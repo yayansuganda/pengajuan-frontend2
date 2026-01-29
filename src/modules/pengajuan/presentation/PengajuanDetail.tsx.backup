@@ -1,0 +1,325 @@
+import React, { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { PengajuanRepositoryImpl } from '../data/PengajuanRepositoryImpl';
+import { Pengajuan } from '../core/PengajuanEntity';
+import { PencairanRepositoryImpl } from '@/modules/pencairan/data/PencairanRepositoryImpl';
+import {
+    ArrowLeft,
+    User,
+    MapPin,
+    Phone,
+    CreditCard,
+    Briefcase,
+    Calendar,
+    DollarSign,
+    FileText,
+    Image as ImageIcon,
+    CheckCircle,
+    XCircle,
+    Clock
+} from 'lucide-react';
+
+const pengajuanRepository = new PengajuanRepositoryImpl();
+const pencairanRepository = new PencairanRepositoryImpl();
+
+interface PengajuanDetailProps {
+    id: string;
+}
+
+export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
+    const router = useRouter();
+    const [pengajuan, setPengajuan] = useState<Pengajuan | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
+    const [borrowerPhotos, setBorrowerPhotos] = useState<string[]>([]);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [hasPencairan, setHasPencairan] = useState(false);
+    const [activeTab, setActiveTab] = useState<'pengajuan' | 'permohonan'>('pengajuan');
+    const [pencairanForm, setPencairanForm] = useState({
+        namaBank: '',
+        nomorRekening: '',
+        atasNama: ''
+    });
+
+    useEffect(() => {
+        fetchPengajuanDetail();
+    }, [id]);
+
+    const fetchPengajuanDetail = async () => {
+        try {
+            setLoading(true);
+            const data = await pengajuanRepository.getPengajuanDetail(id);
+            setPengajuan(data);
+
+            // Parse borrower photos if exists
+            if (data.borrower_photos) {
+                try {
+                    console.log('Raw borrower_photos:', data.borrower_photos);
+                    const photos = JSON.parse(data.borrower_photos);
+                    console.log('Parsed borrower_photos:', photos);
+                    if (Array.isArray(photos) && photos.length > 0) {
+                        setBorrowerPhotos(photos);
+                        console.log('Set borrower photos:', photos);
+                    } else {
+                        setBorrowerPhotos([]);
+                    }
+                } catch (error) {
+                    console.error('Error parsing borrower_photos:', error, data.borrower_photos);
+                    setBorrowerPhotos([]);
+                }
+            } else {
+                console.log('No borrower_photos in response');
+                setBorrowerPhotos([]);
+            }
+
+            // Check if pencairan already exists for this loan
+            const pencairan = await pencairanRepository.getPencairanByLoanId(data.id);
+            setHasPencairan(pencairan !== null);
+        } catch (err) {
+            setError('Failed to fetch pengajuan detail');
+            console.error(err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handlePencairanSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+
+        if (!pengajuan) return;
+
+        try {
+            await pencairanRepository.createPencairan({
+                loan_id: pengajuan.id,
+                bank_name: pencairanForm.namaBank,
+                account_number: pencairanForm.nomorRekening,
+                account_name: pencairanForm.atasNama,
+            });
+
+            alert('Pengajuan pencairan berhasil dikirim!');
+            setIsModalOpen(false);
+            setHasPencairan(true); // Update state to reflect pencairan has been created
+
+            // Reset form
+            setPencairanForm({
+                namaBank: '',
+                nomorRekening: '',
+                atasNama: ''
+            });
+        } catch (error: any) {
+            console.error('Error creating pencairan:', error);
+            alert(error.message || 'Gagal mengajukan pencairan. Silakan coba lagi.');
+        }
+    };
+
+    if (loading) {
+        return (
+            <div className="flex h-64 items-center justify-center">
+                <div className="h-12 w-12 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent"></div>
+            </div>
+        );
+    }
+
+    if (error || !pengajuan) {
+        return (
+            <div className="rounded-lg bg-red-50 p-4 text-center">
+                <p className="text-red-600">{error || 'Pengajuan not found'}</p>
+            </div>
+        );
+    }
+
+    const getStatusColor = (status: string) => {
+        switch (status) {
+            case 'Disetujui':
+                return 'bg-green-50 text-green-700 ring-green-600/20';
+            case 'Ditolak':
+                return 'bg-red-50 text-red-700 ring-red-600/20';
+            case 'Proses Persetujuan':
+                return 'bg-blue-50 text-blue-700 ring-blue-600/20';
+            default:
+                return 'bg-yellow-50 text-yellow-700 ring-yellow-600/20';
+        }
+    };
+
+    const getStatusIcon = (status: string) => {
+        switch (status) {
+            case 'Disetujui':
+                return <CheckCircle className="h-5 w-5 text-green-600" />;
+            case 'Ditolak':
+                return <XCircle className="h-5 w-5 text-red-600" />;
+            default:
+                return <Clock className="h-5 w-5 text-yellow-600" />;
+        }
+    };
+
+    return (
+        <div className="px-4 sm:px-6 lg:px-8 pb-20">
+            {/* Header */}
+            <div className="mb-6">
+                <button
+                    onClick={() => router.back()}
+                    className="inline-flex items-center text-sm font-medium text-gray-500 hover:text-gray-700 mb-4"
+                >
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    Kembali
+                </button>
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h1 className="text-3xl font-bold text-gray-900">Detail Pengajuan</h1>
+                        <p className="mt-2 text-sm text-gray-500">ID Pengajuan: #{pengajuan.id}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        {getStatusIcon(pengajuan.status)}
+                        <span className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-medium ring-1 ring-inset ${getStatusColor(pengajuan.status)}`}>
+                            {pengajuan.status}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            {/* Tabs Navigation */}
+            <div className="mb-6 border-b border-gray-200">
+                <nav className="-mb-px flex space-x-8" aria-label="Tabs">
+                    <button
+                        onClick={() => setActiveTab('pengajuan')}
+                        className={`${activeTab === 'pengajuan'
+                            ? 'border-indigo-500 text-indigo-600'
+                            : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                            } whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium transition-colors`}
+                    >
+                        Detail Pengajuan
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('permohonan')}
+                        className={`${activeTab === 'permohonan'
+                            ? 'border-indigo-500 text-indigo-600'
+                            : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                            } whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium transition-colors`}
+                    >
+                        Detail Permohonan
+                    </button>
+                </nav>
+            </div>
+
+            {/* Tab Content - Detail Pengajuan */}
+            {activeTab === 'pengajuan' && (
+                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    : 'bg-indigo-600 text-white hover:bg-indigo-500 focus-visible:outline-indigo-600'
+                        }`}
+                >
+            {hasPencairan ? 'Pencairan Sudah Diajukan' : 'Pengajuan Pencairan Ke Unit'}
+        </button>
+            </div >
+        </div >
+    )
+}
+
+{/* Modal Pencairan */ }
+{
+    isModalOpen && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+            <div className="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+                <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onClick={() => setIsModalOpen(false)} />
+
+                <div className="relative transform overflow-hidden rounded-lg bg-white px-4 pb-4 pt-5 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:p-6">
+                    <div className="absolute right-0 top-0 hidden pr-4 pt-4 sm:block">
+                        <button
+                            type="button"
+                            className="rounded-md bg-white text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                            onClick={() => setIsModalOpen(false)}
+                        >
+                            <span className="sr-only">Close</span>
+                            <XCircle className="h-6 w-6" aria-hidden="true" />
+                        </button>
+                    </div>
+
+                    <div className="sm:flex sm:items-start">
+                        <div className="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left w-full">
+                            <h3 className="text-base font-semibold leading-6 text-gray-900">
+                                Pengajuan Pencairan Dana
+                            </h3>
+                            <div className="mt-2">
+                                <p className="text-sm text-gray-500 mb-4">
+                                    Silakan lengkapi data rekening tujuan pencairan dana.
+                                </p>
+
+                                <form onSubmit={handlePencairanSubmit} className="space-y-4">
+                                    <div>
+                                        <label htmlFor="namaBank" className="block text-sm font-medium leading-6 text-gray-900">
+                                            Nama Bank
+                                        </label>
+                                        <div className="mt-2">
+                                            <input
+                                                type="text"
+                                                name="namaBank"
+                                                id="namaBank"
+                                                required
+                                                className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 px-3"
+                                                placeholder="Contoh: BCA, Mandiri, BRI"
+                                                value={pencairanForm.namaBank}
+                                                onChange={(e) => setPencairanForm({ ...pencairanForm, namaBank: e.target.value })}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label htmlFor="nomorRekening" className="block text-sm font-medium leading-6 text-gray-900">
+                                            Nomor Rekening
+                                        </label>
+                                        <div className="mt-2">
+                                            <input
+                                                type="text"
+                                                name="nomorRekening"
+                                                id="nomorRekening"
+                                                required
+                                                className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 px-3"
+                                                value={pencairanForm.nomorRekening}
+                                                onChange={(e) => setPencairanForm({ ...pencairanForm, nomorRekening: e.target.value })}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label htmlFor="atasNama" className="block text-sm font-medium leading-6 text-gray-900">
+                                            Nama Pemilik Rekening
+                                        </label>
+                                        <div className="mt-2">
+                                            <input
+                                                type="text"
+                                                name="atasNama"
+                                                id="atasNama"
+                                                required
+                                                className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 px-3"
+                                                value={pencairanForm.atasNama}
+                                                onChange={(e) => setPencairanForm({ ...pencairanForm, atasNama: e.target.value })}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse">
+                                        <button
+                                            type="submit"
+                                            className="inline-flex w-full justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 sm:ml-3 sm:w-auto"
+                                        >
+                                            Ajukan Pencairan
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto"
+                                            onClick={() => setIsModalOpen(false)}
+                                        >
+                                            Batal
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    )
+}
+        </div >
+    );
+};

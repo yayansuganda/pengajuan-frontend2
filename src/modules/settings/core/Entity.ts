@@ -1,0 +1,21 @@
+export interface Setting {
+    id: string;
+    batas_usia_perhitungan_lunas: number;
+    jasa_perbulan: number;
+    description?: string;
+    created_at: string;
+    updated_at: string;
+    deleted_at?: string;
+}
+
+export interface CreateSettingDTO {
+    batas_usia_perhitungan_lunas: number;
+    jasa_perbulan: number;
+    description?: string;
+}
+
+export interface UpdateSettingDTO {
+    batas_usia_perhitungan_lunas: number;
+    jasa_perbulan: number;
+    description?: string;
+}

@@ -1,0 +1,53 @@
+┌─────────────────────────────────────────────────────────────┐
+│                                                             │
+│  🚂 RAILWAY DEPLOYMENT - QUICK REFERENCE                   │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+
+📋 ENVIRONMENT VARIABLES YANG HARUS DISET:
+
+┌─────────────────────────────────────────────────────────────┐
+│ Variable Name          │ Value                              │
+├────────────────────────┼────────────────────────────────────┤
+│ NEXT_PUBLIC_API_URL    │ https://your-backend.railway.app   │
+│                        │ (URL backend Railway Anda)         │
+└─────────────────────────────────────────────────────────────┘
+
+⚠️  PENTING: 
+   - Ganti "your-backend.railway.app" dengan URL backend Railway Anda
+   - Gunakan HTTPS, bukan HTTP
+   - Jangan tambahkan trailing slash (/)
+
+📝 CARA SET DI RAILWAY:
+
+1. Buka Railway Dashboard
+2. Pilih project "pengajuan_frontend"
+3. Klik tab "Variables"
+4. Klik "New Variable"
+5. Masukkan:
+   Name:  NEXT_PUBLIC_API_URL
+   Value: https://your-backend.railway.app
+6. Klik "Add"
+7. Railway akan auto-redeploy
+
+✅ VERIFIKASI SETELAH DEPLOY:
+
+1. Buka app di browser
+2. Tekan F12 (Developer Console)
+3. Cek log:
+   🔧 Creating HTTP Client
+   🔧 API URL: https://your-backend.railway.app  ← Harus backend URL
+   🔧 Environment: production
+
+❌ JIKA MASIH ERROR:
+
+□ Cek Railway Logs untuk error detail
+□ Pastikan backend sudah running
+□ Test backend URL di browser/Postman
+□ Cek CORS di backend (harus allow frontend URL)
+□ Redeploy setelah set environment variable
+
+📚 DOKUMENTASI LENGKAP:
+
+- RAILWAY_DEPLOYMENT.md - Panduan lengkap deployment
+- FIX_SUMMARY.md - Detail fix yang sudah dilakukan
