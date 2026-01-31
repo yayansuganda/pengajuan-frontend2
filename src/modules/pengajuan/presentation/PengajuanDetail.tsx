@@ -183,8 +183,14 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
         <MobileLayoutWrapper showBackground={false}>
             {/* Mobile Layout */}
             <div className="md:hidden">
-                {/* Background Image */}
-                <div className="fixed top-0 left-0 right-0 h-[30vh] z-0 overflow-hidden">
+                {/* Layer 1: Full Page Background */}
+                <div className="fixed inset-0 z-0 pointer-events-none">
+                    <img src="/images/loan_header_bg.png" alt="bg-full" className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-slate-50/70 backdrop-blur-[1px]"></div>
+                </div>
+
+                {/* Layer 2: Header Background */}
+                <div className="fixed top-0 left-0 right-0 h-[250px] z-0 overflow-hidden rounded-b-3xl pointer-events-none">
                     <img
                         src="/images/loan_header_bg.png"
                         alt="Loan Background"
