@@ -84,7 +84,7 @@ const MobileView = ({ data, search, setSearch, statusFilter, setStatusFilter, da
                     </div>
                 </div>
 
-                <div className="space-y-2.5">
+                <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 space-y-3">
                     {/* Search Bar */}
                     <div className="relative">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -93,7 +93,7 @@ const MobileView = ({ data, search, setSearch, statusFilter, setStatusFilter, da
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                             placeholder="Cari Nama / NIK..."
-                            className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 shadow-sm"
+                            className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:bg-white focus:ring-2 focus:ring-indigo-500 transition-colors"
                         />
                     </div>
 
@@ -103,7 +103,7 @@ const MobileView = ({ data, search, setSearch, statusFilter, setStatusFilter, da
                             <select
                                 value={statusFilter}
                                 onChange={(e) => setStatusFilter(e.target.value)}
-                                className="w-full pl-3 pr-8 py-2 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-600 appearance-none focus:ring-2 focus:ring-indigo-500 shadow-sm"
+                                className="w-full pl-3 pr-8 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-600 appearance-none focus:bg-white focus:ring-2 focus:ring-indigo-500 transition-colors"
                             >
                                 {STATUS_OPTIONS.map(opt => (
                                     <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -120,7 +120,7 @@ const MobileView = ({ data, search, setSearch, statusFilter, setStatusFilter, da
                                 type="date"
                                 value={dateFilter}
                                 onChange={(e) => setDateFilter(e.target.value)}
-                                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-600 focus:ring-2 focus:ring-indigo-500 shadow-sm"
+                                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-600 focus:bg-white focus:ring-2 focus:ring-indigo-500 transition-colors"
                             />
                         </div>
                     </div>
