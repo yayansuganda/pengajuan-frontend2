@@ -1853,7 +1853,7 @@ export const CreatePengajuanWizard: React.FC = () => {
                 </div>
 
                 {/* Layer 2: 30% Header Background */}
-                <div className="fixed top-0 left-0 right-0 h-[30vh] z-0 overflow-hidden rounded-b-3xl">
+                <div className="fixed top-0 left-0 right-0 h-[250px] z-0 overflow-hidden rounded-b-3xl">
                     <img
                         src="/images/loan_header_bg.png"
                         alt="Loan Background"
