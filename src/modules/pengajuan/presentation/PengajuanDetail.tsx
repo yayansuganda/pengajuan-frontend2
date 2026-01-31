@@ -2,19 +2,90 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import {
     ArrowLeft, User, MapPin, Briefcase, Calendar, FileText,
     CreditCard, Upload, XCircle, CheckCircle, Clock,
-    Wallet, Landmark, FolderOpen, Banknote, Camera, Receipt, Eye, ExternalLink
+    Wallet, Landmark, FolderOpen, Banknote, Camera, Receipt, Eye, ExternalLink,
+    Home, Plus, LayoutGrid
 } from 'lucide-react';
 import { Pengajuan } from '../core/PengajuanEntity';
 import { PengajuanRepositoryImpl } from '../data/PengajuanRepositoryImpl';
+import { MobileLayoutWrapper } from './components/MobileLayoutWrapper';
 import { useAuth } from '@/modules/auth/presentation/useAuth';
 import axios from 'axios';
 import { showLoading, hideLoading, showSuccess, showError } from '@/shared/utils/sweetAlert';
 import { handleError } from '@/shared/utils/errorHandler';
 
 const pengajuanRepository = new PengajuanRepositoryImpl();
+
+// Subcomponents
+const SummaryCard: React.FC<{ icon: React.ReactNode; label: string; value: string; accent?: boolean }> = ({ icon, label, value, accent }) => (
+    <div className={`rounded-xl p-4 ${accent ? 'bg-gradient-to-br from-indigo-600 to-violet-600 text-white' : 'bg-white border border-slate-200'}`}>
+        <div className={`inline-flex p-2 rounded-lg mb-2 ${accent ? 'bg-white/20 text-white' : 'bg-slate-100 text-indigo-600'}`}>
+            {icon}
+        </div>
+        <p className={`text-xs mb-0.5 ${accent ? 'text-indigo-100' : 'text-slate-500'}`}>{label}</p>
+        <p className={`text-lg font-bold ${accent ? 'text-white' : 'text-slate-900'}`}>{value}</p>
+    </div>
+);
+
+const TabBtn: React.FC<{ active: boolean; onClick: () => void; icon: React.ReactNode; label: string }> = ({ active, onClick, icon, label }) => (
+    <button onClick={onClick} className={`flex-1 flex items-center justify-center gap-2 py-3.5 text-sm font-medium transition-all ${active ? 'text-indigo-600 bg-indigo-50/50 border-b-2 border-indigo-600' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}>
+        {icon}
+        {label}
+    </button>
+);
+
+const Section: React.FC<{ title: string; icon: React.ReactNode; children: React.ReactNode }> = ({ title, icon, children }) => (
+    <div>
+        <div className="flex items-center gap-2 mb-4 pb-2 border-b border-slate-100">
+            {icon}
+            <h3 className="text-sm font-bold text-slate-900">{title}</h3>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-4">
+            {children}
+        </div>
+    </div>
+);
+
+const Field: React.FC<{ label: string; value: string; wide?: boolean; highlight?: boolean }> = ({ label, value, wide, highlight }) => (
+    <div className={wide ? 'col-span-2 sm:col-span-3 lg:col-span-4' : ''}>
+        <dt className="text-xs text-slate-500 mb-0.5">{label}</dt>
+        <dd className={`text-sm ${highlight ? 'font-semibold text-indigo-600' : 'text-slate-900'}`}>{value}</dd>
+    </div>
+);
+
+const DocCard: React.FC<{ title: string; desc: string; url?: string; action?: React.ReactNode }> = ({ title, desc, url, action }) => (
+    <div className="bg-slate-50 rounded-xl border border-slate-200 overflow-hidden">
+        <div className="aspect-[4/3] bg-white relative">
+            {url ? (
+                <a href={url} target="_blank" className="block w-full h-full group">
+                    <img src={url} alt={title} className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
+                        <span className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1.5 px-3 py-1.5 bg-white/90 rounded-full text-xs font-medium text-slate-900">
+                            <ExternalLink className="h-3 w-3" /> Lihat
+                        </span>
+                    </div>
+                </a>
+            ) : (
+                <div className="flex flex-col items-center justify-center h-full text-slate-400 bg-slate-100">
+                    <FileText className="h-8 w-8 mb-1.5 opacity-40" />
+                    <span className="text-xs">Belum ada</span>
+                </div>
+            )}
+        </div>
+        <div className="p-3">
+            <div className="flex items-start justify-between gap-2">
+                <div>
+                    <h4 className="text-sm font-semibold text-slate-900">{title}</h4>
+                    <p className="text-xs text-slate-500">{desc}</p>
+                </div>
+                {action}
+            </div>
+        </div>
+    </div>
+);
 
 interface PengajuanDetailProps {
     id: string;
@@ -109,338 +180,727 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
     ];
 
     return (
-        <div className="max-w-5xl mx-auto space-y-6 pb-24">
-            {/* Hero Header */}
-            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-900 p-6 text-white">
-                <div className="absolute top-0 right-0 w-72 h-72 bg-indigo-500/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
-
-                <div className="relative z-10">
-                    {/* Status + Tombol Kembali */}
-                    <div className="flex items-center justify-between gap-4 mb-3">
-                        <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-sm font-medium ${status.bg} ${status.color}`}>
-                            {status.icon}
-                            <span>{pengajuan.status}</span>
-                        </div>
-                        <button onClick={() => router.back()} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white text-sm font-medium rounded-full border border-white/20 transition-all">
-                            <ArrowLeft className="h-4 w-4" /> Kembali
-                        </button>
-                    </div>
-
-                    {/* Info Nama & Detail */}
-                    <div className="space-y-2">
-                        <h1 className="text-2xl sm:text-3xl font-bold">{pengajuan.nama_lengkap}</h1>
-                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-white/70 text-sm">
-                            <span className="flex items-center gap-1.5"><CreditCard className="h-3.5 w-3.5" /> {pengajuan.nik}</span>
-                            <span className="flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5" /> {new Date(pengajuan.created_at).toLocaleDateString('id-ID', { dateStyle: 'long' })}</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {/* Financial Summary */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                <SummaryCard icon={<Banknote className="h-4 w-4" />} label="Plafond" value={money(pengajuan.jumlah_pembiayaan)} accent />
-                <SummaryCard icon={<Calendar className="h-4 w-4" />} label="Tenor" value={`${d(pengajuan.jangka_waktu)} Bulan`} />
-                <SummaryCard icon={<Receipt className="h-4 w-4" />} label="Angsuran" value={money(pengajuan.besar_angsuran)} />
-                <SummaryCard icon={<Wallet className="h-4 w-4" />} label="Diterima" value={money(pengajuan.nominal_terima)} />
-            </div>
-
-            {/* Tab Navigation */}
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                <div className="flex border-b border-slate-100">
-                    <TabBtn active={activeTab === 'detail'} onClick={() => setActiveTab('detail')} icon={<User className="h-4 w-4" />} label="Data Lengkap" />
-                    <TabBtn active={activeTab === 'dokumen'} onClick={() => setActiveTab('dokumen')} icon={<FolderOpen className="h-4 w-4" />} label="Dokumen" />
+        <MobileLayoutWrapper showBackground={false}>
+            {/* Mobile Layout */}
+            <div className="md:hidden">
+                {/* Background Image */}
+                <div className="fixed top-0 left-0 right-0 h-[30vh] z-0 overflow-hidden">
+                    <img
+                        src="/images/loan_header_bg.png"
+                        alt="Loan Background"
+                        className="w-full h-full object-cover object-center"
+                    />
                 </div>
 
-                <div className="p-5 sm:p-6">
-                    {activeTab === 'detail' && (
-                        <div className="space-y-8">
-                            {/* Personal Info */}
-                            <Section title="Informasi Pribadi" icon={<User className="h-5 w-5 text-indigo-600" />}>
-                                <Field label="Nama Lengkap" value={pengajuan.nama_lengkap} />
-                                <Field label="NIK" value={pengajuan.nik} />
-                                <Field label="Jenis Kelamin" value={d(pengajuan.jenis_kelamin)} />
-                                <Field label="Tempat Lahir" value={d(pengajuan.tempat_lahir)} />
-                                <Field label="Tanggal Lahir" value={pengajuan.tanggal_lahir ? new Date(pengajuan.tanggal_lahir).toLocaleDateString('id-ID') : '-'} />
-                                <Field label="Usia" value={pengajuan.usia ? `${pengajuan.usia} Tahun` : '-'} />
-                                <Field label="Nama Ibu Kandung" value={d(pengajuan.nama_ibu_kandung)} />
-                                <Field label="Pendidikan Terakhir" value={d(pengajuan.pendidikan_terakhir)} />
-                            </Section>
-
-                            {/* Address */}
-                            <Section title="Alamat" icon={<MapPin className="h-5 w-5 text-emerald-600" />}>
-                                <Field label="Alamat Lengkap" value={d(pengajuan.alamat)} wide />
-                                <Field label="RT / RW" value={`${d(pengajuan.rt)} / ${d(pengajuan.rw)}`} />
-                                <Field label="Kelurahan" value={d(pengajuan.kelurahan)} />
-                                <Field label="Kecamatan" value={d(pengajuan.kecamatan)} />
-                                <Field label="Kabupaten" value={d(pengajuan.kabupaten)} />
-                                <Field label="Provinsi" value={d(pengajuan.provinsi)} />
-                                <Field label="Kode Pos" value={d(pengajuan.kode_pos)} />
-                            </Section>
-
-                            {/* Pension */}
-                            <Section title="Data Pensiun" icon={<Briefcase className="h-5 w-5 text-amber-600" />}>
-                                <Field label="Nomor Pensiun (Nopen)" value={d(pengajuan.nopen)} />
-                                <Field label="Jenis Pensiun" value={d(pengajuan.jenis_pensiun)} />
-                                <Field label="Kantor Bayar" value={d(pengajuan.kantor_bayar)} />
-                                <Field label="Nama Bank" value={d(pengajuan.nama_bank)} />
-                                <Field label="No. Rekening Bank" value={d(pengajuan.no_rekening)} />
-                                <Field label="No. Giro Pos" value={d(pengajuan.nomor_rekening_giro_pos)} />
-                            </Section>
-
-                            {/* Financial */}
-                            <Section title="Data Keuangan" icon={<Wallet className="h-5 w-5 text-teal-600" />}>
-                                <Field label="Gaji Bersih" value={money(pengajuan.gaji_bersih)} />
-                                <Field label="Gaji Tersedia" value={money(pengajuan.gaji_tersedia)} />
-                                <Field label="Jenis Dapem" value={d(pengajuan.jenis_dapem)} />
-                                <Field label="Bulan Dapem" value={d(pengajuan.bulan_dapem)} />
-                                <Field label="Status Dapem" value={d(pengajuan.status_dapem)} />
-                            </Section>
-
-                            {/* Loan Details */}
-                            <Section title="Detail Pengajuan" icon={<FileText className="h-5 w-5 text-violet-600" />}>
-                                <Field label="Jenis Pelayanan" value={d(pengajuan.jenis_pelayanan?.name)} highlight />
-                                <Field label="Jenis Pembiayaan" value={d(pengajuan.jenis_pembiayaan?.name)} highlight />
-                                <Field label="Maksimal Plafond" value={money(pengajuan.maksimal_pembiayaan)} />
-                                <Field label="Jumlah Diajukan" value={money(pengajuan.jumlah_pembiayaan)} />
-                                <Field label="Besar Angsuran" value={money(pengajuan.besar_angsuran)} />
-                                <Field label="Total Potongan" value={money(pengajuan.total_potongan)} />
-                                <Field label="Nominal Diterima" value={money(pengajuan.nominal_terima)} />
-                                <Field label="Petugas Kantor Pos" value={d(pengajuan.kantor_pos_petugas)} />
-                            </Section>
-
-                            {/* Notes */}
-                            {(pengajuan.notes || pengajuan.reject_reason) && (
-                                <div className="space-y-3">
-                                    {pengajuan.notes && (
-                                        <div className="p-4 bg-amber-50 rounded-xl border border-amber-200">
-                                            <p className="text-sm font-semibold text-amber-800 mb-1">Catatan</p>
-                                            <p className="text-sm text-amber-700">{pengajuan.notes}</p>
-                                        </div>
-                                    )}
-                                    {pengajuan.reject_reason && (
-                                        <div className="p-4 bg-rose-50 rounded-xl border border-rose-200">
-                                            <p className="text-sm font-semibold text-rose-800 mb-1">Alasan Penolakan</p>
-                                            <p className="text-sm text-rose-700">{pengajuan.reject_reason}</p>
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-                        </div>
-                    )}
-
-                    {activeTab === 'dokumen' && (
-                        <div className="space-y-6">
-                            {/* Sub-tabs for Documents */}
-                            <div className="flex gap-2 p-1 bg-slate-100 rounded-xl">
-                                <button
-                                    onClick={() => setActiveDocTab('pengajuan')}
-                                    className={`flex-1 px-4 py-2.5 text-sm font-medium rounded-lg transition-all ${
-                                        activeDocTab === 'pengajuan'
-                                            ? 'bg-white text-indigo-600 shadow-sm'
-                                            : 'text-slate-600 hover:text-slate-900'
-                                    }`}
-                                >
-                                    <div className="flex items-center justify-center gap-2">
-                                        <Upload className="h-4 w-4" />
-                                        <span>Dokumen Pengajuan</span>
-                                    </div>
-                                </button>
-                                <button
-                                    onClick={() => setActiveDocTab('persetujuan')}
-                                    className={`flex-1 px-4 py-2.5 text-sm font-medium rounded-lg transition-all ${
-                                        activeDocTab === 'persetujuan'
-                                            ? 'bg-white text-emerald-600 shadow-sm'
-                                            : 'text-slate-600 hover:text-slate-900'
-                                    }`}
-                                >
-                                    <div className="flex items-center justify-center gap-2">
-                                        <CheckCircle className="h-4 w-4" />
-                                        <span>Dokumen Persetujuan</span>
-                                    </div>
-                                </button>
+                {/* Content */}
+                <div className="relative z-10 pt-10 px-4">
+                    {/* Header Info */}
+                    <div className="mb-5 px-2">
+                        <div className="flex items-center justify-between mb-3">
+                            <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium ${status.bg} ${status.color}`}>
+                                {status.icon}
+                                <span>{pengajuan.status}</span>
                             </div>
+                            <button onClick={() => router.back()} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-100 text-emerald-700 text-xs font-medium rounded-full border border-emerald-200 transition-all">
+                                <ArrowLeft className="h-3.5 w-3.5" /> Kembali
+                            </button>
+                        </div>
+                        <h1 className="text-emerald-900 text-xl font-bold mb-1">{pengajuan.nama_lengkap}</h1>
+                        <p className="text-emerald-700 text-xs">{pengajuan.nik}</p>
+                    </div>
 
-                            {/* Tab Content */}
-                            {activeDocTab === 'pengajuan' && (
-                                <div className="space-y-6">
-                                    <div className="flex items-start gap-2 p-4 bg-blue-50 rounded-xl border border-blue-100">
-                                        <FileText className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                                        <div>
-                                            <p className="text-sm font-medium text-blue-900">Dokumen Pengajuan</p>
-                                            <p className="text-xs text-blue-700 mt-0.5">Dokumen yang diupload saat pengajuan awal</p>
+                    {/* Main Card */}
+                    <div className="bg-white rounded-3xl shadow-xl shadow-slate-900/10 p-5">
+                        {/* Financial Summary - Compact */}
+                        <div className="grid grid-cols-2 gap-2 mb-5">
+                            <div className="bg-indigo-50 rounded-xl p-3">
+                                <p className="text-[9px] text-indigo-600 font-semibold uppercase mb-0.5">Plafond</p>
+                                <p className="text-sm font-bold text-indigo-700">{money(pengajuan.jumlah_pembiayaan)}</p>
+                            </div>
+                            <div className="bg-slate-50 rounded-xl p-3">
+                                <p className="text-[9px] text-slate-600 font-semibold uppercase mb-0.5">Tenor</p>
+                                <p className="text-sm font-bold text-slate-700">{d(pengajuan.jangka_waktu)} Bln</p>
+                            </div>
+                            <div className="bg-slate-50 rounded-xl p-3">
+                                <p className="text-[9px] text-slate-600 font-semibold uppercase mb-0.5">Angsuran</p>
+                                <p className="text-sm font-bold text-slate-700">{money(pengajuan.besar_angsuran)}</p>
+                            </div>
+                            <div className="bg-emerald-50 rounded-xl p-3">
+                                <p className="text-[9px] text-emerald-600 font-semibold uppercase mb-0.5">Diterima</p>
+                                <p className="text-sm font-bold text-emerald-700">{money(pengajuan.nominal_terima)}</p>
+                            </div>
+                        </div>
+
+                        {/* Tab Navigation - Compact */}
+                        <div className="flex gap-2 p-1 bg-slate-100 rounded-xl mb-4">
+                            <button onClick={() => setActiveTab('detail')} className={`flex-1 px-3 py-2 text-xs font-medium rounded-lg transition-all ${activeTab === 'detail' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-600'}`}>
+                                Detail
+                            </button>
+                            <button onClick={() => setActiveTab('dokumen')} className={`flex-1 px-3 py-2 text-xs font-medium rounded-lg transition-all ${activeTab === 'dokumen' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-600'}`}>
+                                Dokumen
+                            </button>
+                        </div>
+
+                        {/* Tab Content */}
+                        {activeTab === 'detail' && (
+                            <div className="space-y-4 text-sm">
+                                {/* Personal Info - Compact */}
+                                <div>
+                                    <h3 className="text-xs font-bold text-slate-900 mb-2 flex items-center gap-1.5">
+                                        <User className="h-3.5 w-3.5 text-indigo-600" /> Informasi Pribadi
+                                    </h3>
+                                    <div className="space-y-2 text-xs">
+                                        <div className="flex justify-between py-1.5 border-b border-slate-50">
+                                            <span className="text-slate-500">Jenis Kelamin</span>
+                                            <span className="font-medium text-slate-900">{d(pengajuan.jenis_kelamin)}</span>
+                                        </div>
+                                        <div className="flex justify-between py-1.5 border-b border-slate-50">
+                                            <span className="text-slate-500">Tempat Lahir</span>
+                                            <span className="font-medium text-slate-900">{d(pengajuan.tempat_lahir)}</span>
+                                        </div>
+                                        <div className="flex justify-between py-1.5 border-b border-slate-50">
+                                            <span className="text-slate-500">Tanggal Lahir</span>
+                                            <span className="font-medium text-slate-900">{pengajuan.tanggal_lahir ? new Date(pengajuan.tanggal_lahir).toLocaleDateString('id-ID') : '-'}</span>
+                                        </div>
+                                        <div className="flex justify-between py-1.5 border-b border-slate-50">
+                                            <span className="text-slate-500">Usia</span>
+                                            <span className="font-medium text-slate-900">{pengajuan.usia ? `${pengajuan.usia} Tahun` : '-'}</span>
                                         </div>
                                     </div>
+                                </div>
 
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                                        {dokumenPengajuan.map((doc, idx) => (
-                                            <DocCard
-                                                key={idx}
-                                                title={doc.title}
-                                                desc={doc.desc}
-                                                url={doc.url}
-                                            />
-                                        ))}
-                                    </div>
-
-                                    {/* Borrower Photos */}
-                                    <div className="pt-4 border-t border-slate-100">
-                                        <div className="flex items-center gap-2 mb-4">
-                                            <Camera className="h-5 w-5 text-slate-400" />
-                                            <div>
-                                                <h4 className="text-sm font-semibold text-slate-900">Foto Nasabah</h4>
-                                                <p className="text-xs text-slate-500">Dokumentasi foto pemohon</p>
-                                            </div>
+                                {/* Address - Compact */}
+                                <div>
+                                    <h3 className="text-xs font-bold text-slate-900 mb-2 flex items-center gap-1.5">
+                                        <MapPin className="h-3.5 w-3.5 text-emerald-600" /> Alamat
+                                    </h3>
+                                    <div className="space-y-2 text-xs">
+                                        <div className="py-1.5 border-b border-slate-50">
+                                            <span className="text-slate-500 block mb-0.5">Alamat Lengkap</span>
+                                            <span className="font-medium text-slate-900">{d(pengajuan.alamat)}</span>
                                         </div>
+                                        <div className="flex justify-between py-1.5 border-b border-slate-50">
+                                            <span className="text-slate-500">Kelurahan</span>
+                                            <span className="font-medium text-slate-900">{d(pengajuan.kelurahan)}</span>
+                                        </div>
+                                        <div className="flex justify-between py-1.5 border-b border-slate-50">
+                                            <span className="text-slate-500">Kecamatan</span>
+                                            <span className="font-medium text-slate-900">{d(pengajuan.kecamatan)}</span>
+                                        </div>
+                                    </div>
+                                </div>
 
-                                        {borrowerPhotos.length > 0 ? (
-                                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                                                {borrowerPhotos.map((photo, i) => (
-                                                    <a key={i} href={photo} target="_blank" className="group relative aspect-square rounded-xl overflow-hidden border border-slate-200 hover:shadow-lg transition-all">
-                                                        <img src={photo} alt={`Foto ${i + 1}`} className="w-full h-full object-cover" />
-                                                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
-                                                            <Eye className="h-5 w-5 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
-                                                        </div>
+                                {/* Financial - Compact */}
+                                <div>
+                                    <h3 className="text-xs font-bold text-slate-900 mb-2 flex items-center gap-1.5">
+                                        <Wallet className="h-3.5 w-3.5 text-teal-600" /> Data Keuangan
+                                    </h3>
+                                    <div className="space-y-2 text-xs">
+                                        <div className="flex justify-between py-1.5 border-b border-slate-50">
+                                            <span className="text-slate-500">Gaji Bersih</span>
+                                            <span className="font-medium text-slate-900">{money(pengajuan.gaji_bersih)}</span>
+                                        </div>
+                                        <div className="flex justify-between py-1.5 border-b border-slate-50">
+                                            <span className="text-slate-500">Gaji Tersedia</span>
+                                            <span className="font-medium text-slate-900">{money(pengajuan.gaji_tersedia)}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {activeTab === 'dokumen' && (
+                            <div className="space-y-3">
+                                {/* Document Tabs */}
+                                <div className="flex gap-2 p-1 bg-slate-100 rounded-xl">
+                                    <button onClick={() => setActiveDocTab('pengajuan')} className={`flex-1 px-3 py-2 text-xs font-medium rounded-lg transition-all ${activeDocTab === 'pengajuan' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-600'}`}>
+                                        Pengajuan
+                                    </button>
+                                    <button onClick={() => setActiveDocTab('persetujuan')} className={`flex-1 px-3 py-2 text-xs font-medium rounded-lg transition-all ${activeDocTab === 'persetujuan' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-600'}`}>
+                                        Persetujuan
+                                    </button>
+                                </div>
+
+                                {/* Documents Grid */}
+                                <div className="grid grid-cols-2 gap-2">
+                                    {(activeDocTab === 'pengajuan' ? dokumenPengajuan : dokumenPersetujuan).map((doc, idx) => (
+                                        <div key={idx} className="bg-slate-50 rounded-xl overflow-hidden border border-slate-200">
+                                            <div className="aspect-square bg-white relative">
+                                                {doc.url ? (
+                                                    <a href={doc.url} target="_blank" className="block w-full h-full">
+                                                        <img src={doc.url} alt={doc.title} className="w-full h-full object-cover" />
                                                     </a>
-                                                ))}
+                                                ) : (
+                                                    <div className="flex flex-col items-center justify-center h-full text-slate-400 bg-slate-100">
+                                                        <FileText className="h-6 w-6 mb-1 opacity-40" />
+                                                        <span className="text-[10px]">Belum ada</span>
+                                                    </div>
+                                                )}
                                             </div>
-                                        ) : (
-                                            <div className="flex flex-col items-center justify-center py-10 text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200">
-                                                <Camera className="h-10 w-10 mb-2 opacity-40" />
-                                                <span className="text-sm">Belum ada foto</span>
+                                            <div className="p-2">
+                                                <h4 className="text-[10px] font-semibold text-slate-900 truncate">{doc.title}</h4>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Floating Bottom Navigation */}
+                <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
+                    <div className="bg-slate-900 rounded-full px-2 py-1.5 flex items-center gap-1 shadow-2xl shadow-slate-900/40">
+                        <Link href="/dashboard" className="w-11 h-11 rounded-full flex items-center justify-center text-slate-500 hover:text-white hover:bg-white/10 transition-colors">
+                            <Home className="w-5 h-5" />
+                        </Link>
+                        <Link href="/pengajuan" className="w-11 h-11 rounded-full flex items-center justify-center bg-white/10 text-white">
+                            <FileText className="w-5 h-5" />
+                        </Link>
+                        <Link href="/pengajuan/create" className="-mt-5 mx-1">
+                            <div className="w-14 h-14 bg-indigo-600 rounded-full flex items-center justify-center shadow-lg shadow-indigo-600/40 border-4 border-white hover:scale-105 active:scale-95 transition-transform">
+                                <Plus className="w-6 h-6 text-white" strokeWidth={2.5} />
+                            </div>
+                        </Link>
+                        <Link href="#" className="w-11 h-11 rounded-full flex items-center justify-center text-slate-500 hover:text-white hover:bg-white/10 transition-colors">
+                            <LayoutGrid className="w-5 h-5" />
+                        </Link>
+                        <Link href="#" className="w-11 h-11 rounded-full flex items-center justify-center text-slate-500 hover:text-white hover:bg-white/10 transition-colors">
+                            <User className="w-5 h-5" />
+                        </Link>
+                    </div>
+                </div>
+            </div>
+
+            {/* Desktop Layout - Original Design */}
+            <div className="hidden md:block max-w-5xl mx-auto space-y-6 pb-24">
+                {/* Hero Header */}
+                <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-900 p-6 text-white">
+                    <div className="absolute top-0 right-0 w-72 h-72 bg-indigo-500/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+
+                    <div className="relative z-10">
+                        <div className="flex items-center justify-between gap-4 mb-3">
+                            <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-sm font-medium ${status.bg} ${status.color}`}>
+                                {status.icon}
+                                <span>{pengajuan.status}</span>
+                            </div>
+                            <button onClick={() => router.back()} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white text-sm font-medium rounded-full border border-white/20 transition-all">
+                                <ArrowLeft className="h-4 w-4" /> Kembali
+                            </button>
+                        </div>
+
+                        <div className="space-y-2">
+                            <h1 className="text-2xl sm:text-3xl font-bold">{pengajuan.nama_lengkap}</h1>
+                            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-white/70 text-sm">
+                                <span className="flex items-center gap-1.5"><CreditCard className="h-3.5 w-3.5" /> {pengajuan.nik}</span>
+                                <span className="flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5" /> {new Date(pengajuan.created_at).toLocaleDateString('id-ID', { dateStyle: 'long' })}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Financial Summary */}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                    <SummaryCard icon={<Banknote className="h-4 w-4" />} label="Plafond" value={money(pengajuan.jumlah_pembiayaan)} accent />
+                    <SummaryCard icon={<Calendar className="h-4 w-4" />} label="Tenor" value={`${d(pengajuan.jangka_waktu)} Bulan`} />
+                    <SummaryCard icon={<Receipt className="h-4 w-4" />} label="Angsuran" value={money(pengajuan.besar_angsuran)} />
+                    <SummaryCard icon={<Wallet className="h-4 w-4" />} label="Diterima" value={money(pengajuan.nominal_terima)} />
+                </div>
+
+                {/* Tab Navigation */}
+                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div className="flex border-b border-slate-100">
+                        <TabBtn active={activeTab === 'detail'} onClick={() => setActiveTab('detail')} icon={<User className="h-4 w-4" />} label="Data Lengkap" />
+                        <TabBtn active={activeTab === 'dokumen'} onClick={() => setActiveTab('dokumen')} icon={<FolderOpen className="h-4 w-4" />} label="Dokumen" />
+                    </div>
+
+                    <div className="p-5 sm:p-6">
+                        {activeTab === 'detail' && (
+                            <div className="space-y-8">
+                                {/* Personal Info */}
+                                <Section title="Informasi Pribadi" icon={<User className="h-5 w-5 text-indigo-600" />}>
+                                    <Field label="Nama Lengkap" value={pengajuan.nama_lengkap} />
+                                    <Field label="NIK" value={pengajuan.nik} />
+                                    <Field label="Jenis Kelamin" value={d(pengajuan.jenis_kelamin)} />
+                                    <Field label="Tempat Lahir" value={d(pengajuan.tempat_lahir)} />
+                                    <Field label="Tanggal Lahir" value={pengajuan.tanggal_lahir ? new Date(pengajuan.tanggal_lahir).toLocaleDateString('id-ID') : '-'} />
+                                    <Field label="Usia" value={pengajuan.usia ? `${pengajuan.usia} Tahun` : '-'} />
+                                    <Field label="Nama Ibu Kandung" value={d(pengajuan.nama_ibu_kandung)} />
+                                    <Field label="Pendidikan Terakhir" value={d(pengajuan.pendidikan_terakhir)} />
+                                </Section>
+
+                                {/* Address */}
+                                <Section title="Alamat" icon={<MapPin className="h-5 w-5 text-emerald-600" />}>
+                                    <Field label="Alamat Lengkap" value={d(pengajuan.alamat)} wide />
+                                    <Field label="RT / RW" value={`${d(pengajuan.rt)} / ${d(pengajuan.rw)}`} />
+                                    <Field label="Kelurahan" value={d(pengajuan.kelurahan)} />
+                                    <Field label="Kecamatan" value={d(pengajuan.kecamatan)} />
+                                    <Field label="Kabupaten" value={d(pengajuan.kabupaten)} />
+                                    <Field label="Provinsi" value={d(pengajuan.provinsi)} />
+                                    <Field label="Kode Pos" value={d(pengajuan.kode_pos)} />
+                                </Section>
+
+                                {/* Pension */}
+                                <Section title="Data Pensiun" icon={<Briefcase className="h-5 w-5 text-amber-600" />}>
+                                    <Field label="Nomor Pensiun (Nopen)" value={d(pengajuan.nopen)} />
+                                    <Field label="Jenis Pensiun" value={d(pengajuan.jenis_pensiun)} />
+                                    <Field label="Kantor Bayar" value={d(pengajuan.kantor_bayar)} />
+                                    <Field label="Nama Bank" value={d(pengajuan.nama_bank)} />
+                                    <Field label="No. Rekening Bank" value={d(pengajuan.no_rekening)} />
+                                    <Field label="No. Giro Pos" value={d(pengajuan.nomor_rekening_giro_pos)} />
+                                </Section>
+
+                                {/* Financial */}
+                                <Section title="Data Keuangan" icon={<Wallet className="h-5 w-5 text-teal-600" />}>
+                                    <Field label="Gaji Bersih" value={money(pengajuan.gaji_bersih)} />
+                                    <Field label="Gaji Tersedia" value={money(pengajuan.gaji_tersedia)} />
+                                    <Field label="Jenis Dapem" value={d(pengajuan.jenis_dapem)} />
+                                    <Field label="Bulan Dapem" value={d(pengajuan.bulan_dapem)} />
+                                    <Field label="Status Dapem" value={d(pengajuan.status_dapem)} />
+                                </Section>
+
+                                {/* Loan Details */}
+                                <Section title="Detail Pengajuan" icon={<FileText className="h-5 w-5 text-violet-600" />}>
+                                    <Field label="Jenis Pelayanan" value={d(pengajuan.jenis_pelayanan?.name)} highlight />
+                                    <Field label="Jenis Pembiayaan" value={d(pengajuan.jenis_pembiayaan?.name)} highlight />
+                                    <Field label="Maksimal Plafond" value={money(pengajuan.maksimal_pembiayaan)} />
+                                    <Field label="Jumlah Diajukan" value={money(pengajuan.jumlah_pembiayaan)} />
+                                    <Field label="Besar Angsuran" value={money(pengajuan.besar_angsuran)} />
+                                    <Field label="Total Potongan" value={money(pengajuan.total_potongan)} />
+                                    <Field label="Nominal Diterima" value={money(pengajuan.nominal_terima)} />
+                                    <Field label="Petugas Kantor Pos" value={d(pengajuan.kantor_pos_petugas)} />
+                                </Section>
+
+                                {/* Notes */}
+                                {(pengajuan.notes || pengajuan.reject_reason) && (
+                                    <div className="space-y-3">
+                                        {pengajuan.notes && (
+                                            <div className="p-4 bg-amber-50 rounded-xl border border-amber-200">
+                                                <p className="text-sm font-semibold text-amber-800 mb-1">Catatan</p>
+                                                <p className="text-sm text-amber-700">{pengajuan.notes}</p>
+                                            </div>
+                                        )}
+                                        {pengajuan.reject_reason && (
+                                            <div className="p-4 bg-rose-50 rounded-xl border border-rose-200">
+                                                <p className="text-sm font-semibold text-rose-800 mb-1">Alasan Penolakan</p>
+                                                <p className="text-sm text-rose-700">{pengajuan.reject_reason}</p>
                                             </div>
                                         )}
                                     </div>
-                                </div>
-                            )}
+                                )}
+                            </div>
+                        )}
 
-                            {activeDocTab === 'persetujuan' && (
-                                <div className="space-y-6">
-                                    <div className="flex items-start gap-2 p-4 bg-emerald-50 rounded-xl border border-emerald-100">
-                                        <CheckCircle className="h-5 w-5 text-emerald-600 mt-0.5 flex-shrink-0" />
-                                        <div>
-                                            <p className="text-sm font-medium text-emerald-900">Dokumen Persetujuan</p>
-                                            <p className="text-xs text-emerald-700 mt-0.5">Dokumen yang diupload setelah pengajuan disetujui</p>
+                        {activeTab === 'dokumen' && (
+                            <div className="space-y-6">
+                                {/* Sub-tabs for Documents */}
+                                <div className="flex gap-2 p-1 bg-slate-100 rounded-xl">
+                                    <button
+                                        onClick={() => setActiveDocTab('pengajuan')}
+                                        className={`flex-1 px-4 py-2.5 text-sm font-medium rounded-lg transition-all ${activeDocTab === 'pengajuan'
+                                            ? 'bg-white text-indigo-600 shadow-sm'
+                                            : 'text-slate-600 hover:text-slate-900'
+                                            }`}
+                                    >
+                                        <div className="flex items-center justify-center gap-2">
+                                            <Upload className="h-4 w-4" />
+                                            <span>Dokumen Pengajuan</span>
+                                        </div>
+                                    </button>
+                                    <button
+                                        onClick={() => setActiveDocTab('persetujuan')}
+                                        className={`flex-1 px-4 py-2.5 text-sm font-medium rounded-lg transition-all ${activeDocTab === 'persetujuan'
+                                            ? 'bg-white text-emerald-600 shadow-sm'
+                                            : 'text-slate-600 hover:text-slate-900'
+                                            }`}
+                                    >
+                                        <div className="flex items-center justify-center gap-2">
+                                            <CheckCircle className="h-4 w-4" />
+                                            <span>Dokumen Persetujuan</span>
+                                        </div>
+                                    </button>
+                                </div>
+
+                                {/* Tab Content */}
+                                {activeDocTab === 'pengajuan' && (
+                                    <div className="space-y-6">
+                                        <div className="flex items-start gap-2 p-4 bg-blue-50 rounded-xl border border-blue-100">
+                                            <FileText className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                                            <div>
+                                                <p className="text-sm font-medium text-blue-900">Dokumen Pengajuan</p>
+                                                <p className="text-xs text-blue-700 mt-0.5">Dokumen yang diupload saat pengajuan awal</p>
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                            {dokumenPengajuan.map((doc, idx) => (
+                                                <DocCard
+                                                    key={idx}
+                                                    title={doc.title}
+                                                    desc={doc.desc}
+                                                    url={doc.url}
+                                                />
+                                            ))}
+                                        </div>
+
+                                        {/* Borrower Photos */}
+                                        <div className="pt-4 border-t border-slate-100">
+                                            <div className="flex items-center gap-2 mb-4">
+                                                <Camera className="h-5 w-5 text-slate-400" />
+                                                <div>
+                                                    <h4 className="text-sm font-semibold text-slate-900">Foto Nasabah</h4>
+                                                    <p className="text-xs text-slate-500">Dokumentasi foto pemohon</p>
+                                                </div>
+                                            </div>
+
+                                            {borrowerPhotos.length > 0 ? (
+                                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                                    {borrowerPhotos.map((photo, i) => (
+                                                        <a key={i} href={photo} target="_blank" className="group relative aspect-square rounded-xl overflow-hidden border border-slate-200 hover:shadow-lg transition-all">
+                                                            <img src={photo} alt={`Foto ${i + 1}`} className="w-full h-full object-cover" />
+                                                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
+                                                                <Eye className="h-5 w-5 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                            </div>
+                                                        </a>
+                                                    ))}
+                                                </div>
+                                            ) : (
+                                                <div className="flex flex-col items-center justify-center py-10 text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                                                    <Camera className="h-10 w-10 mb-2 opacity-40" />
+                                                    <span className="text-sm">Belum ada foto</span>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
+                                )}
 
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                                        {dokumenPersetujuan.map((doc, idx) => (
-                                            <DocCard
-                                                key={idx}
-                                                title={doc.title}
-                                                desc={doc.desc}
-                                                url={doc.url}
-                                                action={
-                                                    doc.isDisbursement && pengajuan.disbursement && (user?.role === 'admin-pusat' || user?.role === 'super-admin' || user?.role === 'admin-unit') ? (
-                                                        <button onClick={() => setIsUploadModalOpen(true)} className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 flex items-center gap-1">
-                                                            <Upload className="h-3 w-3" /> {doc.url ? 'Update' : 'Upload'}
-                                                        </button>
-                                                    ) : doc.isDisbursement && !pengajuan.disbursement ? (
-                                                        <span className="text-xs text-slate-400">Belum dicairkan</span>
-                                                    ) : null
-                                                }
-                                            />
-                                        ))}
+                                {activeDocTab === 'persetujuan' && (
+                                    <div className="space-y-6">
+                                        <div className="flex items-start gap-2 p-4 bg-emerald-50 rounded-xl border border-emerald-100">
+                                            <CheckCircle className="h-5 w-5 text-emerald-600 mt-0.5 flex-shrink-0" />
+                                            <div>
+                                                <p className="text-sm font-medium text-emerald-900">Dokumen Persetujuan</p>
+                                                <p className="text-xs text-emerald-700 mt-0.5">Dokumen yang diupload setelah pengajuan disetujui</p>
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                            {dokumenPersetujuan.map((doc, idx) => (
+                                                <DocCard
+                                                    key={idx}
+                                                    title={doc.title}
+                                                    desc={doc.desc}
+                                                    url={doc.url}
+                                                    action={
+                                                        doc.isDisbursement && pengajuan.disbursement && (user?.role === 'admin-pusat' || user?.role === 'super-admin' || user?.role === 'admin-unit') ? (
+                                                            <button onClick={() => setIsUploadModalOpen(true)} className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 flex items-center gap-1">
+                                                                <Upload className="h-3 w-3" /> {doc.url ? 'Update' : 'Upload'}
+                                                            </button>
+                                                        ) : doc.isDisbursement && !pengajuan.disbursement ? (
+                                                            <span className="text-xs text-slate-400">Belum dicairkan</span>
+                                                        ) : null
+                                                    }
+                                                />
+                                            ))}
+                                        </div>
                                     </div>
-                                </div>
-                            )}
-                        </div>
-                    )}
-                </div>
-            </div>
-
-            {/* Upload Modal */}
-            {isUploadModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-                    <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
-                        <h3 className="text-lg font-bold text-slate-900 mb-1">Upload Bukti Transfer</h3>
-                        <p className="text-sm text-slate-500 mb-5">Upload gambar bukti pencairan dana</p>
-                        <form onSubmit={handleUploadProof} className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1.5">File Gambar</label>
-                                <input type="file" accept="image/*" onChange={(e) => setProofForm({ ...proofForm, file: e.target.files?.[0] || null })} className="block w-full text-sm text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" />
+                                )}
                             </div>
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1.5">Catatan</label>
-                                <textarea rows={3} className="block w-full rounded-xl border-slate-200 text-sm focus:border-indigo-500 focus:ring-indigo-500" value={proofForm.notes} onChange={(e) => setProofForm({ ...proofForm, notes: e.target.value })} placeholder="Catatan tambahan..." />
-                            </div>
-                            <div className="flex gap-3 pt-2">
-                                <button type="button" onClick={() => setIsUploadModalOpen(false)} className="flex-1 px-4 py-2.5 text-sm font-medium text-slate-700 bg-slate-100 rounded-xl hover:bg-slate-200 transition-colors">Batal</button>
-                                <button type="submit" className="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-indigo-600 rounded-xl hover:bg-indigo-700 transition-colors">Upload</button>
-                            </div>
-                        </form>
+                        )}
                     </div>
                 </div>
-            )}
-        </div>
+
+                {/* Upload Modal */}
+                {isUploadModalOpen && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                        <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+                            <h3 className="text-lg font-bold text-slate-900 mb-1">Upload Bukti Transfer</h3>
+                            <p className="text-sm text-slate-500 mb-5">Upload gambar bukti pencairan dana</p>
+                            <form onSubmit={handleUploadProof} className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-1.5">File Gambar</label>
+                                    <input type="file" accept="image/*" onChange={(e) => setProofForm({ ...proofForm, file: e.target.files?.[0] || null })} className="block w-full text-sm text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-1.5">Catatan</label>
+                                    <textarea rows={3} className="block w-full rounded-xl border-slate-200 text-sm focus:border-indigo-500 focus:ring-indigo-500" value={proofForm.notes} onChange={(e) => setProofForm({ ...proofForm, notes: e.target.value })} placeholder="Catatan tambahan..." />
+                                </div>
+                                <div className="flex gap-3 pt-2">
+                                    <button type="button" onClick={() => setIsUploadModalOpen(false)} className="flex-1 px-4 py-2.5 text-sm font-medium text-slate-700 bg-slate-100 rounded-xl hover:bg-slate-200 transition-colors">Batal</button>
+                                    <button type="submit" className="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-indigo-600 rounded-xl hover:bg-indigo-700 transition-colors">Upload</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                )}
+            </div>
+            <div className="hidden md:block">
+                {/* Hero Header */}
+                <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-900 p-6 text-white">
+                    <div className="absolute top-0 right-0 w-72 h-72 bg-indigo-500/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+
+                    <div className="relative z-10">
+                        {/* Status + Tombol Kembali */}
+                        <div className="flex items-center justify-between gap-4 mb-3">
+                            <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-sm font-medium ${status.bg} ${status.color}`}>
+                                {status.icon}
+                                <span>{pengajuan.status}</span>
+                            </div>
+                            <button onClick={() => router.back()} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white text-sm font-medium rounded-full border border-white/20 transition-all">
+                                <ArrowLeft className="h-4 w-4" /> Kembali
+                            </button>
+                        </div>
+
+                        {/* Info Nama & Detail */}
+                        <div className="space-y-2">
+                            <h1 className="text-2xl sm:text-3xl font-bold">{pengajuan.nama_lengkap}</h1>
+                            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-white/70 text-sm">
+                                <span className="flex items-center gap-1.5"><CreditCard className="h-3.5 w-3.5" /> {pengajuan.nik}</span>
+                                <span className="flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5" /> {new Date(pengajuan.created_at).toLocaleDateString('id-ID', { dateStyle: 'long' })}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Financial Summary */}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                    <SummaryCard icon={<Banknote className="h-4 w-4" />} label="Plafond" value={money(pengajuan.jumlah_pembiayaan)} accent />
+                    <SummaryCard icon={<Calendar className="h-4 w-4" />} label="Tenor" value={`${d(pengajuan.jangka_waktu)} Bulan`} />
+                    <SummaryCard icon={<Receipt className="h-4 w-4" />} label="Angsuran" value={money(pengajuan.besar_angsuran)} />
+                    <SummaryCard icon={<Wallet className="h-4 w-4" />} label="Diterima" value={money(pengajuan.nominal_terima)} />
+                </div>
+
+                {/* Tab Navigation */}
+                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div className="flex border-b border-slate-100">
+                        <TabBtn active={activeTab === 'detail'} onClick={() => setActiveTab('detail')} icon={<User className="h-4 w-4" />} label="Data Lengkap" />
+                        <TabBtn active={activeTab === 'dokumen'} onClick={() => setActiveTab('dokumen')} icon={<FolderOpen className="h-4 w-4" />} label="Dokumen" />
+                    </div>
+
+                    <div className="p-5 sm:p-6">
+                        {activeTab === 'detail' && (
+                            <div className="space-y-8">
+                                {/* Personal Info */}
+                                <Section title="Informasi Pribadi" icon={<User className="h-5 w-5 text-indigo-600" />}>
+                                    <Field label="Nama Lengkap" value={pengajuan.nama_lengkap} />
+                                    <Field label="NIK" value={pengajuan.nik} />
+                                    <Field label="Jenis Kelamin" value={d(pengajuan.jenis_kelamin)} />
+                                    <Field label="Tempat Lahir" value={d(pengajuan.tempat_lahir)} />
+                                    <Field label="Tanggal Lahir" value={pengajuan.tanggal_lahir ? new Date(pengajuan.tanggal_lahir).toLocaleDateString('id-ID') : '-'} />
+                                    <Field label="Usia" value={pengajuan.usia ? `${pengajuan.usia} Tahun` : '-'} />
+                                    <Field label="Nama Ibu Kandung" value={d(pengajuan.nama_ibu_kandung)} />
+                                    <Field label="Pendidikan Terakhir" value={d(pengajuan.pendidikan_terakhir)} />
+                                </Section>
+
+                                {/* Address */}
+                                <Section title="Alamat" icon={<MapPin className="h-5 w-5 text-emerald-600" />}>
+                                    <Field label="Alamat Lengkap" value={d(pengajuan.alamat)} wide />
+                                    <Field label="RT / RW" value={`${d(pengajuan.rt)} / ${d(pengajuan.rw)}`} />
+                                    <Field label="Kelurahan" value={d(pengajuan.kelurahan)} />
+                                    <Field label="Kecamatan" value={d(pengajuan.kecamatan)} />
+                                    <Field label="Kabupaten" value={d(pengajuan.kabupaten)} />
+                                    <Field label="Provinsi" value={d(pengajuan.provinsi)} />
+                                    <Field label="Kode Pos" value={d(pengajuan.kode_pos)} />
+                                </Section>
+
+                                {/* Pension */}
+                                <Section title="Data Pensiun" icon={<Briefcase className="h-5 w-5 text-amber-600" />}>
+                                    <Field label="Nomor Pensiun (Nopen)" value={d(pengajuan.nopen)} />
+                                    <Field label="Jenis Pensiun" value={d(pengajuan.jenis_pensiun)} />
+                                    <Field label="Kantor Bayar" value={d(pengajuan.kantor_bayar)} />
+                                    <Field label="Nama Bank" value={d(pengajuan.nama_bank)} />
+                                    <Field label="No. Rekening Bank" value={d(pengajuan.no_rekening)} />
+                                    <Field label="No. Giro Pos" value={d(pengajuan.nomor_rekening_giro_pos)} />
+                                </Section>
+
+                                {/* Financial */}
+                                <Section title="Data Keuangan" icon={<Wallet className="h-5 w-5 text-teal-600" />}>
+                                    <Field label="Gaji Bersih" value={money(pengajuan.gaji_bersih)} />
+                                    <Field label="Gaji Tersedia" value={money(pengajuan.gaji_tersedia)} />
+                                    <Field label="Jenis Dapem" value={d(pengajuan.jenis_dapem)} />
+                                    <Field label="Bulan Dapem" value={d(pengajuan.bulan_dapem)} />
+                                    <Field label="Status Dapem" value={d(pengajuan.status_dapem)} />
+                                </Section>
+
+                                {/* Loan Details */}
+                                <Section title="Detail Pengajuan" icon={<FileText className="h-5 w-5 text-violet-600" />}>
+                                    <Field label="Jenis Pelayanan" value={d(pengajuan.jenis_pelayanan?.name)} highlight />
+                                    <Field label="Jenis Pembiayaan" value={d(pengajuan.jenis_pembiayaan?.name)} highlight />
+                                    <Field label="Maksimal Plafond" value={money(pengajuan.maksimal_pembiayaan)} />
+                                    <Field label="Jumlah Diajukan" value={money(pengajuan.jumlah_pembiayaan)} />
+                                    <Field label="Besar Angsuran" value={money(pengajuan.besar_angsuran)} />
+                                    <Field label="Total Potongan" value={money(pengajuan.total_potongan)} />
+                                    <Field label="Nominal Diterima" value={money(pengajuan.nominal_terima)} />
+                                    <Field label="Petugas Kantor Pos" value={d(pengajuan.kantor_pos_petugas)} />
+                                </Section>
+
+                                {/* Notes */}
+                                {(pengajuan.notes || pengajuan.reject_reason) && (
+                                    <div className="space-y-3">
+                                        {pengajuan.notes && (
+                                            <div className="p-4 bg-amber-50 rounded-xl border border-amber-200">
+                                                <p className="text-sm font-semibold text-amber-800 mb-1">Catatan</p>
+                                                <p className="text-sm text-amber-700">{pengajuan.notes}</p>
+                                            </div>
+                                        )}
+                                        {pengajuan.reject_reason && (
+                                            <div className="p-4 bg-rose-50 rounded-xl border border-rose-200">
+                                                <p className="text-sm font-semibold text-rose-800 mb-1">Alasan Penolakan</p>
+                                                <p className="text-sm text-rose-700">{pengajuan.reject_reason}</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {activeTab === 'dokumen' && (
+                            <div className="space-y-6">
+                                {/* Sub-tabs for Documents */}
+                                <div className="flex gap-2 p-1 bg-slate-100 rounded-xl">
+                                    <button
+                                        onClick={() => setActiveDocTab('pengajuan')}
+                                        className={`flex-1 px-4 py-2.5 text-sm font-medium rounded-lg transition-all ${activeDocTab === 'pengajuan'
+                                            ? 'bg-white text-indigo-600 shadow-sm'
+                                            : 'text-slate-600 hover:text-slate-900'
+                                            }`}
+                                    >
+                                        <div className="flex items-center justify-center gap-2">
+                                            <Upload className="h-4 w-4" />
+                                            <span>Dokumen Pengajuan</span>
+                                        </div>
+                                    </button>
+                                    <button
+                                        onClick={() => setActiveDocTab('persetujuan')}
+                                        className={`flex-1 px-4 py-2.5 text-sm font-medium rounded-lg transition-all ${activeDocTab === 'persetujuan'
+                                            ? 'bg-white text-emerald-600 shadow-sm'
+                                            : 'text-slate-600 hover:text-slate-900'
+                                            }`}
+                                    >
+                                        <div className="flex items-center justify-center gap-2">
+                                            <CheckCircle className="h-4 w-4" />
+                                            <span>Dokumen Persetujuan</span>
+                                        </div>
+                                    </button>
+                                </div>
+
+                                {/* Tab Content */}
+                                {activeDocTab === 'pengajuan' && (
+                                    <div className="space-y-6">
+                                        <div className="flex items-start gap-2 p-4 bg-blue-50 rounded-xl border border-blue-100">
+                                            <FileText className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                                            <div>
+                                                <p className="text-sm font-medium text-blue-900">Dokumen Pengajuan</p>
+                                                <p className="text-xs text-blue-700 mt-0.5">Dokumen yang diupload saat pengajuan awal</p>
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                            {dokumenPengajuan.map((doc, idx) => (
+                                                <DocCard
+                                                    key={idx}
+                                                    title={doc.title}
+                                                    desc={doc.desc}
+                                                    url={doc.url}
+                                                />
+                                            ))}
+                                        </div>
+
+                                        {/* Borrower Photos */}
+                                        <div className="pt-4 border-t border-slate-100">
+                                            <div className="flex items-center gap-2 mb-4">
+                                                <Camera className="h-5 w-5 text-slate-400" />
+                                                <div>
+                                                    <h4 className="text-sm font-semibold text-slate-900">Foto Nasabah</h4>
+                                                    <p className="text-xs text-slate-500">Dokumentasi foto pemohon</p>
+                                                </div>
+                                            </div>
+
+                                            {borrowerPhotos.length > 0 ? (
+                                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                                    {borrowerPhotos.map((photo, i) => (
+                                                        <a key={i} href={photo} target="_blank" className="group relative aspect-square rounded-xl overflow-hidden border border-slate-200 hover:shadow-lg transition-all">
+                                                            <img src={photo} alt={`Foto ${i + 1}`} className="w-full h-full object-cover" />
+                                                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
+                                                                <Eye className="h-5 w-5 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                            </div>
+                                                        </a>
+                                                    ))}
+                                                </div>
+                                            ) : (
+                                                <div className="flex flex-col items-center justify-center py-10 text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                                                    <Camera className="h-10 w-10 mb-2 opacity-40" />
+                                                    <span className="text-sm">Belum ada foto</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {activeDocTab === 'persetujuan' && (
+                                    <div className="space-y-6">
+                                        <div className="flex items-start gap-2 p-4 bg-emerald-50 rounded-xl border border-emerald-100">
+                                            <CheckCircle className="h-5 w-5 text-emerald-600 mt-0.5 flex-shrink-0" />
+                                            <div>
+                                                <p className="text-sm font-medium text-emerald-900">Dokumen Persetujuan</p>
+                                                <p className="text-xs text-emerald-700 mt-0.5">Dokumen yang diupload setelah pengajuan disetujui</p>
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                            {dokumenPersetujuan.map((doc, idx) => (
+                                                <DocCard
+                                                    key={idx}
+                                                    title={doc.title}
+                                                    desc={doc.desc}
+                                                    url={doc.url}
+                                                    action={
+                                                        doc.isDisbursement && pengajuan.disbursement && (user?.role === 'admin-pusat' || user?.role === 'super-admin' || user?.role === 'admin-unit') ? (
+                                                            <button onClick={() => setIsUploadModalOpen(true)} className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 flex items-center gap-1">
+                                                                <Upload className="h-3 w-3" /> {doc.url ? 'Update' : 'Upload'}
+                                                            </button>
+                                                        ) : doc.isDisbursement && !pengajuan.disbursement ? (
+                                                            <span className="text-xs text-slate-400">Belum dicairkan</span>
+                                                        ) : null
+                                                    }
+                                                />
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Upload Modal */}
+                {
+                    isUploadModalOpen && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                            <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+                                <h3 className="text-lg font-bold text-slate-900 mb-1">Upload Bukti Transfer</h3>
+                                <p className="text-sm text-slate-500 mb-5">Upload gambar bukti pencairan dana</p>
+                                <form onSubmit={handleUploadProof} className="space-y-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1.5">File Gambar</label>
+                                        <input type="file" accept="image/*" onChange={(e) => setProofForm({ ...proofForm, file: e.target.files?.[0] || null })} className="block w-full text-sm text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1.5">Catatan</label>
+                                        <textarea rows={3} className="block w-full rounded-xl border-slate-200 text-sm focus:border-indigo-500 focus:ring-indigo-500" value={proofForm.notes} onChange={(e) => setProofForm({ ...proofForm, notes: e.target.value })} placeholder="Catatan tambahan..." />
+                                    </div>
+                                    <div className="flex gap-3 pt-2">
+                                        <button type="button" onClick={() => setIsUploadModalOpen(false)} className="flex-1 px-4 py-2.5 text-sm font-medium text-slate-700 bg-slate-100 rounded-xl hover:bg-slate-200 transition-colors">Batal</button>
+                                        <button type="submit" className="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-indigo-600 rounded-xl hover:bg-indigo-700 transition-colors">Upload</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    )
+                }
+            </div>
+        </MobileLayoutWrapper>
     );
 };
 
-// Subcomponents
-const SummaryCard: React.FC<{ icon: React.ReactNode; label: string; value: string; accent?: boolean }> = ({ icon, label, value, accent }) => (
-    <div className={`rounded-xl p-4 ${accent ? 'bg-gradient-to-br from-indigo-600 to-violet-600 text-white' : 'bg-white border border-slate-200'}`}>
-        <div className={`inline-flex p-2 rounded-lg mb-2 ${accent ? 'bg-white/20 text-white' : 'bg-slate-100 text-indigo-600'}`}>
-            {icon}
-        </div>
-        <p className={`text-xs mb-0.5 ${accent ? 'text-indigo-100' : 'text-slate-500'}`}>{label}</p>
-        <p className={`text-lg font-bold ${accent ? 'text-white' : 'text-slate-900'}`}>{value}</p>
-    </div>
-);
 
-const TabBtn: React.FC<{ active: boolean; onClick: () => void; icon: React.ReactNode; label: string }> = ({ active, onClick, icon, label }) => (
-    <button onClick={onClick} className={`flex-1 flex items-center justify-center gap-2 py-3.5 text-sm font-medium transition-all ${active ? 'text-indigo-600 bg-indigo-50/50 border-b-2 border-indigo-600' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}>
-        {icon}
-        {label}
-    </button>
-);
-
-const Section: React.FC<{ title: string; icon: React.ReactNode; children: React.ReactNode }> = ({ title, icon, children }) => (
-    <div>
-        <div className="flex items-center gap-2 mb-4 pb-2 border-b border-slate-100">
-            {icon}
-            <h3 className="text-sm font-bold text-slate-900">{title}</h3>
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-4">
-            {children}
-        </div>
-    </div>
-);
-
-const Field: React.FC<{ label: string; value: string; wide?: boolean; highlight?: boolean }> = ({ label, value, wide, highlight }) => (
-    <div className={wide ? 'col-span-2 sm:col-span-3 lg:col-span-4' : ''}>
-        <dt className="text-xs text-slate-500 mb-0.5">{label}</dt>
-        <dd className={`text-sm ${highlight ? 'font-semibold text-indigo-600' : 'text-slate-900'}`}>{value}</dd>
-    </div>
-);
-
-const DocCard: React.FC<{ title: string; desc: string; url?: string; action?: React.ReactNode }> = ({ title, desc, url, action }) => (
-    <div className="bg-slate-50 rounded-xl border border-slate-200 overflow-hidden">
-        <div className="aspect-[4/3] bg-white relative">
-            {url ? (
-                <a href={url} target="_blank" className="block w-full h-full group">
-                    <img src={url} alt={title} className="w-full h-full object-cover" />
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
-                        <span className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1.5 px-3 py-1.5 bg-white/90 rounded-full text-xs font-medium text-slate-900">
-                            <ExternalLink className="h-3 w-3" /> Lihat
-                        </span>
-                    </div>
-                </a>
-            ) : (
-                <div className="flex flex-col items-center justify-center h-full text-slate-400 bg-slate-100">
-                    <FileText className="h-8 w-8 mb-1.5 opacity-40" />
-                    <span className="text-xs">Belum ada</span>
-                </div>
-            )}
-        </div>
-        <div className="p-3">
-            <div className="flex items-start justify-between gap-2">
-                <div>
-                    <h4 className="text-sm font-semibold text-slate-900">{title}</h4>
-                    <p className="text-xs text-slate-500">{desc}</p>
-                </div>
-                {action}
-            </div>
-        </div>
-    </div>
-);

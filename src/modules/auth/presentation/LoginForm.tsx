@@ -106,21 +106,6 @@ export const LoginForm: React.FC = () => {
 
                         {/* Right Side - Login Form */}
                         <div className="w-full max-w-md mx-auto">
-                            {/* Mobile Logo */}
-                            <div className="lg:hidden mb-8 text-center">
-                                <div className="flex justify-center mb-4">
-                                    <div className="relative w-32 h-32">
-                                        <Image
-                                            src="/images/logo-mm1.png"
-                                            alt="Logo"
-                                            fill
-                                            className="object-contain"
-                                            priority
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-
                             {/* Glassmorphism Card */}
                             <div className="relative group">
                                 {/* Glow Effect */}
@@ -131,8 +116,8 @@ export const LoginForm: React.FC = () => {
                                     {/* Header with Logo */}
                                     <div className="mb-8 text-center">
                                         {/* Logo */}
-                                        <div className="flex justify-center">
-                                            <div className="relative w-38 h-38">
+                                        <div className="flex justify-center mb-6">
+                                            <div className="relative w-48 h-48">
                                                 <Image
                                                     src="/images/logo-mm1.png"
                                                     alt="Logo"

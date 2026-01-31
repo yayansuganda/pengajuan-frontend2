@@ -1,126 +1,288 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Search, CreditCard, Calendar, FileText, CheckCircle2, Circle, XCircle, Clock, Info } from 'lucide-react';
+import { Search, CreditCard, Calendar, FileText, CheckCircle, Info, AlertCircle, Clock, ChevronRight } from 'lucide-react';
 import { CekStatusRepositoryImpl } from '../data/CekStatusRepositoryImpl';
-import { PengajuanStatusResult, StatusHistory } from '../core/StatusEntity';
+import { PengajuanStatusResult } from '../core/StatusEntity';
 import { showLoading, hideLoading, showError } from '@/shared/utils/sweetAlert';
 import { handleError } from '@/shared/utils/errorHandler';
+import { MobileLayoutWrapper } from '@/modules/pengajuan/presentation/components/MobileLayoutWrapper';
 
 const repository = new CekStatusRepositoryImpl();
 
-export const CekStatusPage = () => {
-    const [nik, setNik] = useState('');
-    const [results, setResults] = useState<PengajuanStatusResult[]>([]);
-    const [hasSearched, setHasSearched] = useState(false);
+// --- Helpers ---
+const money = (val: number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(val);
 
-    const handleSearch = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!nik.trim()) return;
+const getStatusColor = (status: string) => {
+    switch (status) {
+        case 'Disetujui': return 'bg-emerald-100 text-emerald-700';
+        case 'Ditolak': return 'bg-rose-100 text-rose-700';
+        case 'Proses Persetujuan': return 'bg-blue-100 text-blue-700';
+        default: return 'bg-slate-100 text-slate-700';
+    }
+};
 
-        try {
-            showLoading('Mencari status pengajuan...');
-            const data = await repository.checkStatusByNik(nik);
-            setResults(data);
-            setHasSearched(true);
-            hideLoading();
-        } catch (err: any) {
-            hideLoading();
-            setResults([]);
-            setHasSearched(true);
-            showError(handleError(err, 'Gagal mencari data'));
-        }
-    };
+// --- Components ---
 
-    return (
-        <div className="space-y-6">
-            {/* Header */}
-            <div>
-                <h1 className="text-2xl font-bold text-slate-900">Pengecekan Status Pengajuan</h1>
-                <p className="text-slate-500">Pantau proses pengajuan Anda secara realtime menggunakan NIK.</p>
-            </div>
+interface CekStatusTemplateProps {
+    nik: string;
+    setNik: (val: string) => void;
+    handleSearch: (e: React.FormEvent) => void;
+    results: PengajuanStatusResult[];
+    hasSearched: boolean;
+}
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+const MobileView = ({ nik, setNik, handleSearch, results, hasSearched }: CekStatusTemplateProps) => (
+    <MobileLayoutWrapper>
+        <div className="pt-6 px-4 pb-24">
+            {/* Header & Search */}
+            <div className="mb-6">
+                <h1 className="text-xl font-bold text-slate-800 mb-4">Cek Status Pengajuan</h1>
+
                 {/* Search Card */}
-                <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-                    <h2 className="text-lg font-bold text-slate-900 mb-4">Masukkan Identitas</h2>
-                    <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-4">
-                        <div className="relative flex-1">
-                            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                <CreditCard className="h-5 w-5 text-slate-400" />
-                            </div>
-                            <input
-                                type="text"
-                                value={nik}
-                                onChange={(e) => setNik(e.target.value)}
-                                className="block w-full pl-11 rounded-xl border-slate-200 focus:border-indigo-500 focus:ring-indigo-500 py-3 text-slate-900"
-                                placeholder="Masukkan NIK Pemohon"
-                                autoFocus
-                            />
-                        </div>
-                        <button
-                            type="submit"
-                            disabled={!nik}
-                            className="px-6 py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shrink-0"
-                        >
-                            Cek Status
-                        </button>
-                    </form>
-                </div>
-
-                {/* Info Card */}
-                <div className="bg-blue-50 rounded-2xl border border-blue-100 p-6">
-                    <div className="flex items-center gap-3 mb-3">
-                        <div className="p-2 bg-blue-100 rounded-lg text-blue-600">
-                            <Info className="h-5 w-5" />
-                        </div>
-                        <h3 className="font-bold text-blue-900">Informasi</h3>
+                <div className="bg-white rounded-2xl shadow-lg shadow-slate-900/5 p-5 border border-slate-100">
+                    <div className="relative">
+                        <CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                        <input
+                            type="text"
+                            value={nik}
+                            onChange={(e) => setNik(e.target.value)}
+                            className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                            placeholder="Masukkan NIK Pemohon..."
+                        />
                     </div>
-                    <p className="text-sm text-blue-800/80 leading-relaxed">
-                        Anda dapat memantau setiap tahapan pengajuan mulai dari verifikasi berkas, analisa kredit, hingga pencairan dana.
-                        <br /><br />
-                        Pastikan NIK yang dimasukkan sesuai dengan KTP pemohon.
-                    </p>
+                    <button
+                        onClick={(e) => handleSearch(e)}
+                        disabled={!nik}
+                        className="w-full mt-3 bg-indigo-600 text-white font-bold py-3 rounded-xl shadow-md shadow-indigo-200 disabled:opacity-50 disabled:shadow-none hover:bg-indigo-700 transition-all active:scale-[0.98]"
+                    >
+                        Cek Status
+                    </button>
                 </div>
             </div>
 
-            {/* Results */}
-            {hasSearched && (
-                <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                    <div className="flex items-center gap-4 py-2 mb-4">
-                        <div className="h-px flex-1 bg-slate-200"></div>
-                        <span className="text-sm font-medium text-slate-400 uppercase tracking-wider">
-                            {results.length > 0 ? `Ditemukan ${results.length} Pengajuan` : 'Tidak Ditemukan'}
-                        </span>
-                        <div className="h-px flex-1 bg-slate-200"></div>
-                    </div>
-
+            {/* Content Area */}
+            {hasSearched ? (
+                <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-4">
                     {results.length > 0 ? (
-                        <div className="grid grid-cols-1 gap-6">
-                            {results.map((item) => (
-                                <StatusCard key={item.id} data={item} />
-                            ))}
-                        </div>
-                    ) : (
-                        <div className="text-center py-16 bg-white rounded-2xl border border-dashed border-slate-200">
-                            <div className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-slate-50 mb-4">
-                                <Search className="h-8 w-8 text-slate-300" />
+                        <>
+                            <div className="flex items-center justify-between px-1">
+                                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Hasil Pencarian</span>
+                                <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md">{results.length} Pengajuan</span>
                             </div>
-                            <h3 className="text-lg font-bold text-slate-900">Data Tidak Ditemukan</h3>
-                            <p className="text-slate-500 mt-2 max-w-sm mx-auto">
+
+                            {results.map((item) => (
+                                <MobileStatusCard key={item.id} data={item} />
+                            ))}
+                        </>
+                    ) : (
+                        <div className="text-center py-12 bg-white rounded-3xl border border-dashed border-slate-200">
+                            <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-slate-50 mb-3">
+                                <Search className="h-6 w-6 text-slate-300" />
+                            </div>
+                            <h3 className="text-base font-bold text-slate-900">Tidak Ditemukan</h3>
+                            <p className="text-xs text-slate-500 mt-1 px-8">
                                 Tidak ada pengajuan aktif yang terkait dengan NIK <strong className="text-slate-700">{nik}</strong>.
                             </p>
                         </div>
                     )}
                 </div>
+            ) : (
+                /* Empty State / Default Content */
+                <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-4">
+                    <div className="bg-gradient-to-br from-blue-600 to-indigo-600 rounded-3xl p-6 text-white shadow-xl relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2"></div>
+
+                        <div className="relative z-10">
+                            <div className="flex items-center gap-3 mb-4">
+                                <div className="p-2 bg-white/20 backdrop-blur-sm rounded-xl">
+                                    <Clock className="w-5 h-5 text-white" />
+                                </div>
+                                <h3 className="font-bold text-lg">Pantau Pengajuan</h3>
+                            </div>
+                            <p className="text-blue-100 text-sm leading-relaxed mb-5">
+                                Pantau proses pengajuan Anda secara realtime mulai dari verifikasi hingga pencairan dana. Gunakan NIK untuk melihat:
+                            </p>
+                            <div className="space-y-2.5">
+                                <div className="flex items-center gap-3 bg-white/10 rounded-xl px-4 py-3 border border-white/5">
+                                    <CheckCircle className="w-4 h-4 text-emerald-300 shrink-0" />
+                                    <span className="text-xs font-semibold text-white">Posisi Dokumen Terkini</span>
+                                </div>
+                                <div className="flex items-center gap-3 bg-white/10 rounded-xl px-4 py-3 border border-white/5">
+                                    <CheckCircle className="w-4 h-4 text-emerald-300 shrink-0" />
+                                    <span className="text-xs font-semibold text-white">Riwayat Persetujuan</span>
+                                </div>
+                                <div className="flex items-center gap-3 bg-white/10 rounded-xl px-4 py-3 border border-white/5">
+                                    <CheckCircle className="w-4 h-4 text-emerald-300 shrink-0" />
+                                    <span className="text-xs font-semibold text-white">Status Pencairan Dana</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="p-2 bg-amber-50 rounded-xl text-amber-600">
+                                <AlertCircle className="w-5 h-5" />
+                            </div>
+                            <h3 className="font-bold text-slate-800">Catatan Penting</h3>
+                        </div>
+                        <ul className="space-y-4">
+                            <li className="flex gap-3 text-sm text-slate-600">
+                                <div className="w-1.5 h-1.5 rounded-full bg-slate-300 mt-2 shrink-0"></div>
+                                <span>Pastikan NIK yang dimasukkan sesuai dengan KTP pemohon pengajuan.</span>
+                            </li>
+                            <li className="flex gap-3 text-sm text-slate-600">
+                                <div className="w-1.5 h-1.5 rounded-full bg-slate-300 mt-2 shrink-0"></div>
+                                <span>Status diperbarui secara realtime sesuai proses di kantor cabang.</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
             )}
+        </div>
+    </MobileLayoutWrapper>
+);
+
+const MobileStatusCard = ({ data }: { data: PengajuanStatusResult }) => {
+    return (
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+            {/* Header Gradient */}
+            <div className="bg-slate-50 px-5 py-3 border-b border-slate-100 flex justify-between items-center">
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">{data.jenis_pembiayaan}</span>
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${getStatusColor(data.status_terakhir)}`}>
+                    {data.status_terakhir}
+                </span>
+            </div>
+
+            <div className="p-5">
+                <div className="flex items-center gap-4 mb-4">
+                    <div className="h-10 w-10 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 border border-indigo-100 shadow-sm shrink-0">
+                        <FileText className="h-5 w-5" />
+                    </div>
+                    <div>
+                        <h3 className="font-bold text-slate-900 leading-tight mb-0.5">{data.nama_lengkap}</h3>
+                        <p className="text-xs text-slate-500">{new Date(data.tanggal_pengajuan).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                    </div>
+                </div>
+
+                <div className="mb-4">
+                    <p className="text-xs text-slate-400 mb-1">Plafond Pengajuan</p>
+                    <p className="text-xl font-bold text-indigo-600 tracking-tight">{money(data.jumlah_pembiayaan)}</p>
+                </div>
+
+                {/* Latest History Item Preview */}
+                <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
+                    <p className="text-[10px] text-slate-500 font-semibold mb-2 uppercase tracking-wide flex items-center gap-1.5">
+                        <Clock className="w-3 h-3" />
+                        Aktivitas Terakhir
+                    </p>
+                    {data.history.length > 0 ? (
+                        <div className="flex gap-3">
+                            <div className="relative pt-1 pl-1">
+                                <div className="w-2 h-2 rounded-full bg-emerald-500 ring-4 ring-emerald-50"></div>
+                            </div>
+                            <div>
+                                <p className="text-sm font-semibold text-slate-800 leading-tight">{data.history[0].status}</p>
+                                <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">{data.history[0].description}</p>
+                                <p className="text-[10px] text-slate-400 mt-1.5">{new Date(data.history[0].date).toLocaleString('id-ID')}</p>
+                            </div>
+                        </div>
+                    ) : (
+                        <p className="text-xs text-slate-400 italic">Belum ada riwayat aktivitas.</p>
+                    )}
+                </div>
+            </div>
         </div>
     );
 };
 
-const StatusCard = ({ data }: { data: PengajuanStatusResult }) => {
-    const money = (val: number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(val);
+const DesktopView = ({ nik, setNik, handleSearch, results, hasSearched }: CekStatusTemplateProps) => (
+    <div className="space-y-6">
+        {/* Header */}
+        <div>
+            <h1 className="text-2xl font-bold text-slate-900">Pengecekan Status Pengajuan</h1>
+            <p className="text-slate-500">Pantau proses pengajuan Anda secara realtime menggunakan NIK.</p>
+        </div>
 
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Search Card */}
+            <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+                <h2 className="text-lg font-bold text-slate-900 mb-4">Masukkan Identitas</h2>
+                <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-4">
+                    <div className="relative flex-1">
+                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                            <CreditCard className="h-5 w-5 text-slate-400" />
+                        </div>
+                        <input
+                            type="text"
+                            value={nik}
+                            onChange={(e) => setNik(e.target.value)}
+                            className="block w-full pl-11 rounded-xl border-slate-200 focus:border-indigo-500 focus:ring-indigo-500 py-3 text-slate-900"
+                            placeholder="Masukkan NIK Pemohon"
+                            autoFocus
+                        />
+                    </div>
+                    <button
+                        type="submit"
+                        disabled={!nik}
+                        className="px-6 py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shrink-0"
+                    >
+                        Cek Status
+                    </button>
+                </form>
+            </div>
+
+            {/* Info Card */}
+            <div className="bg-blue-50 rounded-2xl border border-blue-100 p-6">
+                <div className="flex items-center gap-3 mb-3">
+                    <div className="p-2 bg-blue-100 rounded-lg text-blue-600">
+                        <Info className="h-5 w-5" />
+                    </div>
+                    <h3 className="font-bold text-blue-900">Informasi</h3>
+                </div>
+                <p className="text-sm text-blue-800/80 leading-relaxed">
+                    Anda dapat memantau setiap tahapan pengajuan mulai dari verifikasi berkas, analisa kredit, hingga pencairan dana.
+                    <br /><br />
+                    Pastikan NIK yang dimasukkan sesuai dengan KTP pemohon.
+                </p>
+            </div>
+        </div>
+
+        {/* Results */}
+        {hasSearched && (
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div className="flex items-center gap-4 py-2 mb-4">
+                    <div className="h-px flex-1 bg-slate-200"></div>
+                    <span className="text-sm font-medium text-slate-400 uppercase tracking-wider">
+                        {results.length > 0 ? `Ditemukan ${results.length} Pengajuan` : 'Tidak Ditemukan'}
+                    </span>
+                    <div className="h-px flex-1 bg-slate-200"></div>
+                </div>
+
+                {results.length > 0 ? (
+                    <div className="grid grid-cols-1 gap-6">
+                        {results.map((item) => (
+                            <DesktopStatusCard key={item.id} data={item} />
+                        ))}
+                    </div>
+                ) : (
+                    <div className="text-center py-16 bg-white rounded-2xl border border-dashed border-slate-200">
+                        <div className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-slate-50 mb-4">
+                            <Search className="h-8 w-8 text-slate-300" />
+                        </div>
+                        <h3 className="text-lg font-bold text-slate-900">Data Tidak Ditemukan</h3>
+                        <p className="text-slate-500 mt-2 max-w-sm mx-auto">
+                            Tidak ada pengajuan aktif yang terkait dengan NIK <strong className="text-slate-700">{nik}</strong>.
+                        </p>
+                    </div>
+                )}
+            </div>
+        )}
+    </div>
+);
+
+const DesktopStatusCard = ({ data }: { data: PengajuanStatusResult }) => {
     return (
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
             {/* Card Header */}
@@ -193,11 +355,54 @@ const StatusCard = ({ data }: { data: PengajuanStatusResult }) => {
     );
 };
 
-const getStatusColor = (status: string) => {
-    switch (status) {
-        case 'Disetujui': return 'bg-emerald-100 text-emerald-700';
-        case 'Ditolak': return 'bg-rose-100 text-rose-700';
-        case 'Proses Persetujuan': return 'bg-blue-100 text-blue-700';
-        default: return 'bg-slate-100 text-slate-700';
-    }
+// --- Main Page Component ---
+
+export const CekStatusPage = () => {
+    const [nik, setNik] = useState('');
+    const [results, setResults] = useState<PengajuanStatusResult[]>([]);
+    const [hasSearched, setHasSearched] = useState(false);
+
+    const handleSearch = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!nik.trim()) return;
+
+        try {
+            showLoading('Mencari status pengajuan...');
+            const data = await repository.checkStatusByNik(nik);
+            setResults(data);
+            setHasSearched(true);
+            hideLoading();
+        } catch (err: any) {
+            hideLoading();
+            setResults([]);
+            setHasSearched(true);
+            showError(handleError(err, 'Gagal mencari data'));
+        }
+    };
+
+    return (
+        <>
+            {/* Mobile View */}
+            <div className="md:hidden">
+                <MobileView
+                    nik={nik}
+                    setNik={setNik}
+                    handleSearch={handleSearch}
+                    results={results}
+                    hasSearched={hasSearched}
+                />
+            </div>
+
+            {/* Desktop View */}
+            <div className="hidden md:block">
+                <DesktopView
+                    nik={nik}
+                    setNik={setNik}
+                    handleSearch={handleSearch}
+                    results={results}
+                    hasSearched={hasSearched}
+                />
+            </div>
+        </>
+    );
 };

@@ -1,186 +1,338 @@
 'use client';
 
-import React from 'react';
-import Link from 'next/link';
-import { usePengajuan } from './usePengajuan';
-import { Plus, Search, Filter, FileText, ChevronRight, Calendar, User, CreditCard, Clock, Banknote } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { Plus, Search, Calendar, FileText, ChevronRight, Briefcase } from 'lucide-react';
+import { Pengajuan, PengajuanFilter } from '../core/PengajuanEntity';
+import { PengajuanRepositoryImpl } from '../data/PengajuanRepositoryImpl';
+import { useAuth } from '@/modules/auth/presentation/useAuth';
+// Components
+import { MobileLayoutWrapper } from '@/modules/pengajuan/presentation/components/MobileLayoutWrapper';
 
-export const PengajuanList: React.FC = () => {
-    const { pengajuanList, loading, error } = usePengajuan();
+const repository = new PengajuanRepositoryImpl();
 
-    const formatMoney = (amount: number) => {
-        return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(amount);
-    };
+// Interface
+interface ViewProps {
+    data: Pengajuan[];
+    search: string;
+    setSearch: (val: string) => void;
+    statusFilter: string;
+    setStatusFilter: (val: string) => void;
+    dateFilter: string;
+    setDateFilter: (val: string) => void;
+    isLoading: boolean;
+    router: any;
+    user: any;
+}
 
-    const formatDate = (dateString: string) => {
-        return new Date(dateString).toLocaleDateString('id-ID', {
-            day: 'numeric',
-            month: 'short',
-            year: 'numeric'
-        });
-    };
+const STATUS_OPTIONS = [
+    { value: '', label: 'Semua Status' },
+    { value: 'Pending', label: 'Pending' },
+    { value: 'Proses Persetujuan', label: 'Proses' },
+    { value: 'Disetujui', label: 'Disetujui' },
+    { value: 'Ditolak', label: 'Ditolak' },
+    { value: 'Pencairan', label: 'Pencairan' },
+];
 
-    const getDisbursementBadge = (item: any) => {
-        if (item.status !== 'Disetujui') return null;
+const getStatusColor = (status: string) => {
+    switch (status) {
+        case 'Disetujui': return 'bg-emerald-100 text-emerald-700 border-emerald-200';
+        case 'Pencairan': return 'bg-blue-100 text-blue-700 border-blue-200';
+        case 'Ditolak': return 'bg-rose-100 text-rose-700 border-rose-200';
+        case 'Proses Persetujuan': return 'bg-amber-100 text-amber-700 border-amber-200';
+        default: return 'bg-slate-100 text-slate-700 border-slate-200';
+    }
+};
 
-        // Check if disbursement exists and is not null/empty object
-        if (!item.disbursement || !item.disbursement.id) {
-            return (
-                <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium bg-slate-100 text-slate-600 ring-1 ring-inset ring-slate-500/10">
-                    Belum Cair
-                </span>
-            );
-        }
+const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('id-ID', {
+        style: 'currency',
+        currency: 'IDR',
+        minimumFractionDigits: 0
+    }).format(value);
+};
 
-        const status = item.disbursement.status;
-        const styles: Record<string, string> = {
-            'Pending': 'bg-amber-50 text-amber-700 ring-amber-600/20',
-            'Diproses': 'bg-blue-50 text-blue-700 ring-blue-600/20',
-            'Selesai': 'bg-emerald-50 text-emerald-700 ring-emerald-600/20',
-            'Ditolak': 'bg-rose-50 text-rose-700 ring-rose-600/20',
-        };
+const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('id-ID', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric'
+    });
+};
 
-        const badgeClass = styles[status] || 'bg-slate-100 text-slate-700 ring-slate-600/20';
-
-        return (
-            <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ring-1 ring-inset ${badgeClass}`}>
-                {status === 'Selesai' ? 'Sudah Cair' : status}
-            </span>
-        );
-    };
-
-    const getStatusBadge = (status: string) => {
-        const styles: Record<string, string> = {
-            'Disetujui': 'bg-emerald-50 text-emerald-700 ring-emerald-600/20',
-            'Ditolak': 'bg-rose-50 text-rose-700 ring-rose-600/20',
-            'Proses Persetujuan': 'bg-blue-50 text-blue-700 ring-blue-600/20',
-            'Pending': 'bg-amber-50 text-amber-700 ring-amber-600/20'
-        };
-
-        const badgeClass = styles[status] || 'bg-slate-50 text-slate-700 ring-slate-600/20';
-
-        return (
-            <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ${badgeClass}`}>
-                {status}
-            </span>
-        );
-    };
-
-    return (
-        <div className="space-y-6 pb-20 md:pb-0">
-            {/* Header Actions */}
-            <div className="flex flex-col sm:flex-row gap-4 justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-slate-200/60 sticky top-0 z-10">
-                <div className="relative flex-grow w-full sm:w-auto max-w-md">
-                    <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                        <Search className="h-4 w-4 text-slate-400" />
+// --- Mobile View ---
+const MobileView = ({ data, search, setSearch, statusFilter, setStatusFilter, dateFilter, setDateFilter, isLoading, router }: ViewProps) => (
+    <MobileLayoutWrapper>
+        <div className="pt-4 px-4 pb-24 h-full flex flex-col">
+            {/* Header & Filter Section */}
+            <div className="flex-none mb-4 gap-3 flex flex-col">
+                <div className="flex justify-between items-center">
+                    <h1 className="text-lg font-bold text-slate-800">Daftar Pengajuan</h1>
+                    <div className="text-xs font-semibold text-slate-500 bg-slate-100 px-2 py-1 rounded">
+                        Total: {data.length}
                     </div>
-                    <input
-                        type="text"
-                        className="block w-full rounded-lg border-slate-200 bg-slate-50 py-2.5 pl-10 text-slate-900 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 sm:text-sm transition-all duration-200"
-                        placeholder="Cari nasabah..."
-                    />
                 </div>
-                <div className="flex gap-3 w-full sm:w-auto">
-                    <button className="flex items-center justify-center gap-2 rounded-lg bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm border border-slate-200 hover:bg-slate-50 transition-colors">
-                        <Filter className="h-4 w-4" />
-                        <span className="hidden sm:inline">Filter</span>
-                    </button>
-                    <Link
-                        href="/pengajuan/create"
-                        className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-indigo-200 hover:bg-indigo-700 hover:shadow-md transition-all duration-200 active:scale-95"
-                    >
-                        <Plus className="h-4 w-4" />
-                        Buat Baru
-                    </Link>
+
+                <div className="space-y-2.5">
+                    {/* Search Bar */}
+                    <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                        <input
+                            type="text"
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            placeholder="Cari Nama / NIK..."
+                            className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 shadow-sm"
+                        />
+                    </div>
+
+                    {/* Filters Row */}
+                    <div className="flex gap-2">
+                        <div className="relative flex-1">
+                            <select
+                                value={statusFilter}
+                                onChange={(e) => setStatusFilter(e.target.value)}
+                                className="w-full pl-3 pr-8 py-2 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-600 appearance-none focus:ring-2 focus:ring-indigo-500 shadow-sm"
+                            >
+                                {STATUS_OPTIONS.map(opt => (
+                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                ))}
+                            </select>
+                            {/* Custom Arrow */}
+                            <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none">
+                                <svg className="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                            </div>
+                        </div>
+
+                        <div className="relative flex-1">
+                            <input
+                                type="date"
+                                value={dateFilter}
+                                onChange={(e) => setDateFilter(e.target.value)}
+                                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-600 focus:ring-2 focus:ring-indigo-500 shadow-sm"
+                            />
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            {/* Content List - Mobile Friendly Cards */}
-            {pengajuanList.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-20 text-center bg-white rounded-xl border border-dashed border-slate-300">
-                    <div className="rounded-full bg-slate-50 p-6 mb-4 ring-1 ring-slate-100">
-                        <FileText className="h-10 w-10 text-slate-400" />
+            {/* List Content */}
+            <div className="flex-1 overflow-y-auto space-y-2.5 pb-20 -mx-4 px-4">
+                {isLoading ? (
+                    <div className="space-y-2">
+                        {[1, 2, 3, 4].map(i => <div key={i} className="h-20 bg-white rounded-lg border border-slate-100 animate-pulse" />)}
                     </div>
-                    <h3 className="text-lg font-semibold text-slate-900">Belum ada pengajuan</h3>
-                    <p className="mt-2 text-sm text-slate-500 max-w-sm">Mulai dengan membuat pengajuan baru untuk nasabah Anda.</p>
-                </div>
-            ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {pengajuanList.map((item) => (
-                        <Link href={`/pengajuan/${item.id}`} key={item.id} className="block group">
-                            <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm hover:shadow-md hover:border-indigo-300 transition-all duration-200 h-full relative cursor-pointer active:scale-[0.98]">
-                                {/* Header Card */}
-                                <div className="flex justify-between items-start mb-4">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-100 to-slate-100 flex items-center justify-center text-indigo-600 font-bold border border-indigo-50">
-                                            {(item.nama_lengkap || '?').charAt(0).toUpperCase()}
-                                        </div>
-                                        <div>
-                                            <h3 className="text-sm font-bold text-slate-900 line-clamp-1 group-hover:text-indigo-700 transition-colors">
-                                                {item.nama_lengkap}
-                                            </h3>
-                                            <div className="flex items-center text-xs text-slate-500 mt-0.5">
-                                                <CreditCard className="w-3 h-3 mr-1" />
-                                                {item.nik}
-                                            </div>
-                                            <div className="flex flex-wrap gap-1.5 mt-2">
-                                                {item.jenis_pelayanan?.name && (
-                                                    <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-600/20">
-                                                        {item.jenis_pelayanan.name}
-                                                    </span>
-                                                )}
-                                                {item.jenis_pembiayaan?.name && (
-                                                    <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium bg-purple-50 text-purple-700 ring-1 ring-inset ring-purple-600/20">
-                                                        {item.jenis_pembiayaan.name}
-                                                    </span>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="flex flex-col items-end gap-1">
-                                        {getStatusBadge(item.status)}
-                                    </div>
-                                </div>
-
-                                {/* Content Card */}
-                                <div className="space-y-3">
-                                    <div>
-                                        <p className="text-xs text-slate-500 font-medium mb-1">Plafond Pengajuan</p>
-                                        <div className="flex items-baseline gap-1">
-                                            <span className="text-lg font-bold text-slate-900">
-                                                {formatMoney(item.jumlah_pembiayaan)}
-                                            </span>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex items-center justify-between text-xs text-slate-600 pt-3 border-t border-slate-100">
-                                        <div className="flex items-center gap-1.5 bg-slate-50 px-2 py-1 rounded">
-                                            <Clock className="w-3.5 h-3.5 text-slate-400" />
-                                            <span className="font-medium">{item.jangka_waktu} Bulan</span>
-                                        </div>
-                                        <div className="flex items-center gap-1.5">
-                                            <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                                            <span>{formatDate(item.created_at)}</span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Arrow Indicator */}
-                                <div className="absolute top-1/2 right-2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity -mr-2 group-hover:mr-0 hidden md:block">
-                                    <ChevronRight className="w-5 h-5 text-indigo-400" />
-                                </div>
-
-                                {/* Disbursement Badge (Footer) */}
-                                {item.status === 'Disetujui' && (
-                                    <div className="mt-3 pt-2 text-right">
-                                        {getDisbursementBadge(item)}
-                                    </div>
-                                )}
+                ) : data.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-16 text-center">
+                        <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-3">
+                            <FileText className="w-8 h-8 text-slate-300" />
+                        </div>
+                        <p className="text-slate-500 text-sm font-medium">Data tidak ditemukan</p>
+                    </div>
+                ) : (
+                    data.map((item) => (
+                        <div
+                            key={item.id}
+                            onClick={() => router.push(`/pengajuan/${item.id}`)}
+                            className="bg-white p-3.5 rounded-xl border border-slate-100 shadow-sm active:scale-[0.98] transition-transform"
+                        >
+                            <div className="flex justify-between items-start mb-2">
+                                <h3 className="font-bold text-slate-800 text-sm line-clamp-1 flex-1 mr-2">{item.nama_lengkap}</h3>
+                                <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider border whitespace-nowrap ${getStatusColor(item.status)}`}>
+                                    {item.status}
+                                </span>
                             </div>
-                        </Link>
-                    ))}
-                </div>
-            )}
+
+                            <div className="flex items-end justify-between">
+                                <div className="space-y-0.5">
+                                    <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                                        <Calendar className="w-3 h-3" />
+                                        <span>{formatDate(item.created_at)}</span>
+                                    </div>
+                                    {item.unit && (
+                                        <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                                            <Briefcase className="w-3 h-3" />
+                                            <span className="truncate max-w-[120px]">{item.unit}</span>
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="text-right">
+                                    <p className="text-[10px] text-slate-400 font-medium uppercase">Nominal</p>
+                                    <p className="text-sm font-bold text-indigo-600">{formatCurrency(item.jumlah_pembiayaan)}</p>
+                                </div>
+                            </div>
+                        </div>
+                    ))
+                )}
+            </div>
+
+            {/* FAB */}
+            <button
+                onClick={() => router.push('/pengajuan/create')}
+                className="fixed bottom-24 right-5 h-12 w-12 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full shadow-lg shadow-emerald-600/30 flex items-center justify-center text-white z-40 hover:scale-105 active:scale-95 transition-all"
+            >
+                <Plus className="w-6 h-6" />
+            </button>
         </div>
+    </MobileLayoutWrapper>
+);
+
+// --- Desktop View ---
+const DesktopView = ({ data, search, setSearch, statusFilter, setStatusFilter, dateFilter, setDateFilter, isLoading, router }: ViewProps) => (
+    <div className="px-4 sm:px-6 lg:px-8">
+        <div className="sm:flex sm:items-center mb-6">
+            <div className="sm:flex-auto">
+                <h1 className="text-2xl font-semibold text-gray-900">Daftar Pengajuan</h1>
+                <p className="mt-2 text-sm text-gray-700">Kelola data pengajuan pembiayaan</p>
+            </div>
+            <div className="mt-4 sm:ml-16 sm:mt-0 sm:flex-none">
+                <button
+                    onClick={() => router.push('/pengajuan/create')}
+                    className="block rounded-md bg-indigo-600 px-3 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                >
+                    Buat Pengajuan
+                </button>
+            </div>
+        </div>
+
+        <div className="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-xl p-6 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="col-span-1 md:col-span-2 relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <input
+                        type="text"
+                        placeholder="Cari nama atau NIK..."
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        className="pl-9 w-full px-3 py-2 text-sm text-gray-900 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    />
+                </div>
+                <div className="col-span-1">
+                    <select
+                        value={statusFilter}
+                        onChange={(e) => setStatusFilter(e.target.value)}
+                        className="w-full px-3 py-2 text-sm text-gray-900 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    >
+                        {STATUS_OPTIONS.map((opt) => (
+                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                        ))}
+                    </select>
+                </div>
+                <div className="col-span-1">
+                    <input
+                        type="date"
+                        value={dateFilter}
+                        onChange={(e) => setDateFilter(e.target.value)}
+                        className="w-full px-3 py-2 text-sm text-gray-900 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    />
+                </div>
+            </div>
+        </div>
+
+        {/* Table Content */}
+        <div className="mt-8 flow-root">
+            <div className="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
+                <div className="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
+                    <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 sm:rounded-lg">
+                        <table className="min-w-full divide-y divide-gray-300">
+                            <thead className="bg-gray-50">
+                                <tr>
+                                    <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Pemohon</th>
+                                    <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Unit</th>
+                                    <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Nominal</th>
+                                    <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Tanggal</th>
+                                    <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Status</th>
+                                    <th className="relative py-3.5 pl-3 pr-4 sm:pr-6"><span className="sr-only">Detail</span></th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-200 bg-white">
+                                {isLoading ? (
+                                    <tr><td colSpan={6} className="px-3 py-10 text-center text-sm text-gray-500">Memuat data...</td></tr>
+                                ) : data.length === 0 ? (
+                                    <tr><td colSpan={6} className="px-3 py-10 text-center text-sm text-gray-500">Tidak ada pengajuan</td></tr>
+                                ) : (
+                                    data.map((item) => (
+                                        <tr key={item.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => router.push(`/pengajuan/${item.id}`)}>
+                                            <td className="whitespace-nowrap px-3 py-4 text-sm">
+                                                <div className="font-medium text-gray-900">{item.nama_lengkap}</div>
+                                                <div className="text-gray-500">{item.nik}</div>
+                                            </td>
+                                            <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{item.unit || '-'}</td>
+                                            <td className="whitespace-nowrap px-3 py-4 text-sm font-medium text-gray-900">{formatCurrency(item.jumlah_pembiayaan)}</td>
+                                            <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{formatDate(item.created_at)}</td>
+                                            <td className="whitespace-nowrap px-3 py-4 text-sm">
+                                                <span className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${getStatusColor(item.status).replace('border', '')}`}>
+                                                    {item.status}
+                                                </span>
+                                            </td>
+                                            <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
+                                                <span className="text-indigo-600 hover:text-indigo-900">Detail</span>
+                                            </td>
+                                        </tr>
+                                    ))
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+);
+
+// --- Main Container ---
+export const PengajuanList: React.FC = () => {
+    const router = useRouter();
+    const { user } = useAuth();
+    const [data, setData] = useState<Pengajuan[]>([]);
+    const [search, setSearch] = useState('');
+    const [statusFilter, setStatusFilter] = useState('');
+    const [dateFilter, setDateFilter] = useState('');
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        fetchData();
+    }, [statusFilter, dateFilter]); // Fetch immediately on select change
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            fetchData(); // Fetch debounce on text search
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [search]);
+
+    const fetchData = async () => {
+        try {
+            setIsLoading(true);
+            const filter: PengajuanFilter = {};
+            if (search) filter.search = search;
+            if (statusFilter) filter.status = statusFilter;
+            // Assuming backend supports 'date' or we filter client side.
+            // Sending as custom param if supported or just ignoring if not.
+            // If client side filtering needed:
+
+            const result = await repository.getPengajuanList(filter);
+
+            let filteredResult = result;
+            if (dateFilter) {
+                // Client side date filtering as basic implementation
+                filteredResult = result.filter(item => item.created_at.startsWith(dateFilter));
+            }
+
+            setData(filteredResult);
+            setIsLoading(false);
+        } catch (error: any) {
+            console.error(error);
+            setIsLoading(false);
+        }
+    };
+
+    const viewProps = { data, search, setSearch, statusFilter, setStatusFilter, dateFilter, setDateFilter, isLoading, router, user };
+
+    return (
+        <>
+            <div className="md:hidden"><MobileView {...viewProps} /></div>
+            <div className="hidden md:block"><DesktopView {...viewProps} /></div>
+        </>
     );
 };

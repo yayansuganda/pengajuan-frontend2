@@ -36,30 +36,38 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 flex font-sans">
-            {/* Sidebar Navigation */}
-            <Sidebar
-                userRole={user.role}
-                isOpen={isSidebarOpen}
-                onClose={() => setIsSidebarOpen(false)}
-            />
+        <>
+            {/* Mobile Layout - Full screen, no sidebar/header */}
+            <div className="md:hidden min-h-screen bg-gray-50">
+                {children}
+            </div>
 
-            {/* Main Content Area */}
-            <div className="flex-1 lg:ml-64 flex flex-col min-h-screen transition-all duration-300">
-                {/* Top Header */}
-                <Header
-                    user={user}
-                    onLogout={handleLogout}
-                    onMenuClick={() => setIsSidebarOpen(true)}
+            {/* Desktop Layout - With sidebar and header */}
+            <div className="hidden md:flex min-h-screen bg-gray-50 font-sans">
+                {/* Sidebar Navigation */}
+                <Sidebar
+                    userRole={user.role}
+                    isOpen={isSidebarOpen}
+                    onClose={() => setIsSidebarOpen(false)}
                 />
 
-                {/* Page Content */}
-                <main className="flex-1 p-6 lg:p-8 overflow-y-auto w-full">
-                    <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-500">
-                        {children}
-                    </div>
-                </main>
+                {/* Main Content Area */}
+                <div className="flex-1 lg:ml-64 flex flex-col min-h-screen transition-all duration-300">
+                    {/* Top Header */}
+                    <Header
+                        user={user}
+                        onLogout={handleLogout}
+                        onMenuClick={() => setIsSidebarOpen(true)}
+                    />
+
+                    {/* Page Content */}
+                    <main className="flex-1 p-6 lg:p-8 overflow-y-auto w-full">
+                        <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-500">
+                            {children}
+                        </div>
+                    </main>
+                </div>
             </div>
-        </div>
+        </>
     );
 };

@@ -16,9 +16,24 @@ import { Setting } from '@/modules/settings/core/Entity';
 const STEPS = [
     { number: 1, title: 'Data Pensiun', icon: Briefcase, description: 'Pelayanan & Bank' },
     { number: 2, title: 'Data Diri', icon: User, description: 'Informasi Pribadi' },
-    { number: 3, title: 'Perhitungan', icon: Calculator, description: 'Simulasi Pinjaman' },
+    { number: 3, title: 'Perhitungan', icon: Calculator, description: 'Simulasi Pembiayaan' },
     { number: 4, title: 'Dokumen', icon: Upload, description: 'Upload Berkas' },
     { number: 5, title: 'Review', icon: Eye, description: 'Konfirmasi' }
+];
+
+// Education levels list
+const EDUCATION_LEVELS = [
+    'SD',
+    'SMP',
+    'SMA/SMK',
+    'D1',
+    'D2',
+    'D3',
+    'D4',
+    'S1',
+    'S2',
+    'S3',
+    'Profesor'
 ];
 
 // Document upload config - Required documents for pengajuan
@@ -28,6 +43,7 @@ const UPLOAD_FIELDS = [
     { name: 'upload_ktp_pemohon', label: 'KTP Pemohon', hasTemplate: false, required: true },
     { name: 'upload_karip_buku_asabri', label: 'KARIP / Buku ASABRI', hasTemplate: false, required: true },
     { name: 'upload_slip_gaji_terakhir', label: 'Slip Gaji Terakhir', hasTemplate: false, required: true },
+    { name: 'upload_surat_permohonan_anggota', label: 'Surat Permohonan Anggota & Pembiayaan', hasTemplate: true, required: true },
     { name: 'upload_borrower_photos', label: 'Foto Pemohon', hasTemplate: false, required: true, multiple: true },
 ];
 
@@ -92,7 +108,7 @@ export const CreatePengajuanWizard: React.FC = () => {
 
         // Step 2 - Data Diri
         nik: '', nama_lengkap: '', jenis_kelamin: 'Laki-laki', tempat_lahir: '', tanggal_lahir: '',
-        usia: '', nama_ibu_kandung: '', pendidikan_terakhir: '',
+        usia: '', nomor_telephone: '', nama_ibu_kandung: '', pendidikan_terakhir: '',
         alamat: '', rt: '', rw: '', kode_pos: '', kelurahan: '', kecamatan: '', kabupaten: '', provinsi: '',
 
         // Step 3 - Perhitungan
@@ -104,17 +120,23 @@ export const CreatePengajuanWizard: React.FC = () => {
         // Step 4 - Upload Dokumen
         upload_ktp_pemohon: '', upload_pengajuan_permohonan: '', upload_dokumen_akad: '',
         upload_flagging: '', upload_surat_pernyataan_beda_penerima: '', upload_karip_buku_asabri: '',
-        upload_slip_gaji_terakhir: '', upload_borrower_photos: '',
+        upload_slip_gaji_terakhir: '', upload_surat_permohonan_anggota: '', upload_borrower_photos: '',
     });
 
     // Store file names for display
     const [fileNames, setFileNames] = useState<{ [key: string]: string }>({});
-    
+
     // Upload loading states
     const [uploadingFiles, setUploadingFiles] = useState<{ [key: string]: boolean }>({});
-    
+
     // Image preview URLs
     const [imagePreviews, setImagePreviews] = useState<{ [key: string]: string[] }>({});
+
+    // Upload menu state
+    const [showUploadMenu, setShowUploadMenu] = useState<string | null>(null);
+
+    // Field errors state for inline validation
+    const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
 
     // Debug: Log imagePreviews state changes
     useEffect(() => {
@@ -171,16 +193,16 @@ export const CreatePengajuanWizard: React.FC = () => {
 
                 setJenisPelayananList(pelayananRes.data);
                 setJenisPembiayaanList(pembiayaanRes.data);
-                
+
                 // Store all potongan for Ta'awun calculation
                 setAllPotonganList(potonganRes.data.filter(p => p.is_active));
-                
+
                 // Filter only is_view = true and is_active = true for display
                 setPotonganList(potonganRes.data.filter(p => p.is_view && p.is_active));
-                
+
                 // Store all potongan jangka waktu
                 setPotonganJangkaWaktuList(potonganJWRes.data.filter((p: PotonganJangkaWaktu) => p.is_active));
-                
+
                 // Store settings (for jasa_perbulan)
                 setSettings(settingsRes);
             } catch (error) {
@@ -207,22 +229,22 @@ export const CreatePengajuanWizard: React.FC = () => {
             // Extract age in months
             const tahunMatch = formData.usia.match(/(\d+)\s*tahun/);
             const bulanMatch = formData.usia.match(/(\d+)\s*bulan/);
-            
+
             const tahunNum = tahunMatch ? parseInt(tahunMatch[1]) : 0;
             const bulanNum = bulanMatch ? parseInt(bulanMatch[1]) : 0;
             const ageInMonths = (tahunNum * 12) + bulanNum;
-            
+
             // Convert batas_usia_perhitungan_lunas to months and subtract current age
             const batasUsiaBulan = settings.batas_usia_perhitungan_lunas * 12;
             const maksJangkaWaktu = batasUsiaBulan - ageInMonths;
-            
+
             console.log('📊 Maks Jangka Waktu Calculation:', {
                 batasUsia: settings.batas_usia_perhitungan_lunas,
                 batasUsiaBulan,
                 ageInMonths,
                 maksJangkaWaktu
             });
-            
+
             // Only set if positive
             if (maksJangkaWaktu > 0) {
                 // Convert back to years for display
@@ -238,22 +260,22 @@ export const CreatePengajuanWizard: React.FC = () => {
     useEffect(() => {
         const gajiTersedia = parseFloat((formData.gaji_tersedia || '').replace(/\./g, '')) || 0;
         const maksJangkaWaktu = parseInt(formData.maksimal_jangka_waktu_usia) || 0;
-        
+
         if (gajiTersedia > 0 && maksJangkaWaktu > 0) {
             // Calculate: Gaji Tersedia * Maks Jangka Waktu (in years) * 12 months
             const maksPembiayaan = gajiTersedia * maksJangkaWaktu * 12;
-            
+
             console.log('💰 Maks Pembiayaan Calculation:', {
                 gajiTersedia,
                 maksJangkaWaktu: `${maksJangkaWaktu} tahun`,
                 maksJangkaWaktuBulan: maksJangkaWaktu * 12,
                 maksPembiayaan
             });
-            
+
             // Store as raw number (no formatting)
-            setFormData(prev => ({ 
-                ...prev, 
-                maksimal_pembiayaan: Math.round(maksPembiayaan).toString() 
+            setFormData(prev => ({
+                ...prev,
+                maksimal_pembiayaan: Math.round(maksPembiayaan).toString()
             }));
         } else if (gajiTersedia === 0 || maksJangkaWaktu === 0) {
             // Clear if either is zero
@@ -265,7 +287,7 @@ export const CreatePengajuanWizard: React.FC = () => {
     useEffect(() => {
         // Parse and validate jangka_waktu
         const jangkaWaktu = parseInt(formData.jangka_waktu);
-        
+
         // Only search if jangka_waktu is a valid positive number
         if (!isNaN(jangkaWaktu) && jangkaWaktu > 0) {
             // Find matching range from loaded data
@@ -284,7 +306,7 @@ export const CreatePengajuanWizard: React.FC = () => {
         // Parse plafond - ensure we only parse raw number (no dots)
         const rawPlafond = (formData.jumlah_pembiayaan || '').replace(/\./g, '');
         const plafondPengajuan = parseFloat(rawPlafond) || 0;
-        
+
         if (plafondPengajuan > 0 && potonganList.length > 0) {
             const calculatePotonganValue = (potongan: Potongan): number => {
                 if (potongan.kategori === 'persentase') {
@@ -317,7 +339,7 @@ export const CreatePengajuanWizard: React.FC = () => {
 
             // Round to avoid floating point precision issues and convert to integer
             const roundedTotal = Math.round(totalPotongan);
-            
+
             // Debug logging
             if (roundedTotal > 100000000) { // If more than 100 million, something is wrong
                 console.error('⚠️ Total potongan calculation error:', {
@@ -329,7 +351,7 @@ export const CreatePengajuanWizard: React.FC = () => {
                     potonganJW: potonganJangkaWaktu?.potongan_persen || 0
                 });
             }
-            
+
             setFormData(prev => ({ ...prev, total_potongan: roundedTotal.toString() }));
         } else {
             // Clear total potongan if no plafond or potongan list
@@ -349,7 +371,7 @@ export const CreatePengajuanWizard: React.FC = () => {
             const angsuranPokok = plafond / jangkaWaktu;
             const jasaBulanNilai = (jasaPerbulan / 100) * plafond;
             const totalAngsuran = angsuranPokok + jasaBulanNilai;
-            
+
             const roundedAngsuran = Math.round(totalAngsuran);
             setFormData(prev => ({ ...prev, besar_angsuran: roundedAngsuran.toString() }));
         } else {
@@ -383,28 +405,28 @@ export const CreatePengajuanWizard: React.FC = () => {
     // Format number to Indonesian format (12.500)
     const formatNumberID = (value: string | number): string => {
         if (!value || value === '0') return '';
-        
+
         // Convert to string and clean
         let numStr = value.toString().trim();
-        
+
         // Remove all dots (thousand separators)
         numStr = numStr.replace(/\./g, '');
-        
+
         // Remove any non-digit characters except leading minus
         numStr = numStr.replace(/[^\d-]/g, '');
-        
+
         // Check if valid number
         if (numStr === '' || numStr === '-' || isNaN(Number(numStr))) return '';
-        
+
         // Convert to number and format
         const num = parseInt(numStr, 10);
-        
+
         // Sanity check for reasonable values (max 1 trillion)
         if (Math.abs(num) > 1000000000000) {
             console.warn('Number too large:', num, 'Original value:', value);
             return '';
         }
-        
+
         return num.toLocaleString('id-ID');
     };
 
@@ -416,6 +438,14 @@ export const CreatePengajuanWizard: React.FC = () => {
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
+        // Clear error when user starts typing
+        if (fieldErrors[name]) {
+            setFieldErrors(prev => {
+                const newErrors = { ...prev };
+                delete newErrors[name];
+                return newErrors;
+            });
+        }
     };
 
     const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -427,6 +457,14 @@ export const CreatePengajuanWizard: React.FC = () => {
             // Validate it's a valid number
             if (rawValue === '' || /^[0-9]+$/.test(rawValue)) {
                 setFormData(prev => ({ ...prev, [name]: rawValue }));
+                // Clear error when user starts typing
+                if (fieldErrors[name]) {
+                    setFieldErrors(prev => {
+                        const newErrors = { ...prev };
+                        delete newErrors[name];
+                        return newErrors;
+                    });
+                }
             }
         }
     };
@@ -439,49 +477,49 @@ export const CreatePengajuanWizard: React.FC = () => {
                 console.log(`📸 ========================================`);
                 console.log(`📸 MULTIPLE FILES - NEW APPROACH`);
                 console.log(`📸 Field: ${fieldName}, Files: ${files.length}`);
-                
+
                 const fileNamesArray = files.map(file => file.name);
                 const imageFiles = files.filter(file => file.type.startsWith('image/'));
-                
+
                 // Set filenames
                 setFileNames(prev => ({ ...prev, [fieldName]: fileNamesArray.join(', ') }));
-                
+
                 // Read all images as base64
                 if (imageFiles.length > 0) {
                     console.log(`📸 Reading ${imageFiles.length} images as base64...`);
-                    
+
                     const readers = imageFiles.map((file, idx) => {
                         return new Promise<string>((resolve) => {
                             const reader = new FileReader();
                             reader.onloadend = () => {
                                 const base64 = reader.result as string;
-                                console.log(`📸 ✅ Image ${idx+1} ready: ${base64.substring(0, 50)}...`);
+                                console.log(`📸 ✅ Image ${idx + 1} ready: ${base64.substring(0, 50)}...`);
                                 resolve(base64);
                             };
                             reader.onerror = () => {
-                                console.error(`📸 ❌ Image ${idx+1} failed`);
+                                console.error(`📸 ❌ Image ${idx + 1} failed`);
                                 resolve('');
                             };
                             reader.readAsDataURL(file);
                         });
                     });
-                    
+
                     Promise.all(readers).then(base64Array => {
                         const validPreviews = base64Array.filter(b => b !== '');
                         console.log(`📸 All ${validPreviews.length} images ready!`);
-                        
+
                         setImagePreviews(prev => {
                             const newState = { ...prev, [fieldName]: validPreviews };
                             console.log(`📸 State updated with ${validPreviews.length} previews`);
                             return newState;
                         });
-                        
+
                         console.log(`🖼️ ✅ ALL PREVIEWS READY!`);
                     });
                 }
-                
+
                 console.log(`📸 ========================================`);
-                
+
                 // NOW start upload in background
                 setUploadingFiles(prev => ({ ...prev, [fieldName]: true }));
                 try {
@@ -489,7 +527,7 @@ export const CreatePengajuanWizard: React.FC = () => {
                     const uploadPromises = files.map(async (file) => {
                         const uploadFormData = new FormData();
                         uploadFormData.append('file', file);
-                        
+
                         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/upload`, {
                             method: 'POST',
                             headers: {
@@ -497,25 +535,34 @@ export const CreatePengajuanWizard: React.FC = () => {
                             },
                             body: uploadFormData,
                         });
-                        
+
                         if (!response.ok) {
                             throw new Error(`Upload failed for ${file.name}`);
                         }
-                        
+
                         const data = await response.json();
                         return data.url; // Backend returns { url: "/uploads/filename.jpg" }
                     });
-                    
+
                     const uploadedUrls = await Promise.all(uploadPromises);
-                    
+
                     // Store server URLs as JSON array string
                     setFormData(prev => ({ ...prev, [fieldName]: JSON.stringify(uploadedUrls) }));
-                    
+
                     // File names and previews already set above, keep them
                     console.log('✅ Upload successful, server URLs stored, previews kept');
+
+                    // Clear error when upload success
+                    if (fieldErrors[fieldName]) {
+                        setFieldErrors(prev => {
+                            const newErrors = { ...prev };
+                            delete newErrors[fieldName];
+                            return newErrors;
+                        });
+                    }
                 } catch (error) {
                     console.error('Error uploading files:', error);
-                    alert('Gagal mengupload file. Silakan coba lagi.');
+                    setFieldErrors(prev => ({ ...prev, [fieldName]: 'Gagal mengupload file. Pastikan file tidak melebihi 5MB dan format sesuai.' }));
                     // Clear preview on error
                     setImagePreviews(prev => ({ ...prev, [fieldName]: [] }));
                 } finally {
@@ -530,49 +577,49 @@ export const CreatePengajuanWizard: React.FC = () => {
                 console.log(`📸 SINGLE FILE - NEW APPROACH`);
                 console.log(`📸 Field: ${fieldName}`);
                 console.log(`📸 File:`, file.name, file.type, file.size);
-                
+
                 // Set filename first
                 setFileNames(prev => ({ ...prev, [fieldName]: file.name }));
-                
+
                 // For images: Use FileReader with base64 (most reliable)
                 if (file.type.startsWith('image/')) {
                     console.log(`📸 Reading as base64...`);
-                    
+
                     const reader = new FileReader();
                     reader.onloadend = () => {
                         const base64String = reader.result as string;
                         console.log(`📸 ✅ Base64 ready:`, base64String.substring(0, 50) + '...');
                         console.log(`📸 Length:`, base64String.length);
-                        
+
                         // Direct state update with base64
                         setImagePreviews(prev => {
                             const newState = { ...prev, [fieldName]: [base64String] };
                             console.log(`📸 State updated:`, fieldName, 'has preview:', newState[fieldName]?.length > 0);
                             return newState;
                         });
-                        
+
                         // Force a re-render by updating a timestamp
                         console.log(`🖼️ ✅ PREVIEW READY! Base64 length: ${base64String.length}`);
                     };
-                    
+
                     reader.onerror = () => {
                         console.error(`📸 ❌ FileReader failed!`);
                     };
-                    
+
                     reader.readAsDataURL(file);
                 } else {
                     console.log(`📸 Not an image`);
                 }
-                
+
                 console.log(`📸 ========================================`)
-                
+
                 // NOW start upload in background
                 setUploadingFiles(prev => ({ ...prev, [fieldName]: true }));
                 try {
                     // Upload file to server
                     const uploadFormData = new FormData();
                     uploadFormData.append('file', file);
-                    
+
                     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/upload`, {
                         method: 'POST',
                         headers: {
@@ -580,22 +627,31 @@ export const CreatePengajuanWizard: React.FC = () => {
                         },
                         body: uploadFormData,
                     });
-                    
+
                     if (!response.ok) {
                         throw new Error('Upload failed');
                     }
-                    
+
                     const data = await response.json();
                     const fileUrl = data.url; // Backend returns { url: "/uploads/filename.jpg" }
-                    
+
                     // Store server URL
                     setFormData(prev => ({ ...prev, [fieldName]: fileUrl }));
-                    
+
                     // File name and preview already set above, keep them
                     console.log('✅ Upload successful, server URL stored, preview kept');
+
+                    // Clear error when upload success
+                    if (fieldErrors[fieldName]) {
+                        setFieldErrors(prev => {
+                            const newErrors = { ...prev };
+                            delete newErrors[fieldName];
+                            return newErrors;
+                        });
+                    }
                 } catch (error) {
                     console.error('Error uploading file:', error);
-                    alert('Gagal mengupload file. Silakan coba lagi.');
+                    setFieldErrors(prev => ({ ...prev, [fieldName]: 'Gagal mengupload file. Pastikan file tidak melebihi 5MB dan format sesuai.' }));
                     // Clear preview on error
                     setImagePreviews(prev => ({ ...prev, [fieldName]: [] }));
                 } finally {
@@ -616,7 +672,7 @@ export const CreatePengajuanWizard: React.FC = () => {
                 }
             });
         }
-        
+
         // Clear all file-related state
         setFormData(prev => ({ ...prev, [fieldName]: '' }));
         setFileNames(prev => ({ ...prev, [fieldName]: '' }));
@@ -628,14 +684,76 @@ export const CreatePengajuanWizard: React.FC = () => {
     };
 
     const nextStep = () => {
+        // Validate required fields based on current step
+        if (!validateCurrentStep()) {
+            return;
+        }
+
         if (currentStep < STEPS.length) {
+            // Clear errors when moving to next step
+            setFieldErrors({});
             setCurrentStep(curr => curr + 1);
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
     };
 
+    const validateCurrentStep = (): boolean => {
+        const errors: { [key: string]: string } = {};
+
+        // Step 1: Data Pensiun & Pelayanan
+        if (currentStep === 1) {
+            if (!formData.jenis_pelayanan_id) errors.jenis_pelayanan_id = 'Jenis Pelayanan wajib dipilih';
+            if (!formData.jenis_pembiayaan_id) errors.jenis_pembiayaan_id = 'Jenis Pembiayaan wajib dipilih';
+        }
+
+        // Step 2: Data Diri
+        if (currentStep === 2) {
+            if (!formData.nik) errors.nik = 'NIK wajib diisi';
+            if (!formData.nama_lengkap) errors.nama_lengkap = 'Nama Lengkap wajib diisi';
+            if (!formData.jenis_kelamin) errors.jenis_kelamin = 'Jenis Kelamin wajib dipilih';
+            if (!formData.tempat_lahir) errors.tempat_lahir = 'Tempat Lahir wajib diisi';
+            if (!formData.tanggal_lahir) errors.tanggal_lahir = 'Tanggal Lahir wajib diisi';
+            if (!formData.nomor_telephone) errors.nomor_telephone = 'Nomor Telephone wajib diisi';
+            if (!formData.pendidikan_terakhir) errors.pendidikan_terakhir = 'Pendidikan Terakhir wajib dipilih';
+        }
+
+        // Step 3: Perhitungan
+        if (currentStep === 3) {
+            if (!formData.jangka_waktu) errors.jangka_waktu = 'Jangka Waktu wajib diisi';
+            if (!formData.jumlah_pembiayaan || parseFloat((formData.jumlah_pembiayaan || '').replace(/\./g, '')) <= 0) {
+                errors.jumlah_pembiayaan = 'Plafond Pengajuan wajib diisi dan harus lebih dari 0';
+            }
+        }
+
+        // Step 4: Upload Dokumen
+        if (currentStep === 4) {
+            UPLOAD_FIELDS.forEach(field => {
+                if (field.required && !formData[field.name as keyof typeof formData]) {
+                    errors[field.name] = `${field.label} wajib diupload`;
+                }
+            });
+        }
+
+        setFieldErrors(errors);
+
+        if (Object.keys(errors).length > 0) {
+            // Scroll to first error
+            const firstErrorField = Object.keys(errors)[0];
+            const element = document.getElementById(firstErrorField);
+            if (element) {
+                element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                element.focus();
+            }
+            return false;
+        }
+
+        return true;
+    };
+
     const prevStep = () => {
         if (currentStep > 1) {
+            // Clear errors when moving to previous step
+            setFieldErrors({});
             setCurrentStep(curr => curr - 1);
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
@@ -646,15 +764,25 @@ export const CreatePengajuanWizard: React.FC = () => {
             setSubmitting(true);
 
             // Validate required fields
+            const submitErrors: { [key: string]: string } = {};
             if (!formData.nik || !formData.nama_lengkap) {
-                alert('NIK dan Nama Lengkap wajib diisi!');
-                setSubmitting(false);
-                return;
+                if (!formData.nik) submitErrors.nik = 'NIK wajib diisi';
+                if (!formData.nama_lengkap) submitErrors.nama_lengkap = 'Nama Lengkap wajib diisi';
             }
 
             if (!formData.jumlah_pembiayaan || parseFloat((formData.jumlah_pembiayaan || '').replace(/\./g, '')) <= 0) {
-                alert('Jumlah Pembiayaan wajib diisi!');
+                submitErrors.jumlah_pembiayaan = 'Jumlah Pembiayaan wajib diisi dan harus lebih dari 0';
+            }
+
+            if (Object.keys(submitErrors).length > 0) {
+                setFieldErrors(submitErrors);
                 setSubmitting(false);
+                // Scroll to first error
+                const firstErrorField = Object.keys(submitErrors)[0];
+                const element = document.getElementById(firstErrorField);
+                if (element) {
+                    element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
                 return;
             }
 
@@ -662,13 +790,13 @@ export const CreatePengajuanWizard: React.FC = () => {
             // Format: "45 tahun 6 bulan" or "45 tahun" or "6 bulan"
             const tahunMatch = formData.usia.match(/(\d+)\s*tahun/);
             const bulanMatch = formData.usia.match(/(\d+)\s*bulan/);
-            
+
             const tahunNum = tahunMatch ? parseInt(tahunMatch[1]) : 0;
             const bulanNum = bulanMatch ? parseInt(bulanMatch[1]) : 0;
-            
+
             // Convert to total months: (years * 12) + months
             const usiaNum = (tahunNum * 12) + bulanNum;
-            
+
             console.log('📅 Age Calculation:', {
                 original: formData.usia,
                 tahun: tahunNum,
@@ -679,15 +807,15 @@ export const CreatePengajuanWizard: React.FC = () => {
             // Build potongan_detail JSON array
             const rawPlafond = (formData.jumlah_pembiayaan || '').replace(/\./g, '');
             const plafond = parseFloat(rawPlafond) || 0;
-            
+
             const potonganDetailArray: any[] = [];
-            
+
             // Add regular potongan (is_view = true)
             potonganList.forEach(p => {
-                const nilai = p.kategori === 'persentase' 
-                    ? (p.persentase_nominal / 100) * plafond 
+                const nilai = p.kategori === 'persentase'
+                    ? (p.persentase_nominal / 100) * plafond
                     : p.persentase_nominal;
-                    
+
                 potonganDetailArray.push({
                     nama: p.nama_potongan,
                     kategori: p.kategori,
@@ -695,14 +823,14 @@ export const CreatePengajuanWizard: React.FC = () => {
                     nilai: Math.round(nilai)
                 });
             });
-            
+
             // Add Ta'awun if applicable
             const hiddenPercentageSum = allPotonganList
                 .filter(p => p.kategori === 'persentase' && !p.is_view)
                 .reduce((sum, p) => sum + p.persentase_nominal, 0);
             const potonganJWPersen = potonganJangkaWaktu?.potongan_persen || 0;
             const taawunPersen = potonganJWPersen - hiddenPercentageSum;
-            
+
             if (taawunPersen > 0) {
                 const taawunValue = (taawunPersen / 100) * plafond;
                 potonganDetailArray.push({
@@ -729,6 +857,7 @@ export const CreatePengajuanWizard: React.FC = () => {
                 kabupaten: formData.kabupaten,
                 provinsi: formData.provinsi,
                 kode_pos: formData.kode_pos,
+                nomor_telephone: formData.nomor_telephone,
                 nama_ibu_kandung: formData.nama_ibu_kandung,
                 pendidikan_terakhir: formData.pendidikan_terakhir,
                 usia: usiaNum,
@@ -770,6 +899,7 @@ export const CreatePengajuanWizard: React.FC = () => {
                 flagging_url: formData.upload_flagging || '',
                 surat_pernyataan_beda_url: formData.upload_surat_pernyataan_beda_penerima || '',
                 karip_buku_asabri_url: formData.upload_karip_buku_asabri || '',
+                surat_permohonan_anggota_url: formData.upload_surat_permohonan_anggota || '',
                 latitude: 0,
                 longitude: 0,
                 approval: 'Pending',
@@ -801,7 +931,8 @@ export const CreatePengajuanWizard: React.FC = () => {
         const displayValue = isNumber ? formatNumberID(rawValue) : rawValue;
         // Use text type for number formatting, otherwise use actual type (date, text, etc)
         const inputType = isNumber ? "text" : type;
-        
+        const hasError = fieldErrors[name];
+
         return (
             <div className="col-span-1">
                 <label htmlFor={name} className={labelClasses}>
@@ -813,64 +944,90 @@ export const CreatePengajuanWizard: React.FC = () => {
                     id={name}
                     required={required}
                     disabled={disabled}
-                    className={`${inputClasses} ${disabled ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                    className={`${inputClasses} ${disabled ? 'bg-gray-100 cursor-not-allowed' : ''} ${hasError ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
                     placeholder={placeholder}
                     value={displayValue}
                     onChange={isNumber ? handleNumberChange : handleChange}
                 />
+                {hasError && (
+                    <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
+                        <AlertCircle className="w-4 h-4" />
+                        {hasError}
+                    </p>
+                )}
             </div>
         );
     };
 
-    const renderSelect = (label: string, name: string, options: { value: string; label: string }[], required: boolean = false, loading: boolean = false) => (
-        <div className="col-span-1">
-            <label htmlFor={name} className={labelClasses}>
-                {label} {required && <span className="text-red-500">*</span>}
-            </label>
-            <div className="relative">
+    const renderSelect = (label: string, name: string, options: { value: string; label: string }[], required: boolean = false, loading: boolean = false) => {
+        const hasError = fieldErrors[name];
+
+        return (
+            <div className="col-span-1">
+                <label htmlFor={name} className={labelClasses}>
+                    {label} {required && <span className="text-red-500">*</span>}
+                </label>
+                <div className="relative">
+                    <select
+                        name={name}
+                        id={name}
+                        required={required}
+                        className={`${inputClasses} ${hasError ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
+                        value={formData[name as keyof typeof formData]}
+                        onChange={handleChange}
+                        disabled={loading}
+                    >
+                        <option value="">{loading ? 'Memuat...' : 'Pilih...'}</option>
+                        {options.map(opt => (
+                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                        ))}
+                    </select>
+                    {loading && (
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                            <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
+                        </div>
+                    )}
+                </div>
+                {hasError && (
+                    <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
+                        <AlertCircle className="w-4 h-4" />
+                        {hasError}
+                    </p>
+                )}
+            </div>
+        );
+    };
+
+    const renderSimpleSelect = (label: string, name: string, options: string[], required: boolean = false) => {
+        const hasError = fieldErrors[name];
+
+        return (
+            <div className="col-span-1">
+                <label htmlFor={name} className={labelClasses}>
+                    {label} {required && <span className="text-red-500">*</span>}
+                </label>
                 <select
                     name={name}
                     id={name}
                     required={required}
-                    className={inputClasses}
+                    className={`${inputClasses} ${hasError ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
                     value={formData[name as keyof typeof formData]}
                     onChange={handleChange}
-                    disabled={loading}
                 >
-                    <option value="">{loading ? 'Memuat...' : 'Pilih...'}</option>
+                    <option value="">Pilih...</option>
                     {options.map(opt => (
-                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                        <option key={opt} value={opt}>{opt}</option>
                     ))}
                 </select>
-                {loading && (
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                        <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
-                    </div>
+                {hasError && (
+                    <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
+                        <AlertCircle className="w-4 h-4" />
+                        {hasError}
+                    </p>
                 )}
             </div>
-        </div>
-    );
-
-    const renderSimpleSelect = (label: string, name: string, options: string[], required: boolean = false) => (
-        <div className="col-span-1">
-            <label htmlFor={name} className={labelClasses}>
-                {label} {required && <span className="text-red-500">*</span>}
-            </label>
-            <select
-                name={name}
-                id={name}
-                required={required}
-                className={inputClasses}
-                value={formData[name as keyof typeof formData]}
-                onChange={handleChange}
-            >
-                <option value="">Pilih...</option>
-                {options.map(opt => (
-                    <option key={opt} value={opt}>{opt}</option>
-                ))}
-            </select>
-        </div>
-    );
+        );
+    };
 
     // Step 1: Data Diri
     const renderStep1 = () => (
@@ -885,8 +1042,9 @@ export const CreatePengajuanWizard: React.FC = () => {
             {renderInput("Tempat Lahir", "tempat_lahir", "text", true)}
             {renderInput("Tanggal Lahir", "tanggal_lahir", "date", true)}
             {renderInput("Usia", "usia", "text", false, "", false, true)}
+            {renderInput("Nomor Telephone", "nomor_telephone", "tel", true, "08xxxxxxxxxx")}
             {renderInput("Nama Ibu Kandung", "nama_ibu_kandung")}
-            {renderInput("Pendidikan Terakhir", "pendidikan_terakhir")}
+            {renderSimpleSelect("Pendidikan Terakhir", "pendidikan_terakhir", EDUCATION_LEVELS, true)}
 
             <div className="col-span-full mt-4 mb-2 pt-4 border-t border-gray-100">
                 <h3 className="text-lg font-bold text-gray-900">Alamat Domisili</h3>
@@ -907,7 +1065,7 @@ export const CreatePengajuanWizard: React.FC = () => {
                 {renderInput("RT", "rt", "text", false, "000", true)}
                 {renderInput("RW", "rw", "text", false, "000", true)}
             </div>
-            {renderInput("Kode Pos", "kode_pos", "text", false, "", true)}
+            {renderInput("Kode Pos", "kode_pos", "text", false, "", false)}
             {renderInput("Desa / Kelurahan", "kelurahan")}
             {renderInput("Kecamatan", "kecamatan")}
             {renderInput("Kabupaten / Kota", "kabupaten")}
@@ -943,9 +1101,9 @@ export const CreatePengajuanWizard: React.FC = () => {
                     <div className="col-span-full mt-4 mb-2 pt-4 border-t border-gray-100">
                         <h3 className="text-lg font-bold text-gray-900">Data Pensiun (POS)</h3>
                     </div>
-                    {renderInput("Nopen", "nopen", "text", false, "Nomor Pensiun", true)}
+                    {renderInput("Nopen", "nopen", "text", false, "Nomor Pensiun", false)}
                     {renderInput("Jenis Pensiun", "jenis_pensiun")}
-                    {renderInput("No Giro Pos", "nomor_rekening_giro_pos", "text", false, "", true)}
+                    {renderInput("No Giro Pos", "nomor_rekening_giro_pos", "text", false, "", false)}
 
                     <div className="col-span-full mt-4 mb-2 pt-4 border-t border-gray-100">
                         <h3 className="text-lg font-bold text-gray-900">Data Keuangan</h3>
@@ -990,7 +1148,7 @@ export const CreatePengajuanWizard: React.FC = () => {
         // Parse plafond - ensure we only parse raw number (no dots) 
         const rawPlafond = (formData.jumlah_pembiayaan || '').replace(/\./g, '');
         const plafondPengajuan = parseFloat(rawPlafond) || 0;
-        
+
         const calculatePotonganValue = (potongan: Potongan): number => {
             if (potongan.kategori === 'persentase') {
                 return (potongan.persentase_nominal / 100) * plafondPengajuan;
@@ -1010,7 +1168,7 @@ export const CreatePengajuanWizard: React.FC = () => {
 
         // Calculate total potongan for display (including Ta'awun)
         let totalPotongan = potonganList.reduce((total, p) => total + calculatePotonganValue(p), 0);
-        
+
         // Add Ta'awun to total if applicable
         const hiddenPercentageSum = allPotonganList
             .filter(p => p.kategori === 'persentase' && !p.is_view)
@@ -1025,7 +1183,7 @@ export const CreatePengajuanWizard: React.FC = () => {
         return (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="col-span-full mb-2">
-                    <h3 className="text-lg font-bold text-gray-900">Simulasi Pinjaman</h3>
+                    <h3 className="text-lg font-bold text-gray-900">Simulasi Pembiayaan</h3>
                 </div>
                 {renderInput("Maks Jangka Waktu (Thn)", "maksimal_jangka_waktu_usia", "number", false, "Tahun", true, true)}
                 {renderInput("Jangka Waktu (Bln)", "jangka_waktu", "number", true, "Bulan", true)}
@@ -1048,7 +1206,7 @@ export const CreatePengajuanWizard: React.FC = () => {
                                             <span className="text-gray-700">
                                                 {potongan.nama_potongan}
                                                 <span className="text-xs text-gray-500 ml-2">
-                                                    ({potongan.kategori === 'persentase' 
+                                                    ({potongan.kategori === 'persentase'
                                                         ? `${potongan.persentase_nominal}%`
                                                         : 'Nominal'
                                                     })
@@ -1058,7 +1216,7 @@ export const CreatePengajuanWizard: React.FC = () => {
                                         </li>
                                     );
                                 })}
-                                
+
                                 {/* Ta'awun Calculation */}
                                 {taawunPersen > 0 && (
                                     <li className="flex items-center justify-between text-sm">
@@ -1112,7 +1270,8 @@ export const CreatePengajuanWizard: React.FC = () => {
             const hasFile = !!fileNames[field.name];
             const isUploading = uploadingFiles[field.name];
             const previews = imagePreviews[field.name] || [];
-            
+            const hasError = fieldErrors[field.name];
+
             // Debug: Log render state
             console.log(`🎯 renderUploadBox for ${field.name}:`, {
                 hasFile,
@@ -1121,18 +1280,32 @@ export const CreatePengajuanWizard: React.FC = () => {
                 fileNames: fileNames[field.name],
                 willShowPreview: !isUploading && hasFile && previews.length > 0
             });
-            
+
             return (
-                <div key={field.name} className="relative">
-                    <label className="block text-sm font-semibold text-gray-900 mb-2">
-                        {field.label}
-                        {field.required && <span className="text-red-500 ml-1">*</span>}
-                        {isMultiple && <span className="text-xs text-gray-500 ml-2">(Multiple files)</span>}
-                    </label>
-                    
+                <div key={field.name} id={field.name} className="relative">
+                    <div className="flex items-center justify-between mb-2">
+                        <label className="block text-sm font-semibold text-gray-900">
+                            {field.label}
+                            {field.required && <span className="text-red-500 ml-1">*</span>}
+                            {isMultiple && <span className="text-xs text-gray-500 ml-2">(Multiple files)</span>}
+                        </label>
+
+                        {/* Template Download Button */}
+                        {field.hasTemplate && (
+                            <a
+                                href="/templates/SURAT_PERMOHONAN_ANGGOTA_PEMBIAYAAN.pdf"
+                                download="SURAT_PERMOHONAN_ANGGOTA_PEMBIAYAAN.pdf"
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
+                            >
+                                <Download className="w-3.5 h-3.5" />
+                                Download Template
+                            </a>
+                        )}
+                    </div>
+
                     {/* Upload Box with Preview */}
                     <div className="relative group">
-                        {/* Input Hidden */}
+                        {/* Input Hidden - File Upload */}
                         <input
                             ref={(el) => { fileInputRefs.current[field.name] = el; }}
                             type="file"
@@ -1142,15 +1315,37 @@ export const CreatePengajuanWizard: React.FC = () => {
                             disabled={isUploading}
                             onChange={(e) => handleFileChange(e, field.name, isMultiple)}
                         />
-                        
+
+                        {/* Input Hidden - Camera */}
+                        <input
+                            ref={(el) => { fileInputRefs.current[`${field.name}_camera`] = el; }}
+                            type="file"
+                            className="hidden"
+                            accept="image/*"
+                            capture="environment"
+                            multiple={isMultiple}
+                            disabled={isUploading}
+                            onChange={(e) => handleFileChange(e, field.name, isMultiple)}
+                        />
+
                         {/* Upload/Preview Box */}
-                        <div 
-                            onClick={() => !isUploading && fileInputRefs.current[field.name]?.click()}
+                        <div
+                            onClick={() => {
+                                if (!isUploading) {
+                                    // Jika "Surat Permohonan Anggota & Pembiayaan", langsung buka file picker
+                                    if (field.name === 'upload_surat_permohonan_anggota') {
+                                        fileInputRefs.current[field.name]?.click();
+                                    } else {
+                                        setShowUploadMenu(showUploadMenu === field.name ? null : field.name);
+                                    }
+                                }
+                            }}
                             className={`
                                 relative overflow-hidden rounded-xl border-2 border-dashed transition-all duration-200
-                                ${isUploading ? 'border-blue-400 bg-blue-50 cursor-wait' : 
-                                  hasFile ? 'border-green-500 bg-gradient-to-br from-green-50 to-emerald-50 cursor-pointer hover:border-green-600' : 
-                                  'border-gray-300 bg-gray-50 cursor-pointer hover:border-indigo-500 hover:bg-indigo-50'}
+                                ${isUploading ? 'border-blue-400 bg-blue-50 cursor-wait' :
+                                    hasFile ? 'border-green-500 bg-gradient-to-br from-green-50 to-emerald-50 cursor-pointer hover:border-green-600' :
+                                        hasError ? 'border-red-500 bg-red-50 cursor-pointer hover:border-red-600' :
+                                            'border-gray-300 bg-gray-50 cursor-pointer hover:border-indigo-500 hover:bg-indigo-50'}
                             `}
                             style={{ minHeight: isMultiple ? '240px' : '180px' }}
                         >
@@ -1161,88 +1356,88 @@ export const CreatePengajuanWizard: React.FC = () => {
                                     <p className="text-sm font-medium text-blue-700">Mengupload...</p>
                                 </div>
                             )}
-                            
-            {/* SIMPLIFIED PREVIEW RENDERING */}
-            {(() => {
-                const showPreview = !isUploading && hasFile && previews.length > 0;
-                console.log(`🎨 RENDER CHECK ${field.name}:`, {
-                    isUploading,
-                    hasFile,
-                    previewsLength: previews.length,
-                    showPreview
-                });
-                
-                if (!isUploading && hasFile && previews.length > 0) {
-                    console.log(`✅ SHOWING PREVIEW for ${field.name}`);
-                    return (
-                        <div className="p-6">
-                            {/* Preview Images */}
-                            <div className="flex flex-wrap gap-4 justify-center mb-4">
-                                {previews.map((src, idx) => {
-                                    console.log(`🖼️ Image ${idx}: ${src.substring(0, 50)}... (${src.length} chars)`);
+
+                            {/* SIMPLIFIED PREVIEW RENDERING */}
+                            {(() => {
+                                const showPreview = !isUploading && hasFile && previews.length > 0;
+                                console.log(`🎨 RENDER CHECK ${field.name}:`, {
+                                    isUploading,
+                                    hasFile,
+                                    previewsLength: previews.length,
+                                    showPreview
+                                });
+
+                                if (!isUploading && hasFile && previews.length > 0) {
+                                    console.log(`✅ SHOWING PREVIEW for ${field.name}`);
                                     return (
-                                        <div key={idx} className="w-32 h-32">
-                                            <img
-                                                src={src}
-                                                alt={`Preview ${idx + 1}`}
-                                                className="w-full h-full object-cover rounded-lg border-4 border-green-500 shadow-xl"
-                                                style={{ backgroundColor: '#ffffff' }}
-                                                onLoad={() => console.log(`✅ IMG ${idx} LOADED`)}
-                                                onError={(e) => {
-                                                    console.error(`❌ IMG ${idx} ERROR`);
-                                                    (e.target as HTMLImageElement).style.backgroundColor = '#ff0000';
-                                                }}
-                                            />
+                                        <div className="p-6">
+                                            {/* Preview Images */}
+                                            <div className="flex flex-wrap gap-4 justify-center mb-4">
+                                                {previews.map((src, idx) => {
+                                                    console.log(`🖼️ Image ${idx}: ${src.substring(0, 50)}... (${src.length} chars)`);
+                                                    return (
+                                                        <div key={idx} className="w-32 h-32">
+                                                            <img
+                                                                src={src}
+                                                                alt={`Preview ${idx + 1}`}
+                                                                className="w-full h-full object-cover rounded-lg border-4 border-green-500 shadow-xl"
+                                                                style={{ backgroundColor: '#ffffff' }}
+                                                                onLoad={() => console.log(`✅ IMG ${idx} LOADED`)}
+                                                                onError={(e) => {
+                                                                    console.error(`❌ IMG ${idx} ERROR`);
+                                                                    (e.target as HTMLImageElement).style.backgroundColor = '#ff0000';
+                                                                }}
+                                                            />
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+
+                                            {/* Filename */}
+                                            <div className="text-center">
+                                                <p className="text-sm font-bold text-green-700">{fileNames[field.name]}</p>
+                                                <p className="text-xs text-gray-500 mt-1">Klik box untuk ganti</p>
+                                            </div>
                                         </div>
                                     );
-                                })}
-                            </div>
-                            
-                            {/* Filename */}
-                            <div className="text-center">
-                                <p className="text-sm font-bold text-green-700">{fileNames[field.name]}</p>
-                                <p className="text-xs text-gray-500 mt-1">Klik box untuk ganti</p>
-                            </div>
-                        </div>
-                    );
-                }
-                
-                return null;
-            })()}
-            
-            {/* No Preview State */}
-            {!isUploading && hasFile && previews.length === 0 && (() => {
-                console.log(`⚠️ NO PREVIEW: ${field.name}, file: ${fileNames[field.name]}, previews: ${previews.length}`);
-                return (
-                    <div className="p-6 flex flex-col items-center justify-center h-full">
-                        <FileText className="w-16 h-16 text-orange-500 mb-3" />
-                        <p className="text-sm font-medium text-orange-700">{fileNames[field.name]}</p>
-                        <p className="text-xs text-gray-500 mt-2">Preview not available</p>
-                        <div className="mt-3 px-3 py-2 bg-yellow-50 rounded border border-yellow-300">
-                            <p className="text-xs text-yellow-700 font-mono">
-                                Previews: {previews.length}<br/>
-                                Check Console (F12)
-                            </p>
-                        </div>
-                    </div>
-                );
-            })()}
-            
-            {/* Empty State */}
-            {!isUploading && !hasFile && (
-                <div className="p-6 flex flex-col items-center justify-center h-full text-center">
-                    <div className="w-16 h-16 rounded-full bg-indigo-100 flex items-center justify-center mb-4 group-hover:bg-indigo-200 transition-colors">
-                        <Upload className="w-8 h-8 text-indigo-600" />
-                    </div>
-                    <p className="text-sm font-semibold text-gray-900 mb-1">
-                        Klik untuk upload {field.label.toLowerCase()}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                        {acceptType === 'image/*' ? 'JPG, PNG (Max 5MB)' : 'JPG, PNG, PDF (Max 5MB)'}
-                    </p>
-                </div>
-            )}
-                            
+                                }
+
+                                return null;
+                            })()}
+
+                            {/* No Preview State */}
+                            {!isUploading && hasFile && previews.length === 0 && (() => {
+                                console.log(`⚠️ NO PREVIEW: ${field.name}, file: ${fileNames[field.name]}, previews: ${previews.length}`);
+                                return (
+                                    <div className="p-6 flex flex-col items-center justify-center h-full">
+                                        <FileText className="w-16 h-16 text-orange-500 mb-3" />
+                                        <p className="text-sm font-medium text-orange-700">{fileNames[field.name]}</p>
+                                        <p className="text-xs text-gray-500 mt-2">Preview not available</p>
+                                        <div className="mt-3 px-3 py-2 bg-yellow-50 rounded border border-yellow-300">
+                                            <p className="text-xs text-yellow-700 font-mono">
+                                                Previews: {previews.length}<br />
+                                                Check Console (F12)
+                                            </p>
+                                        </div>
+                                    </div>
+                                );
+                            })()}
+
+                            {/* Empty State */}
+                            {!isUploading && !hasFile && (
+                                <div className="p-6 flex flex-col items-center justify-center h-full text-center">
+                                    <div className="w-16 h-16 rounded-full bg-indigo-100 flex items-center justify-center mb-4 group-hover:bg-indigo-200 transition-colors">
+                                        <Upload className="w-8 h-8 text-indigo-600" />
+                                    </div>
+                                    <p className="text-sm font-semibold text-gray-900 mb-1">
+                                        Klik untuk upload {field.label.toLowerCase()}
+                                    </p>
+                                    <p className="text-xs text-gray-500">
+                                        {acceptType === 'image/*' ? 'JPG, PNG (Max 5MB)' : 'JPG, PNG, PDF (Max 5MB)'}
+                                    </p>
+                                </div>
+                            )}
+
                             {/* Remove Button (Floating) */}
                             {!isUploading && hasFile && (
                                 <button
@@ -1257,18 +1452,92 @@ export const CreatePengajuanWizard: React.FC = () => {
                                     <X className="w-4 h-4" />
                                 </button>
                             )}
+
+                            {/* Upload Options Menu - Skip for Surat Permohonan Anggota */}
+                            {showUploadMenu === field.name && !isUploading && field.name !== 'upload_surat_permohonan_anggota' && (
+                                <div
+                                    className="absolute inset-0 bg-white/95 backdrop-blur-sm z-30 flex items-center justify-center p-4"
+                                    onClick={(e) => e.stopPropagation()}
+                                >
+                                    <div className="w-full max-w-xs space-y-3">
+                                        <div className="text-center mb-4">
+                                            <h4 className="text-sm font-bold text-gray-900">{hasFile ? 'Ganti File' : 'Pilih Metode Upload'}</h4>
+                                            <p className="text-xs text-gray-500 mt-1">{hasFile ? 'Pilih metode untuk mengganti file' : 'Pilih dari file atau ambil foto langsung'}</p>
+                                        </div>
+
+                                        {/* File Upload Button */}
+                                        <button
+                                            type="button"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setShowUploadMenu(null);
+                                                fileInputRefs.current[field.name]?.click();
+                                            }}
+                                            className="w-full flex items-center gap-3 p-4 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors shadow-md"
+                                        >
+                                            <Upload className="w-5 h-5" />
+                                            <div className="text-left">
+                                                <div className="text-sm font-semibold">Upload dari File</div>
+                                                <div className="text-xs opacity-90">Pilih file dari galeri/storage</div>
+                                            </div>
+                                        </button>
+
+                                        {/* Camera Button */}
+                                        <button
+                                            type="button"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setShowUploadMenu(null);
+                                                fileInputRefs.current[`${field.name}_camera`]?.click();
+                                            }}
+                                            className="w-full flex items-center gap-3 p-4 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors shadow-md"
+                                        >
+                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                                            </svg>
+                                            <div className="text-left">
+                                                <div className="text-sm font-semibold">Ambil Foto</div>
+                                                <div className="text-xs opacity-90">Gunakan kamera perangkat</div>
+                                            </div>
+                                        </button>
+
+                                        {/* Cancel Button */}
+                                        <button
+                                            type="button"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setShowUploadMenu(null);
+                                            }}
+                                            className="w-full p-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium"
+                                        >
+                                            Batal
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
+
+                    {/* Error Message */}
+                    {hasError && (
+                        <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                            <p className="text-sm text-red-600 flex items-center gap-2">
+                                <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                                <span>{hasError}</span>
+                            </p>
+                        </div>
+                    )}
                 </div>
             );
         };
-        
+
         return (
             <div className="space-y-6">
                 <div className="mb-6">
                     <h3 className="text-lg font-bold text-gray-900">Upload Dokumen Pengajuan</h3>
                     <p className="text-sm text-gray-500 mt-1">Unggah dokumen yang diperlukan untuk proses pengajuan.</p>
-                    
+
                     {/* Info Banner */}
                     <div className="mt-3 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
                         <p className="text-xs text-blue-700 flex items-start gap-2">
@@ -1278,7 +1547,7 @@ export const CreatePengajuanWizard: React.FC = () => {
                             </span>
                         </p>
                     </div>
-                    
+
                     {/* Debug Banner */}
                     <div className="mt-3 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
                         <p className="text-xs text-yellow-800 font-medium">
@@ -1351,6 +1620,7 @@ export const CreatePengajuanWizard: React.FC = () => {
                     <PreviewItem label="Jenis Kelamin" value={formData.jenis_kelamin} />
                     <PreviewItem label="Tempat, Tanggal Lahir" value={`${formData.tempat_lahir}, ${formData.tanggal_lahir}`} />
                     <PreviewItem label="Usia" value={formData.usia} />
+                    <PreviewItem label="Nomor Telephone" value={formData.nomor_telephone} />
                     <PreviewItem label="Nama Ibu Kandung" value={formData.nama_ibu_kandung} />
                     <PreviewItem label="Pendidikan Terakhir" value={formData.pendidikan_terakhir} />
                     <div className="sm:col-span-2">
@@ -1385,7 +1655,7 @@ export const CreatePengajuanWizard: React.FC = () => {
                 </PreviewSection>
 
                 {/* Perhitungan */}
-                <PreviewSection title="Perhitungan Pinjaman">
+                <PreviewSection title="Perhitungan Pembiayaan">
                     <PreviewItem label="Maks Jangka Waktu" value={formData.maksimal_jangka_waktu_usia ? `${formData.maksimal_jangka_waktu_usia} Tahun` : ''} />
                     <PreviewItem label="Jangka Waktu" value={formData.jangka_waktu ? `${formData.jangka_waktu} Bulan` : ''} />
                     <PreviewItem label="Maks Pembiayaan" value={formatCurrency(formData.maksimal_pembiayaan)} />
@@ -1411,7 +1681,7 @@ export const CreatePengajuanWizard: React.FC = () => {
                                 const hasPreview = imagePreviews[field.name] && imagePreviews[field.name].length > 0;
                                 const previews = imagePreviews[field.name] || [];
                                 const fileName = fileNames[field.name];
-                                
+
                                 // Debug log untuk Step 5
                                 console.log(`📋 Step 5 Preview for ${field.name}:`, {
                                     hasPreview,
@@ -1419,11 +1689,11 @@ export const CreatePengajuanWizard: React.FC = () => {
                                     fileName,
                                     firstPreviewLength: previews[0]?.length || 0
                                 });
-                                
+
                                 return (
                                     <div key={field.name} className="space-y-3">
                                         <dt className="text-xs font-bold text-gray-700 uppercase tracking-wide">{field.label}</dt>
-                                        
+
                                         {hasPreview ? (
                                             <div className="space-y-3">
                                                 {/* Preview Box - Same as Step 4 but read-only */}
@@ -1455,7 +1725,7 @@ export const CreatePengajuanWizard: React.FC = () => {
                                                             );
                                                         })}
                                                     </div>
-                                                    
+
                                                     {/* Filename with Icon */}
                                                     <div className="text-center mt-4">
                                                         <div className="flex items-center justify-center gap-2">
@@ -1528,46 +1798,135 @@ export const CreatePengajuanWizard: React.FC = () => {
     };
 
     // Stepper for Card Header
-    const renderStepper = () => (
-        <div className="relative px-2 md:px-4">
-            {/* Background Line */}
-            <div className="absolute top-1/2 left-0 w-full h-[2px] bg-indigo-400/30 -translate-y-1/2 z-0 rounded-full"></div>
+    const renderStepper = (isMobile = false) => {
+        const bgLineColor = isMobile ? 'bg-emerald-400/30' : 'bg-indigo-400/30';
+        const currentBgColor = isMobile ? 'bg-white border-white text-emerald-600' : 'bg-white border-white text-indigo-600';
+        const completedBgColor = isMobile ? 'bg-emerald-400 border-emerald-300 text-white' : 'bg-indigo-500 border-indigo-400 text-white';
+        const incompleteBgColor = isMobile ? 'bg-emerald-600/50 border-emerald-400/50 text-emerald-200' : 'bg-indigo-700/50 border-indigo-500/50 text-indigo-300';
 
-            {/* Progress Line */}
-            <div
-                className="absolute top-1/2 left-0 h-[2px] bg-white -translate-y-1/2 z-0 transition-all duration-500 ease-out shadow-[0_0_8px_rgba(255,255,255,0.4)]"
-                style={{ width: `${((currentStep - 1) / (STEPS.length - 1)) * 100}%` }}
-            ></div>
+        return (
+            <div className="relative px-2 md:px-4">
+                {/* Background Line */}
+                <div className={`absolute top-1/2 left-0 w-full h-[2px] ${bgLineColor} -translate-y-1/2 z-0 rounded-full`}></div>
 
-            <div className="relative z-10 flex justify-between w-full">
-                {STEPS.map((step) => {
-                    const isCompleted = step.number < currentStep;
-                    const isCurrent = step.number === currentStep;
-                    const Icon = step.icon;
+                {/* Progress Line */}
+                <div
+                    className="absolute top-1/2 left-0 h-[2px] bg-white -translate-y-1/2 z-0 transition-all duration-500 ease-out shadow-[0_0_8px_rgba(255,255,255,0.4)]"
+                    style={{ width: `${((currentStep - 1) / (STEPS.length - 1)) * 100}%` }}
+                ></div>
 
-                    return (
-                        <div key={step.number} className="flex flex-col items-center">
-                            <div
-                                className={`flex items-center justify-center w-9 h-9 md:w-12 md:h-12 rounded-full border-2 md:border-[3px] transition-all duration-300 transform 
-                                ${isCurrent
-                                        ? 'bg-white border-white text-indigo-600 scale-105 shadow-lg'
-                                        : isCompleted
-                                            ? 'bg-indigo-500 border-indigo-400 text-white'
-                                            : 'bg-indigo-700/50 border-indigo-500/50 text-indigo-300'
-                                    }`}
-                            >
-                                <Icon className="w-4 h-4 md:w-5 md:h-5" strokeWidth={2.5} />
+                <div className="relative z-10 flex justify-between w-full">
+                    {STEPS.map((step) => {
+                        const isCompleted = step.number < currentStep;
+                        const isCurrent = step.number === currentStep;
+                        const Icon = step.icon;
+
+                        return (
+                            <div key={step.number} className="flex flex-col items-center">
+                                <div
+                                    className={`flex items-center justify-center w-9 h-9 md:w-12 md:h-12 rounded-full border-2 md:border-[3px] transition-all duration-300 transform 
+                                    ${isCurrent
+                                            ? currentBgColor + ' scale-105 shadow-lg'
+                                            : isCompleted
+                                                ? completedBgColor
+                                                : incompleteBgColor
+                                        }`}
+                                >
+                                    <Icon className="w-4 h-4 md:w-5 md:h-5" strokeWidth={2.5} />
+                                </div>
                             </div>
-                        </div>
-                    );
-                })}
+                        );
+                    })}
+                </div>
             </div>
-        </div>
-    );
+        );
+    };
 
     return (
         <>
-            <div className="mx-1 md:mx-3 lg:mx-auto lg:max-w-7xl pt-2 md:pt-4 pb-24 md:pb-0">
+            {/* Mobile Layout */}
+            <div className="md:hidden min-h-screen bg-slate-100 pb-28">
+                {/* Background Image */}
+                <div className="fixed top-0 left-0 right-0 h-[30vh] z-0 overflow-hidden rounded-b-3xl">
+                    <img
+                        src="/images/loan_header_bg.png"
+                        alt="Loan Background"
+                        className="w-full h-full object-cover object-center"
+                    />
+                </div>
+
+                {/* Content */}
+                <div className="relative z-10 pt-6 px-4">
+                    {/* Header Info */}
+                    <div className="mb-4 px-2 flex items-center justify-between">
+                        <div>
+                            <h1 className="text-emerald-900 text-xl font-bold mb-1">Pengajuan Baru</h1>
+                            <p className="text-emerald-700 text-xs">Lengkapi formulir pengajuan pembiayaan</p>
+                        </div>
+                        <button
+                            onClick={() => router.back()}
+                            className="px-3 py-1.5 bg-rose-100 text-rose-700 text-xs font-semibold rounded-full border border-rose-200 hover:bg-rose-200 transition-colors"
+                        >
+                            Batal
+                        </button>
+                    </div>
+
+                    {/* Main Card */}
+                    <div className="bg-white rounded-3xl shadow-xl shadow-slate-900/10 overflow-hidden">
+                        {/* Card Header with Stepper */}
+                        <div className="bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 px-4 py-4 relative overflow-hidden">
+                            {/* Decorative Elements */}
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-white/10 to-transparent rounded-full -translate-y-1/2 translate-x-1/3"></div>
+
+                            {/* Stepper */}
+                            <div className="relative z-10 w-full">
+                                {renderStepper(true)}
+                            </div>
+
+                            {/* Step Info */}
+                            <div className="relative z-10 text-center mt-3">
+                                <h2 className="text-base font-bold text-white">{STEPS[currentStep - 1].title}</h2>
+                                <p className="text-xs text-emerald-50 mt-0.5">{STEPS[currentStep - 1].description}</p>
+                            </div>
+                        </div>
+
+                        {/* Form Content */}
+                        <main className="px-4 py-5">
+                            {currentStep === 1 && renderStep2()}
+                            {currentStep === 2 && renderStep1()}
+                            {currentStep === 3 && renderStep3()}
+                            {currentStep === 4 && renderStep4()}
+                            {currentStep === 5 && renderStep5()}
+                        </main>
+                    </div>
+                </div>
+
+                {/* Mobile Sticky Bottom Nav */}
+                <div className="fixed bottom-0 left-0 right-0 p-3 bg-white border-t border-gray-200 z-50 shadow-lg">
+                    <div className="flex gap-2">
+                        <button
+                            type="button"
+                            onClick={prevStep}
+                            disabled={currentStep === 1 || submitting}
+                            className={`flex-1 py-2.5 border border-gray-300 rounded-lg font-medium text-gray-700 bg-white active:bg-gray-50 text-xs ${currentStep === 1 ? 'opacity-40' : ''}`}
+                        >
+                            Kembali
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={currentStep === STEPS.length ? handleSubmit : nextStep}
+                            disabled={submitting}
+                            className="flex-1 py-2.5 rounded-lg font-medium text-white bg-emerald-600 shadow active:bg-emerald-700 text-xs"
+                        >
+                            {submitting ? '...' : currentStep === STEPS.length ? 'Submit' : 'Lanjut'}
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {/* Desktop Layout - Original Design */}
+            <div className="hidden md:block mx-1 md:mx-3 lg:mx-auto lg:max-w-7xl pt-2 md:pt-4 pb-24 md:pb-0">
                 <div className="bg-white rounded-xl md:rounded-2xl shadow-md md:shadow-lg overflow-hidden">
 
                     {/* Card Header with Stepper */}
@@ -1627,29 +1986,6 @@ export const CreatePengajuanWizard: React.FC = () => {
                             {!submitting && currentStep === STEPS.length && <Save className="ml-1.5 -mr-1 h-4 w-4" />}
                         </button>
                     </div>
-                </div>
-            </div>
-
-            {/* Mobile Sticky Bottom Nav */}
-            <div className="md:hidden fixed bottom-0 left-0 right-0 p-3 bg-white border-t border-gray-200 z-50 shadow-lg">
-                <div className="flex gap-2">
-                    <button
-                        type="button"
-                        onClick={prevStep}
-                        disabled={currentStep === 1 || submitting}
-                        className={`flex-1 py-3 border border-gray-300 rounded-lg font-semibold text-gray-700 bg-white active:bg-gray-50 text-sm ${currentStep === 1 ? 'opacity-40' : ''}`}
-                    >
-                        Kembali
-                    </button>
-
-                    <button
-                        type="button"
-                        onClick={currentStep === STEPS.length ? handleSubmit : nextStep}
-                        disabled={submitting}
-                        className="flex-1 py-3 rounded-lg font-semibold text-white bg-indigo-600 shadow active:bg-indigo-700 text-sm"
-                    >
-                        {submitting ? '...' : currentStep === STEPS.length ? 'Submit' : 'Lanjut'}
-                    </button>
                 </div>
             </div>
         </>
