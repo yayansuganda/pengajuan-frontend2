@@ -42,8 +42,15 @@ export const MobileLayoutWrapper: React.FC<MobileLayoutWrapperProps> = ({ childr
         <>
             {/* Mobile Layout */}
             <div className="md:hidden min-h-screen bg-slate-100 pb-28">
+                {/* Layer 1: Global Full Page Background */}
+                <div className="fixed inset-0 z-0 pointer-events-none">
+                    <img src="/images/loan_header_bg.png" alt="bg-full" className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-slate-50/70 backdrop-blur-[1px]"></div>
+                </div>
+
+                {/* Layer 2: 30% Header Background (Conditional) */}
                 {showBackground && (
-                    <div className="fixed top-0 left-0 right-0 h-[30vh] z-0 overflow-hidden rounded-b-3xl">
+                    <div className="fixed top-0 left-0 right-0 h-[30vh] z-0 overflow-hidden rounded-b-3xl pointer-events-none">
                         <img
                             src="/images/loan_header_bg.png"
                             alt="Loan Background"
@@ -53,7 +60,7 @@ export const MobileLayoutWrapper: React.FC<MobileLayoutWrapperProps> = ({ childr
                 )}
 
                 {/* Content */}
-                <div className={`relative ${showBackground ? 'z-10' : ''}`}>
+                <div className="relative z-10">
                     {children}
                 </div>
 

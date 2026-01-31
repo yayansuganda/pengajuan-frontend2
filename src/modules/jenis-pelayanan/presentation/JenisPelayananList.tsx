@@ -82,7 +82,7 @@ const MobileView = ({
 
             <button
                 onClick={openCreateModal}
-                className="fixed bottom-24 right-5 h-14 w-14 bg-indigo-600 rounded-full shadow-lg shadow-indigo-600/30 flex items-center justify-center text-white z-40 hover:bg-indigo-700 active:scale-95 transition-all"
+                className="fixed bottom-24 right-5 h-12 w-12 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full shadow-lg shadow-emerald-600/30 flex items-center justify-center text-white z-40 hover:scale-105 active:scale-95 transition-all"
             >
                 <Plus className="w-6 h-6" />
             </button>

@@ -62,8 +62,19 @@ const formatDate = (dateString: string) => {
 
 // --- Mobile View ---
 const MobileView = ({ data, search, setSearch, statusFilter, setStatusFilter, dateFilter, setDateFilter, isLoading, router }: ViewProps) => (
-    <MobileLayoutWrapper>
-        <div className="pt-4 px-4 pb-24 h-full flex flex-col">
+    <MobileLayoutWrapper showBackground={false}>
+        {/* Layer 1: Full Page Background */}
+        <div className="fixed inset-0 z-0 pointer-events-none">
+            <img src="/images/loan_header_bg.png" alt="bg" className="w-full h-full object-cover" />
+            <div className="absolute inset-0 bg-slate-50/70 backdrop-blur-[1px]"></div>
+        </div>
+
+        {/* Layer 2: 30% Header Background */}
+        <div className="fixed top-0 left-0 right-0 h-[30vh] z-0 overflow-hidden rounded-b-3xl pointer-events-none">
+            <img src="/images/loan_header_bg.png" alt="header" className="w-full h-full object-cover object-center" />
+        </div>
+
+        <div className="relative z-10 pt-4 px-4 pb-24 h-full flex flex-col">
             {/* Header & Filter Section */}
             <div className="flex-none mb-4 gap-3 flex flex-col">
                 <div className="flex justify-between items-center">

@@ -1846,7 +1846,13 @@ export const CreatePengajuanWizard: React.FC = () => {
         <>
             {/* Mobile Layout */}
             <div className="md:hidden min-h-screen bg-slate-100 pb-28">
-                {/* Background Image */}
+                {/* Layer 1: Full Page Background */}
+                <div className="fixed inset-0 z-0 pointer-events-none">
+                    <img src="/images/loan_header_bg.png" alt="bg-full" className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-slate-50/70 backdrop-blur-[1px]"></div>
+                </div>
+
+                {/* Layer 2: 30% Header Background */}
                 <div className="fixed top-0 left-0 right-0 h-[30vh] z-0 overflow-hidden rounded-b-3xl">
                     <img
                         src="/images/loan_header_bg.png"
