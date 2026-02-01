@@ -17,9 +17,9 @@ export interface CreateUserDTO {
 }
 
 export interface UpdateUserDTO {
-    username: string;
+    username?: string;
     password?: string; // Optional - only if changing password
-    role: string;
-    unit: string;
-    name: string;
+    role?: string;
+    unit?: string;
+    name?: string;
 }
