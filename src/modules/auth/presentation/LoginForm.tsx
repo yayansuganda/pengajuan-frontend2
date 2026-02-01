@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from './useAuth';
 import { User, Lock, ArrowRight, Sparkles, Shield, Zap } from 'lucide-react';
-import { showLoading, hideLoading, showError } from '../../../shared/utils/sweetAlert';
+import { showLoading, hideLoading, showError } from '@/shared/utils/sweetAlert';
 import Image from 'next/image';
 
 export const LoginForm: React.FC = () => {

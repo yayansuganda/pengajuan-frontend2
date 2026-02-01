@@ -2,6 +2,7 @@ export interface Unit {
     id: number;
     code: string;
     name: string;
+    manager_name?: string;
     description?: string;
     address?: string;
     phone?: string;
@@ -14,6 +15,7 @@ export interface Unit {
 export interface CreateUnitDTO {
     code: string;
     name: string;
+    manager_name?: string;
     description?: string;
     address?: string;
     phone?: string;
@@ -23,6 +25,7 @@ export interface CreateUnitDTO {
 export interface UpdateUnitDTO {
     code: string;
     name: string;
+    manager_name?: string;
     description?: string;
     address?: string;
     phone?: string;

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, Search, Edit, Trash2, CheckCircle, XCircle, X, Save, Building2, MapPin, Phone, Layers } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, CheckCircle, XCircle, X, Save, Building2, MapPin, Phone, Layers, User } from 'lucide-react';
 import { Unit, CreateUnitDTO, UpdateUnitDTO } from '../core/UnitEntity';
 import { UnitRepositoryImpl } from '../data/UnitRepositoryImpl';
 import { useAuth } from '@/modules/auth/presentation/useAuth';
@@ -59,44 +59,44 @@ const MobileView = ({
                     </div>
                 ) : (
                     units.map((unit) => (
-                        <div key={unit.id} className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm flex flex-col gap-3">
-                            <div className="flex items-start gap-4">
-                                <div className="p-3 bg-indigo-50 rounded-xl text-indigo-600 shrink-0">
-                                    <Building2 className="w-6 h-6" />
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <div className="flex justify-between items-start">
-                                        <h3 className="font-bold text-slate-800 text-base">{unit.name}</h3>
-                                        <div className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${unit.is_active ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
-                                            {unit.is_active ? 'AKTIF' : 'NONAKTIF'}
+                        <div key={unit.id} className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
+                            <div className="flex justify-between items-start gap-3 mb-2">
+                                <div className="flex items-center gap-3 overflow-hidden">
+                                    <div className="p-2 bg-indigo-50 rounded-lg text-indigo-600 shrink-0">
+                                        <Building2 className="w-4 h-4" />
+                                    </div>
+                                    <div className="min-w-0 flex flex-col">
+                                        <div className="flex items-center gap-2">
+                                            <h3 className="font-bold text-slate-800 text-sm truncate">{unit.name}</h3>
+                                            <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider shrink-0 ${unit.is_active ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
+                                                {unit.is_active ? 'AKTIF' : 'NONAKTIF'}
+                                            </span>
                                         </div>
                                     </div>
-                                    <p className="text-xs font-mono text-slate-500 mt-0.5 bg-slate-100 inline-block px-1.5 py-0.5 rounded">{unit.code}</p>
-
-                                    <div className="mt-2 text-xs text-slate-500 space-y-1">
-                                        {unit.address && (
-                                            <div className="flex items-center gap-1.5 align-top">
-                                                <MapPin className="w-3.5 h-3.5 shrink-0" />
-                                                <span className="truncate">{unit.address}</span>
-                                            </div>
-                                        )}
-                                        {unit.phone && (
-                                            <div className="flex items-center gap-1.5">
-                                                <Phone className="w-3.5 h-3.5 shrink-0" />
-                                                <span>{unit.phone}</span>
-                                            </div>
-                                        )}
-                                    </div>
+                                </div>
+                                <div className="flex gap-2 shrink-0">
+                                    <button onClick={() => openEditModal(unit)} className="p-2 bg-slate-50 text-slate-600 rounded-lg border border-slate-100 hover:bg-slate-100 transition-colors">
+                                        <Edit className="w-4 h-4" />
+                                    </button>
+                                    <button onClick={() => handleDelete(unit.id)} className="p-2 bg-rose-50 text-rose-600 rounded-lg border border-rose-100 hover:bg-rose-100 transition-colors">
+                                        <Trash2 className="w-4 h-4" />
+                                    </button>
                                 </div>
                             </div>
 
-                            <div className="flex gap-2 pt-2 border-t border-slate-50 justify-end">
-                                <button onClick={() => openEditModal(unit)} className="flex-1 py-2 bg-slate-50 text-slate-600 rounded-lg border border-slate-100 text-xs font-bold flex justify-center items-center gap-2">
-                                    <Edit className="w-4 h-4" /> Edit
-                                </button>
-                                <button onClick={() => handleDelete(unit.id)} className="flex-1 py-2 bg-rose-50 text-rose-600 rounded-lg border border-rose-100 text-xs font-bold flex justify-center items-center gap-2">
-                                    <Trash2 className="w-4 h-4" /> Hapus
-                                </button>
+                            <div className="grid grid-cols-2 gap-3 mt-2 pt-2 border-t border-slate-50">
+                                <div className="flex items-center gap-2 text-xs text-slate-600 font-medium">
+                                    <User className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+                                    <span className="truncate">{unit.manager_name || '-'}</span>
+                                </div>
+                                <div className="flex items-center gap-2 text-xs text-slate-600 font-medium">
+                                    <Phone className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+                                    <span className="truncate">{unit.phone || '-'}</span>
+                                </div>
+                                <div className="col-span-2 flex items-start gap-2 text-xs text-slate-600">
+                                    <MapPin className="w-3.5 h-3.5 mt-0.5 text-indigo-500 shrink-0" />
+                                    <span className="truncate">{unit.address || '-'}</span>
+                                </div>
                             </div>
                         </div>
                     ))
@@ -222,7 +222,7 @@ export const UnitList: React.FC = () => {
     const [limit] = useState(10);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingUnit, setEditingUnit] = useState<Unit | null>(null);
-    const [formData, setFormData] = useState({ code: '', name: '', description: '', address: '', phone: '', is_active: true });
+    const [formData, setFormData] = useState({ code: '', name: '', manager_name: '', description: '', address: '', phone: '', is_active: true });
 
     useEffect(() => {
         if (user && user.role !== 'super-admin') { router.push('/dashboard'); return; }
@@ -262,9 +262,9 @@ export const UnitList: React.FC = () => {
         } catch (error: any) { hideLoading(); showError(handleError(error, 'Gagal menghapus unit')); }
     };
 
-    const openCreateModal = () => { setEditingUnit(null); setFormData({ code: '', name: '', description: '', address: '', phone: '', is_active: true }); setIsModalOpen(true); };
-    const openEditModal = async (unit: Unit) => { setEditingUnit(unit); setFormData({ code: unit.code, name: unit.name, description: unit.description || '', address: unit.address || '', phone: unit.phone || '', is_active: unit.is_active }); setIsModalOpen(true); };
-    const closeModal = () => { setIsModalOpen(false); setEditingUnit(null); setFormData({ code: '', name: '', description: '', address: '', phone: '', is_active: true }); };
+    const openCreateModal = () => { setEditingUnit(null); setFormData({ code: '', name: '', manager_name: '', description: '', address: '', phone: '', is_active: true }); setIsModalOpen(true); };
+    const openEditModal = async (unit: Unit) => { setEditingUnit(unit); setFormData({ code: unit.code, name: unit.name, manager_name: unit.manager_name || '', description: unit.description || '', address: unit.address || '', phone: unit.phone || '', is_active: unit.is_active }); setIsModalOpen(true); };
+    const closeModal = () => { setIsModalOpen(false); setEditingUnit(null); setFormData({ code: '', name: '', manager_name: '', description: '', address: '', phone: '', is_active: true }); };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -305,6 +305,10 @@ export const UnitList: React.FC = () => {
                                     <div>
                                         <label className="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wide">Nama Unit <span className="text-red-500">*</span></label>
                                         <input type="text" required value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="w-full px-4 py-2.5 text-sm text-gray-900 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Contoh: Unit Cabang Jakarta" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wide">Nama Manager</label>
+                                        <input type="text" value={formData.manager_name} onChange={(e) => setFormData({ ...formData, manager_name: e.target.value })} className="w-full px-4 py-2.5 text-sm text-gray-900 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Nama Manager Unit..." />
                                     </div>
                                     <div>
                                         <label className="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wide">Alamat</label>
