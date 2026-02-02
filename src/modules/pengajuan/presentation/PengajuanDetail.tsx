@@ -114,6 +114,8 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
         shipping_receipt_url: ''
     });
 
+    const [previewDoc, setPreviewDoc] = useState<{ url: string; type: 'image' | 'pdf' } | null>(null);
+
     useEffect(() => {
         fetchData();
     }, [id]);
@@ -185,6 +187,11 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
             hideLoading();
             showError(handleError(err, 'Gagal upload'));
         }
+    };
+
+    const openPreview = (url: string, isPdf: boolean = false) => {
+        const type = isPdf || url.toLowerCase().includes('.pdf') ? 'pdf' : 'image';
+        setPreviewDoc({ url, type });
     };
 
     const handleApprovalDocUpload = async (docType: 'pengajuan_permohonan_url' | 'dokumen_akad_url' | 'flagging_url' | 'surat_pernyataan_beda_url' | 'disbursement_proof_url' | 'shipping_receipt_url', file: File) => {
@@ -309,7 +316,6 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
         { title: 'Flagging', desc: 'Dokumen Flagging', url: pengajuan.flagging_url, key: 'flagging_url' },
         { title: 'Surat Pernyataan Beda Penerima', desc: 'Pernyataan Ahli Waris', url: pengajuan.surat_pernyataan_beda_url, key: 'surat_pernyataan_beda_url' },
         { title: 'Bukti Transfer', desc: 'Bukti Pencairan Dana', url: pengajuan.disbursement_proof_url, key: 'disbursement_proof_url', uploadInfo: { type: 'disbursement', label: 'Bukti Transfer' } },
-        { title: 'Resi Pengiriman', desc: 'Resi Pengiriman Berkas', url: pengajuan.shipping_receipt_url, key: 'shipping_receipt_url', uploadInfo: { type: 'shipping', label: 'Resi Pengiriman' } },
     ];
 
     return (
@@ -474,9 +480,9 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                                             <div key={idx} className="bg-slate-50 rounded-xl overflow-hidden border border-slate-200">
                                                 <div className="aspect-square bg-white relative">
                                                     {doc.url ? (
-                                                        <a href={doc.url} target="_blank" className="block w-full h-full">
+                                                        <div onClick={() => openPreview(doc.url!)} className="block w-full h-full cursor-pointer">
                                                             <img src={doc.url} alt={doc.title} className="w-full h-full object-cover" />
-                                                        </a>
+                                                        </div>
                                                     ) : (
                                                         <div className="flex flex-col items-center justify-center h-full text-slate-400 bg-slate-100">
                                                             <FileText className="h-6 w-6 mb-1 opacity-40" />
@@ -504,10 +510,7 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                                                 canUpload = ['pengajuan_permohonan_url', 'dokumen_akad_url', 'flagging_url', 'surat_pernyataan_beda_url'].includes(docKey);
                                             }
 
-                                            // Admin Unit: Upload Shipping Receipt when Menunggu Verifikasi Admin Unit
-                                            if (user?.role === 'admin-unit' && pengajuan.status === 'Menunggu Verifikasi Admin Unit') {
-                                                canUpload = docKey === 'shipping_receipt_url';
-                                            }
+                                            // Admin Unit: Upload Logic REMOVED (Verification Only)
 
                                             // Admin Pusat: Upload Disbursement Proof when Menunggu Pencairan
                                             if (user?.role === 'admin-pusat' && pengajuan.status === 'Menunggu Pencairan') {
@@ -530,16 +533,16 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                                                 <div key={idx} className="bg-slate-50 rounded-xl overflow-hidden border border-slate-200">
                                                     <div className="aspect-square bg-white relative">
                                                         {hasDoc ? (
-                                                            <a href={hasDoc} target="_blank" className="block w-full h-full">
+                                                            <div onClick={() => openPreview(hasDoc, isPdfDoc)} className="block w-full h-full cursor-pointer">
                                                                 {isPdfDoc ? (
                                                                     <div className="flex flex-col items-center justify-center h-full text-indigo-600">
                                                                         <FileText className="h-12 w-12 mb-2" />
-                                                                        <span className="text-xs font-medium">PDF</span>
+                                                                        <span className="text-xs font-medium">PDF Preview</span>
                                                                     </div>
                                                                 ) : (
                                                                     <img src={hasDoc} alt={doc.title} className="w-full h-full object-cover" />
                                                                 )}
-                                                            </a>
+                                                            </div>
                                                         ) : (
                                                             <div className="flex flex-col items-center justify-center h-full text-slate-400 bg-slate-100">
                                                                 <FileText className="h-6 w-6 mb-1 opacity-40" />
@@ -625,7 +628,7 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                                     Kirim ke Admin Unit
                                 </button>
                             )}
-                            {user?.role === 'admin-unit' && pengajuan.status === 'Menunggu Verifikasi Admin Unit' && approvalDocs.shipping_receipt_url && (
+                            {user?.role === 'admin-unit' && pengajuan.status === 'Menunggu Verifikasi Admin Unit' && (
                                 <button
                                     onClick={() => handleUpdateStatus('Menunggu Pencairan', 'Kirim Pusat?')}
                                     className="flex-1 px-4 py-3 bg-orange-600 text-white text-sm font-medium rounded-xl hover:bg-orange-700 transition-colors shadow-lg"
@@ -660,14 +663,7 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                             </div>
                         )}
 
-                        {/* Info Message for Admin Unit */}
-                        {user?.role === 'admin-unit' && pengajuan.status === 'Menunggu Verifikasi Admin Unit' && !approvalDocs.shipping_receipt_url && (
-                            <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-xl">
-                                <p className="text-xs text-amber-800 text-center">
-                                    🚚 Upload resi pengiriman berkas fisik untuk melanjutkan
-                                </p>
-                            </div>
-                        )}
+
 
                         {/* Info Message for Admin Pusat */}
                         {user?.role === 'admin-pusat' && pengajuan.status === 'Menunggu Pencairan' && !approvalDocs.disbursement_proof_url && (
@@ -679,12 +675,12 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                         )}
                     </div>
                 </div>
-            </div>
+            </div >
 
             {/* Desktop Layout - Original Design */}
-            <div className="hidden md:block max-w-5xl mx-auto space-y-6 pb-24">
+            < div className="hidden md:block max-w-5xl mx-auto space-y-6 pb-24" >
                 {/* Hero Header */}
-                <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-900 p-6 text-white">
+                < div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-900 p-6 text-white" >
                     <div className="absolute top-0 right-0 w-72 h-72 bg-indigo-500/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
 
                     <div className="relative z-10">
@@ -748,18 +744,18 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                             </div>
                         </div>
                     </div>
-                </div>
+                </div >
 
                 {/* Financial Summary */}
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                < div className="grid grid-cols-2 lg:grid-cols-4 gap-3" >
                     <SummaryCard icon={<Banknote className="h-4 w-4" />} label="Plafond" value={money(pengajuan.jumlah_pembiayaan)} accent />
                     <SummaryCard icon={<Calendar className="h-4 w-4" />} label="Tenor" value={`${d(pengajuan.jangka_waktu)} Bulan`} />
                     <SummaryCard icon={<Receipt className="h-4 w-4" />} label="Angsuran" value={money(pengajuan.besar_angsuran)} />
                     <SummaryCard icon={<Wallet className="h-4 w-4" />} label="Diterima" value={money(pengajuan.nominal_terima)} />
-                </div>
+                </div >
 
                 {/* Tab Navigation */}
-                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                < div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden" >
                     <div className="flex border-b border-slate-100">
                         <TabBtn active={activeTab === 'detail'} onClick={() => setActiveTab('detail')} icon={<User className="h-4 w-4" />} label="Data Lengkap" />
                         <TabBtn active={activeTab === 'dokumen'} onClick={() => setActiveTab('dokumen')} icon={<FolderOpen className="h-4 w-4" />} label="Dokumen" />
@@ -957,32 +953,34 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                             </div>
                         )}
                     </div>
-                </div>
+                </div >
 
                 {/* Upload Modal */}
-                {isUploadModalOpen && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-                        <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
-                            <h3 className="text-lg font-bold text-slate-900 mb-1">Upload Bukti Transfer</h3>
-                            <p className="text-sm text-slate-500 mb-5">Upload gambar bukti pencairan dana</p>
-                            <form onSubmit={handleUploadProof} className="space-y-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-slate-700 mb-1.5">File Gambar</label>
-                                    <input type="file" accept="image/*" onChange={(e) => setProofForm({ ...proofForm, file: e.target.files?.[0] || null })} className="block w-full text-sm text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-slate-700 mb-1.5">Catatan</label>
-                                    <textarea rows={3} className="block w-full rounded-xl border-slate-200 text-sm focus:border-indigo-500 focus:ring-indigo-500" value={proofForm.notes} onChange={(e) => setProofForm({ ...proofForm, notes: e.target.value })} placeholder="Catatan tambahan..." />
-                                </div>
-                                <div className="flex gap-3 pt-2">
-                                    <button type="button" onClick={() => setIsUploadModalOpen(false)} className="flex-1 px-4 py-2.5 text-sm font-medium text-slate-700 bg-slate-100 rounded-xl hover:bg-slate-200 transition-colors">Batal</button>
-                                    <button type="submit" className="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-indigo-600 rounded-xl hover:bg-indigo-700 transition-colors">Upload</button>
-                                </div>
-                            </form>
+                {
+                    isUploadModalOpen && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                            <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+                                <h3 className="text-lg font-bold text-slate-900 mb-1">Upload Bukti Transfer</h3>
+                                <p className="text-sm text-slate-500 mb-5">Upload gambar bukti pencairan dana</p>
+                                <form onSubmit={handleUploadProof} className="space-y-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1.5">File Gambar</label>
+                                        <input type="file" accept="image/*" onChange={(e) => setProofForm({ ...proofForm, file: e.target.files?.[0] || null })} className="block w-full text-sm text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1.5">Catatan</label>
+                                        <textarea rows={3} className="block w-full rounded-xl border-slate-200 text-sm focus:border-indigo-500 focus:ring-indigo-500" value={proofForm.notes} onChange={(e) => setProofForm({ ...proofForm, notes: e.target.value })} placeholder="Catatan tambahan..." />
+                                    </div>
+                                    <div className="flex gap-3 pt-2">
+                                        <button type="button" onClick={() => setIsUploadModalOpen(false)} className="flex-1 px-4 py-2.5 text-sm font-medium text-slate-700 bg-slate-100 rounded-xl hover:bg-slate-200 transition-colors">Batal</button>
+                                        <button type="submit" className="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-indigo-600 rounded-xl hover:bg-indigo-700 transition-colors">Upload</button>
+                                    </div>
+                                </form>
+                            </div>
                         </div>
-                    </div>
-                )}
-            </div>
+                    )
+                }
+            </div >
             <div className="hidden md:block">
                 {/* Hero Header */}
                 <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-900 p-6 text-white">
@@ -1258,7 +1256,28 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                     )
                 }
             </div>
-        </MobileLayoutWrapper >
+            {/* Image/PDF Preview Modal */}
+            {previewDoc && (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" onClick={() => setPreviewDoc(null)}>
+                    <div className="relative w-full max-w-lg bg-white rounded-2xl overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200" onClick={e => e.stopPropagation()}>
+                        <div className="flex items-center justify-between p-4 border-b">
+                            <h3 className="text-sm font-bold text-slate-900">Preview Dokumen</h3>
+                            <button onClick={() => setPreviewDoc(null)} className="p-1 hover:bg-slate-100 rounded-full">
+                                <XCircle className="w-6 h-6 text-slate-500" />
+                            </button>
+                        </div>
+                        <div className="p-4 bg-slate-100 flex items-center justify-center min-h-[300px]">
+                            {previewDoc.type === 'pdf' ? (
+                                <iframe src={previewDoc.url} className="w-full h-[60vh] rounded-lg bg-white shadow-sm border border-slate-200" title="PDF Preview"></iframe>
+                            ) : (
+                                <img src={previewDoc.url} alt="Preview" className="max-w-full max-h-[60vh] object-contain rounded-lg shadow-sm" />
+                            )}
+                        </div>
+
+                    </div>
+                </div>
+            )}
+        </MobileLayoutWrapper>
     );
 };
 
