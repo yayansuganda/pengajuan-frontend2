@@ -111,4 +111,6 @@ export interface Pengajuan {
 export interface PengajuanFilter {
     status?: string;
     search?: string;
+    limit?: number;
+    page?: number;
 }

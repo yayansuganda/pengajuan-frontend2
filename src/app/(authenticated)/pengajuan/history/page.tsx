@@ -67,7 +67,15 @@ export default function PengajuanHistoryPage() {
     const fetchHistory = async () => {
         try {
             setIsLoading(true);
-            const allData = await repository.getPengajuanList({});
+
+            // Fetch with high limit to get all data
+            // Backend will still filter by unit based on user role
+            // Send status='all' to prevent backend from applying default status filter
+            const allData = await repository.getPengajuanList({
+                status: 'all', // Special value to get all statuses
+                limit: 1000, // Get more data
+                page: 1
+            });
 
             console.log('📊 History Debug Info:');
             console.log('- User role:', user?.role);
@@ -77,13 +85,22 @@ export default function PengajuanHistoryPage() {
 
             // Filter by unit_id for non-super-admin users
             let filteredByUnit = allData;
-            if (user?.role !== 'super-admin' && user?.unit) {
-                filteredByUnit = allData.filter((item: Pengajuan) =>
-                    item.unit === user.unit
-                );
-                console.log('- After unit filter:', filteredByUnit.length);
+            if (user?.role !== 'super-admin') {
+                console.log('- Applying unit filter...');
+                console.log('- User unit value:', JSON.stringify(user?.unit));
+
+                if (user?.unit) {
+                    filteredByUnit = allData.filter((item: Pengajuan) => {
+                        const match = item.unit === user.unit;
+                        console.log(`  Item: "${item.name}" | item.unit="${item.unit}" | user.unit="${user.unit}" | Match: ${match}`);
+                        return match;
+                    });
+                    console.log('- After unit filter:', filteredByUnit.length);
+                } else {
+                    console.log('⚠️ User has no unit property, showing all data');
+                }
             } else {
-                console.log('- No unit filter applied (super-admin or no unit)');
+                console.log('- No unit filter applied (super-admin)');
             }
 
             // Filter only completed or rejected submissions
