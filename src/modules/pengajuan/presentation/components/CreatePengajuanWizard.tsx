@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { usePengajuan } from '../usePengajuan';
 import { ChevronRight, ChevronLeft, Check, Save, User, Briefcase, Calculator, Upload, Eye, AlertCircle, Download, X, FileText, Loader2, MinusCircle } from 'lucide-react';
+import Swal from 'sweetalert2';
 import { JenisPelayananRepositoryImpl } from '@/modules/jenis-pelayanan/data/RepositoryImpl';
 import { JenisPembiayaanRepositoryImpl } from '@/modules/jenis-pembiayaan/data/RepositoryImpl';
 import { JenisPelayanan } from '@/modules/jenis-pelayanan/core/Entity';
@@ -77,10 +78,13 @@ const calculateAge = (birthDate: string): string => {
     return `${years} tahun ${months} bulan`;
 };
 
-export const CreatePengajuanWizard: React.FC = () => {
+import { PengajuanRepositoryImpl } from '@/modules/pengajuan/data/PengajuanRepositoryImpl';
+
+export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ pengajuanId }) => {
     const router = useRouter();
-    const { createPengajuan } = usePengajuan();
+    const { createPengajuan, updatePengajuan } = usePengajuan();
     const [currentStep, setCurrentStep] = useState(1);
+    const [fetchingDetail, setFetchingDetail] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const fileInputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
 
@@ -213,7 +217,141 @@ export const CreatePengajuanWizard: React.FC = () => {
         };
 
         fetchMasterData();
+        fetchMasterData();
     }, []);
+
+    // Fetch existing data for editing
+    useEffect(() => {
+        if (!pengajuanId) return;
+
+        const fetchDetail = async () => {
+            try {
+                setFetchingDetail(true);
+                const repo = new PengajuanRepositoryImpl();
+                const data = await repo.getPengajuanDetail(pengajuanId);
+
+                if (data) {
+                    console.log('📄 Fetched Pengajuan Detail:', data);
+
+                    // Parse borrower photos
+                    let borrowerPhotosStr = '';
+                    let borrowerPhotosArr: string[] = [];
+                    if (data.borrower_photos) {
+                        try {
+                            if (data.borrower_photos.startsWith('[')) {
+                                borrowerPhotosArr = JSON.parse(data.borrower_photos);
+                                // If it's an array, we might want to pass the JSON string to upload_borrower_photos?
+                                // Actually upload logic expects array for previews but string for payload.
+                                // For display we use imagePreviews.
+                                borrowerPhotosStr = data.borrower_photos;
+                            } else {
+                                borrowerPhotosArr = [data.borrower_photos];
+                                borrowerPhotosStr = data.borrower_photos;
+                            }
+                        } catch (e) {
+                            borrowerPhotosArr = [data.borrower_photos];
+                            borrowerPhotosStr = data.borrower_photos;
+                        }
+                    }
+
+                    // Pre-fill One-to-One file mappings
+                    const fileMappings: Record<string, string> = {
+                        upload_ktp_pemohon: data.ktp_url || '',
+                        upload_slip_gaji_terakhir: data.slip_gaji_url || '',
+                        upload_karip_buku_asabri: data.karip_buku_asabri_url || '',
+                        upload_surat_permohonan_anggota: (data as any).surat_permohonan_anggota_url || '', // Cast as any if missing in interface
+                        upload_pengajuan_permohonan: data.pengajuan_permohonan_url || '',
+                        upload_dokumen_akad: data.dokumen_akad_url || '',
+                        upload_flagging: data.flagging_url || '',
+                        upload_surat_pernyataan_beda_penerima: data.surat_pernyataan_beda_url || '',
+                    };
+
+                    // Set Previews
+                    const newPreviews: Record<string, string[]> = {};
+                    const newFileNames: Record<string, string> = {};
+
+                    Object.entries(fileMappings).forEach(([key, url]) => {
+                        if (url) {
+                            newPreviews[key] = [url];
+                            newFileNames[key] = 'File tersimpan';
+                        }
+                    });
+
+                    if (borrowerPhotosArr.length > 0) {
+                        newPreviews['upload_borrower_photos'] = borrowerPhotosArr;
+                        newFileNames['upload_borrower_photos'] = `${borrowerPhotosArr.length} Foto tersimpan`;
+                    }
+
+                    setImagePreviews(newPreviews);
+                    setFileNames(newFileNames);
+
+                    // Populate Form Data
+                    setFormData(prev => ({
+                        ...prev,
+                        // Data Diri
+                        nik: data.nik || '',
+                        nama_lengkap: data.nama_lengkap || '',
+                        jenis_kelamin: data.jenis_kelamin || 'Laki-laki',
+                        tempat_lahir: data.tempat_lahir || '',
+                        tanggal_lahir: data.tanggal_lahir || '',
+                        alamat: data.alamat || '',
+                        rt: data.rt || '',
+                        rw: data.rw || '',
+                        kelurahan: data.kelurahan || '',
+                        kecamatan: data.kecamatan || '',
+                        kabupaten: data.kabupaten || '',
+                        provinsi: data.provinsi || '',
+                        kode_pos: data.kode_pos || '',
+                        nomor_telephone: (data as any).nomor_telephone || '',
+                        nama_ibu_kandung: data.nama_ibu_kandung || '',
+                        pendidikan_terakhir: data.pendidikan_terakhir || '',
+                        usia: data.usia ? `${data.usia} tahun` : '', // Convert number to string format
+
+                        // Data Pensiun
+                        nopen: data.nopen || '',
+                        jenis_pensiun: data.jenis_pensiun || '',
+                        kantor_bayar: data.kantor_bayar || '',
+                        nama_bank: data.nama_bank || '',
+                        no_rekening: data.no_rekening || '',
+                        nomor_rekening_giro_pos: data.nomor_rekening_giro_pos || '',
+
+                        // Data Dapem
+                        jenis_dapem: data.jenis_dapem || '',
+                        bulan_dapem: data.bulan_dapem || '',
+                        status_dapem: data.status_dapem || '',
+                        gaji_bersih: data.gaji_bersih?.toString() || '',
+                        gaji_tersedia: data.gaji_tersedia?.toString() || '',
+
+                        // Data Pengajuan
+                        jenis_pelayanan_id: data.jenis_pelayanan?.id || data.jenis_pelayanan_id || '',
+                        jenis_pembiayaan_id: data.jenis_pembiayaan?.id || data.jenis_pembiayaan_id || '',
+                        maksimal_jangka_waktu_usia: data.maksimal_jangka_waktu_usia?.toString() || '',
+                        jangka_waktu: data.jangka_waktu?.toString() || '',
+                        maksimal_pembiayaan: data.maksimal_pembiayaan?.toString() || '',
+                        jumlah_pembiayaan: data.jumlah_pembiayaan?.toString() || '',
+                        besar_angsuran: data.besar_angsuran?.toString() || '',
+                        total_potongan: data.total_potongan?.toString() || '',
+                        nominal_terima: data.nominal_terima?.toString() || '',
+                        kantor_pos_petugas: data.kantor_pos_petugas || '',
+
+                        // Files (need to set these so validation passes)
+                        ...fileMappings,
+                        upload_borrower_photos: borrowerPhotosStr,
+                    }));
+
+                    // We might need to manually trigger calculations or just trust the values?
+                    // Better to rely on fetched values for now.
+                }
+
+            } catch (err) {
+                console.error("Failed to fetch detail for edit:", err);
+            } finally {
+                setFetchingDetail(false);
+            }
+        };
+
+        fetchDetail();
+    }, [pengajuanId]);
 
     // Auto-calculate age when birth date changes
     useEffect(() => {
@@ -913,10 +1051,32 @@ export const CreatePengajuanWizard: React.FC = () => {
                 potongan_detail: payload.potongan_detail
             });
 
-            await createPengajuan(payload);
+            // Send to Backend
+            console.log('🚀 Payload:', payload);
+
+            if (pengajuanId) {
+                await updatePengajuan(pengajuanId, payload);
+            } else {
+                await createPengajuan(payload);
+            }
+
+            // Show Success UI
+            await Swal.fire({
+                title: 'Berhasil!',
+                text: pengajuanId ? 'Data pengajuan berhasil diperbarui.' : 'Pengajuan baru telah berhasil disimpan.',
+                icon: 'success',
+                confirmButtonText: 'Tutup',
+                confirmButtonColor: '#059669', // Emerald 600
+                showConfirmButton: false,
+                timer: 2000
+            });
+
+            // Redirect to list
             router.push('/pengajuan');
-        } catch (error) {
-            console.error("Failed to submit:", error);
+
+        } catch (error: any) {
+            console.error('Submit Error:', error);
+            // Error handling is done in usePengajuan
         } finally {
             setSubmitting(false);
         }

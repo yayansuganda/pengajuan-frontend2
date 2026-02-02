@@ -52,11 +52,30 @@ export const usePengajuan = () => {
         }
     };
 
+    const updatePengajuan = async (id: string, data: any) => {
+        try {
+            showLoading('Menyimpan perubahan...');
+            setLoading(true);
+            await pengajuanRepository.updatePengajuan(id, data);
+            hideLoading();
+        } catch (err: any) {
+            hideLoading();
+            const errorMessage = err.response?.data?.error || err.message || 'Gagal menyimpan perubahan';
+            setError(errorMessage);
+            showError(errorMessage);
+            console.error(err);
+            throw err;
+        } finally {
+            setLoading(false);
+        }
+    };
+
     return {
         pengajuanList,
         loading,
         error,
         refresh: fetchPengajuan,
         createPengajuan,
+        updatePengajuan,
     };
 };

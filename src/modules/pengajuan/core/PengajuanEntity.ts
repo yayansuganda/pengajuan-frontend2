@@ -80,6 +80,8 @@ export interface Pengajuan {
     flagging_url?: string;
     surat_pernyataan_beda_url?: string;
     karip_buku_asabri_url?: string;
+    disbursement_proof_url?: string;
+    shipping_receipt_url?: string;
 
     // Location
     latitude?: number;

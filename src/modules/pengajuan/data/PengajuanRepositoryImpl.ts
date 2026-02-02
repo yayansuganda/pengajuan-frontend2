@@ -1,9 +1,9 @@
 import { PengajuanRepository } from '../core/PengajuanRepository';
 import { Pengajuan, PengajuanFilter } from '../core/PengajuanEntity';
-import { createHttpClient } from '@/shared/utils/httpClient';
+import httpClient from '@/shared/utils/httpClient';
 
 export class PengajuanRepositoryImpl implements PengajuanRepository {
-    private httpClient = createHttpClient();
+    private httpClient = httpClient;
 
     async getPengajuanList(filter?: PengajuanFilter): Promise<Pengajuan[]> {
         const response = await this.httpClient.get<{ data: Pengajuan[], total: number }>('/pengajuan', { params: filter });
@@ -17,6 +17,18 @@ export class PengajuanRepositoryImpl implements PengajuanRepository {
 
     async createPengajuan(data: any): Promise<void> {
         await this.httpClient.post('/loans', data);
+    }
+
+    async updatePengajuan(id: string, data: any): Promise<void> {
+        await this.httpClient.put(`/loans/${id}`, data);
+    }
+
+    async update(id: string, data: any): Promise<void> {
+        return this.updatePengajuan(id, data);
+    }
+
+    async updateStatus(id: string, status: string, rejectReason?: string): Promise<void> {
+        await this.httpClient.put(`/pengajuan/${id}/status`, { status, reject_reason: rejectReason });
     }
 
     async uploadDisbursementProof(disbursementId: string, proofUrl: string, notes?: string): Promise<void> {

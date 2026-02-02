@@ -2,9 +2,10 @@
 
 import { useAuth } from '@/modules/auth/presentation/useAuth';
 import { usePengajuan } from '@/modules/pengajuan/presentation/usePengajuan';
-import { FileText, CheckCircle, XCircle, Activity, MapPin, Trophy, Medal, Award, Filter, Wallet, Truck, Flag } from 'lucide-react';
+import { FileText, CheckCircle, XCircle, Activity, MapPin, Trophy, Medal, Award, Filter, Wallet, Truck, Flag, AlertCircle, ArrowRight, ChevronRight, FileUp } from 'lucide-react';
 import { MobileLayoutWrapper } from '@/modules/pengajuan/presentation/components/MobileLayoutWrapper';
 import { useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 // Disable static generation for this page
 export const dynamic = 'force-dynamic';
@@ -12,6 +13,7 @@ export const dynamic = 'force-dynamic';
 export default function DashboardPage() {
     const { user } = useAuth();
     const { pengajuanList } = usePengajuan();
+    const router = useRouter();
 
     // Filter states
     const [selectedUnit, setSelectedUnit] = useState<string>('all');
@@ -46,6 +48,12 @@ export default function DashboardPage() {
 
         return filtered;
     }, [pengajuanList, selectedUnit, dateRange]);
+
+    // Officer specific: Loans needing approval documents
+    const approvalNeededLoans = useMemo(() => {
+        if (user?.role !== 'officer') return [];
+        return pengajuanList.filter(item => item.status === 'Disetujui');
+    }, [pengajuanList, user]);
 
     // Helper to format currency
     const formatCurrency = (amount: number) => {
@@ -256,6 +264,60 @@ export default function DashboardPage() {
                                     })}
                                 </div>
                             </div>
+
+                            {/* Alert/Action Section for Officer - Mobile */}
+                            {user?.role === 'officer' && approvalNeededLoans.length > 0 && (
+                                <div className="mb-4">
+                                    <div className="bg-amber-50 rounded-2xl p-4 border border-amber-100 shadow-sm">
+                                        <div className="flex items-center gap-2 mb-3">
+                                            <div className="p-1.5 bg-amber-100 rounded-full animate-pulse">
+                                                <AlertCircle className="w-4 h-4 text-amber-600" />
+                                            </div>
+                                            <h3 className="text-xs font-bold text-amber-900">Perlu Upload Dokumen ({approvalNeededLoans.length})</h3>
+                                        </div>
+                                        <div className="space-y-2">
+                                            {approvalNeededLoans.slice(0, 3).map((item, idx) => (
+                                                <div
+                                                    key={item.id}
+                                                    onClick={() => router.push(`/pengajuan/${item.id}`)}
+                                                    className="bg-white rounded-xl p-3 border border-amber-200 shadow-sm active:scale-[0.98] transition-all cursor-pointer"
+                                                >
+                                                    <div className="flex items-center justify-between gap-3">
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="flex items-center gap-1.5 mb-1">
+                                                                <span className="text-[10px] font-bold text-slate-800 truncate">{item.name}</span>
+                                                                <span className="px-1.5 py-0.5 rounded text-[8px] font-bold bg-emerald-100 text-emerald-700">
+                                                                    Disetujui
+                                                                </span>
+                                                            </div>
+                                                            <div className="flex items-center gap-2 text-[10px] text-slate-500">
+                                                                <div className="flex items-center gap-1">
+                                                                    <Activity className="w-3 h-3" />
+                                                                    {new Date(item.created_at).toLocaleDateString()}
+                                                                </div>
+                                                                <span>•</span>
+                                                                <div className="flex items-center gap-1">
+                                                                    <FileUp className="w-3 h-3 text-amber-500" />
+                                                                    <span className="text-amber-600 font-medium">Upload PDF</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <ChevronRight className="w-4 h-4 text-amber-400" />
+                                                    </div>
+                                                </div>
+                                            ))}
+                                            {approvalNeededLoans.length > 3 && (
+                                                <button
+                                                    onClick={() => router.push('/pengajuan')}
+                                                    className="w-full py-2 text-[10px] font-bold text-amber-700 text-center hover:bg-amber-100 rounded-lg transition-colors"
+                                                >
+                                                    Lihat {approvalNeededLoans.length - 3} lainnya...
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
 
                             {/* Top Regions */}
                             <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg p-4 border border-white">
