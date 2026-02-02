@@ -290,7 +290,7 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
                         ...prev,
                         // Data Diri
                         nik: data.nik || '',
-                        nama_lengkap: data.nama_lengkap || '',
+                        nama_lengkap: data.name || '',
                         jenis_kelamin: data.jenis_kelamin || 'Laki-laki',
                         tempat_lahir: data.tempat_lahir || '',
                         tanggal_lahir: data.tanggal_lahir || '',

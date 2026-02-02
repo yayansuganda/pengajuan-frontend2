@@ -156,7 +156,7 @@ const MobileView = ({ data, search, setSearch, statusFilter, setStatusFilter, da
                             className="bg-white p-3.5 rounded-xl border border-slate-100 shadow-sm active:scale-[0.98] transition-transform"
                         >
                             <div className="flex justify-between items-start mb-2">
-                                <h3 className="font-bold text-slate-800 text-sm line-clamp-1 flex-1 mr-2">{item.nama_lengkap}</h3>
+                                <h3 className="font-bold text-slate-800 text-sm line-clamp-1 flex-1 mr-2">{item.name}</h3>
                                 <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider border whitespace-nowrap ${getStatusColor(item.status)}`}>
                                     {item.status}
                                 </span>
@@ -273,7 +273,7 @@ const DesktopView = ({ data, search, setSearch, statusFilter, setStatusFilter, d
                                     data.map((item) => (
                                         <tr key={item.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => router.push(`/pengajuan/${item.id}`)}>
                                             <td className="whitespace-nowrap px-3 py-4 text-sm">
-                                                <div className="font-medium text-gray-900">{item.nama_lengkap}</div>
+                                                <div className="font-medium text-gray-900">{item.name}</div>
                                                 <div className="text-gray-500">{item.nik}</div>
                                             </td>
                                             <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{item.unit || '-'}</td>
