@@ -21,7 +21,7 @@ export default function DashboardPage() {
 
     // Get unique units for filter
     const units = useMemo(() => {
-        const uniqueUnits = new Set(pengajuanList.map(item => item.unit_name).filter(Boolean));
+        const uniqueUnits = new Set(pengajuanList.map(item => item.unit).filter(Boolean));
         return Array.from(uniqueUnits).sort();
     }, [pengajuanList]);
 
@@ -31,7 +31,7 @@ export default function DashboardPage() {
 
         // Filter by unit
         if (selectedUnit !== 'all') {
-            filtered = filtered.filter(item => item.unit_name === selectedUnit);
+            filtered = filtered.filter(item => item.unit === selectedUnit);
         }
 
         // Filter by date range
@@ -53,6 +53,24 @@ export default function DashboardPage() {
     const approvalNeededLoans = useMemo(() => {
         if (user?.role !== 'officer') return [];
         return pengajuanList.filter(item => item.status === 'Disetujui');
+    }, [pengajuanList, user]);
+
+    // Officer specific: Loans needing shipping receipt (Status: Dicairkan)
+    const shippingReceiptNeededLoans = useMemo(() => {
+        if (user?.role !== 'officer') return [];
+        return pengajuanList.filter(item => item.status === 'Dicairkan');
+    }, [pengajuanList, user]);
+
+    // Admin Unit specific: Loans needing verification
+    const verificationNeededLoans = useMemo(() => {
+        if (user?.role !== 'admin-unit') return [];
+        return pengajuanList.filter(item => item.status === 'Menunggu Verifikasi Admin Unit');
+    }, [pengajuanList, user]);
+
+    // Admin Pusat specific: Loans needing disbursement
+    const disbursementNeededLoans = useMemo(() => {
+        if (user?.role !== 'admin-pusat') return [];
+        return pengajuanList.filter(item => item.status === 'Menunggu Pencairan');
     }, [pengajuanList, user]);
 
     // Helper to format currency
@@ -92,7 +110,7 @@ export default function DashboardPage() {
         const regionMap = new Map<string, number>();
 
         filteredPengajuan.forEach(item => {
-            const region = item.unit_name || 'Unknown';
+            const region = item.unit || 'Unknown';
             regionMap.set(region, (regionMap.get(region) || 0) + 1);
         });
 
@@ -284,11 +302,14 @@ export default function DashboardPage() {
                                                 >
                                                     <div className="flex items-center justify-between gap-3">
                                                         <div className="flex-1 min-w-0">
-                                                            <div className="flex items-center gap-1.5 mb-1">
-                                                                <span className="text-[10px] font-bold text-slate-800 truncate">{item.name}</span>
-                                                                <span className="px-1.5 py-0.5 rounded text-[8px] font-bold bg-emerald-100 text-emerald-700">
-                                                                    Disetujui
-                                                                </span>
+                                                            <div className="mb-1">
+                                                                <div className="flex items-center justify-between gap-2">
+                                                                    <span className="text-[10px] font-bold text-slate-800 truncate">{item.name}</span>
+                                                                    <span className="px-1.5 py-0.5 rounded text-[8px] font-bold bg-emerald-100 text-emerald-700 whitespace-nowrap">
+                                                                        Disetujui
+                                                                    </span>
+                                                                </div>
+                                                                <p className="text-[9px] text-slate-500 font-medium">{item.unit}</p>
                                                             </div>
                                                             <div className="flex items-center gap-2 text-[10px] text-slate-500">
                                                                 <div className="flex items-center gap-1">
@@ -312,6 +333,177 @@ export default function DashboardPage() {
                                                     className="w-full py-2 text-[10px] font-bold text-amber-700 text-center hover:bg-amber-100 rounded-lg transition-colors"
                                                 >
                                                     Lihat {approvalNeededLoans.length - 3} lainnya...
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Alert/Action Section for Officer - Shipping Receipt Needed */}
+                            {user?.role === 'officer' && shippingReceiptNeededLoans.length > 0 && (
+                                <div className="mb-4">
+                                    <div className="bg-indigo-50 rounded-2xl p-4 border border-indigo-100 shadow-sm">
+                                        <div className="flex items-center gap-2 mb-3">
+                                            <div className="p-1.5 bg-indigo-100 rounded-full animate-pulse">
+                                                <Truck className="w-4 h-4 text-indigo-600" />
+                                            </div>
+                                            <h3 className="text-xs font-bold text-indigo-900">Perlu Upload Resi ({shippingReceiptNeededLoans.length})</h3>
+                                        </div>
+                                        <div className="space-y-2">
+                                            {shippingReceiptNeededLoans.slice(0, 3).map((item, idx) => (
+                                                <div
+                                                    key={item.id}
+                                                    onClick={() => router.push(`/pengajuan/${item.id}`)}
+                                                    className="bg-white rounded-xl p-3 border border-indigo-200 shadow-sm active:scale-[0.98] transition-all cursor-pointer"
+                                                >
+                                                    <div className="flex items-center justify-between gap-3">
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="mb-1">
+                                                                <div className="flex items-center justify-between gap-2">
+                                                                    <span className="text-[10px] font-bold text-slate-800 truncate">{item.name}</span>
+                                                                    <span className="px-1.5 py-0.5 rounded text-[8px] font-bold bg-teal-100 text-teal-700 whitespace-nowrap">
+                                                                        Dicairkan
+                                                                    </span>
+                                                                </div>
+                                                                <p className="text-[9px] text-slate-500 font-medium">{item.unit}</p>
+                                                            </div>
+                                                            <div className="flex items-center gap-2 text-[10px] text-slate-500">
+                                                                <div className="flex items-center gap-1">
+                                                                    <Activity className="w-3 h-3" />
+                                                                    {new Date(item.created_at).toLocaleDateString()}
+                                                                </div>
+                                                                <span>•</span>
+                                                                <div className="flex items-center gap-1">
+                                                                    <Truck className="w-3 h-3 text-indigo-500" />
+                                                                    <span className="text-indigo-600 font-medium">Upload Resi</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <ChevronRight className="w-4 h-4 text-indigo-400" />
+                                                    </div>
+                                                </div>
+                                            ))}
+                                            {shippingReceiptNeededLoans.length > 3 && (
+                                                <button
+                                                    onClick={() => router.push('/pengajuan')}
+                                                    className="w-full py-2 text-[10px] font-bold text-indigo-700 text-center hover:bg-indigo-100 rounded-lg transition-colors"
+                                                >
+                                                    Lihat {shippingReceiptNeededLoans.length - 3} lainnya...
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Alert/Action Section for Admin Unit - Mobile */}
+                            {user?.role === 'admin-unit' && verificationNeededLoans.length > 0 && (
+                                <div className="mb-4">
+                                    <div className="bg-orange-50 rounded-2xl p-4 border border-orange-100 shadow-sm">
+                                        <div className="flex items-center gap-2 mb-3">
+                                            <div className="p-1.5 bg-orange-100 rounded-full animate-pulse">
+                                                <AlertCircle className="w-4 h-4 text-orange-600" />
+                                            </div>
+                                            <h3 className="text-xs font-bold text-orange-900">Perlu Verifikasi ({verificationNeededLoans.length})</h3>
+                                        </div>
+                                        <div className="space-y-2">
+                                            {verificationNeededLoans.slice(0, 3).map((item, idx) => (
+                                                <div
+                                                    key={item.id}
+                                                    onClick={() => router.push(`/pengajuan/${item.id}`)}
+                                                    className="bg-white rounded-xl p-3 border border-orange-200 shadow-sm active:scale-[0.98] transition-all cursor-pointer"
+                                                >
+                                                    <div className="flex items-center justify-between gap-3">
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="mb-1">
+                                                                <div className="flex items-center justify-between gap-2">
+                                                                    <span className="text-[10px] font-bold text-slate-800 truncate">{item.name}</span>
+                                                                    <span className="px-1.5 py-0.5 rounded text-[8px] font-bold bg-amber-100 text-amber-700 whitespace-nowrap">
+                                                                        Menunggu Verifikasi
+                                                                    </span>
+                                                                </div>
+                                                                <p className="text-[9px] text-slate-500 font-medium">{item.unit}</p>
+                                                            </div>
+                                                            <div className="flex items-center gap-2 text-[10px] text-slate-500">
+                                                                <div className="flex items-center gap-1">
+                                                                    <Activity className="w-3 h-3" />
+                                                                    {new Date(item.created_at).toLocaleDateString()}
+                                                                </div>
+                                                                <span>•</span>
+                                                                <div className="flex items-center gap-1">
+                                                                    <CheckCircle className="w-3 h-3 text-orange-500" />
+                                                                    <span className="text-orange-600 font-medium">Verifikasi</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <ChevronRight className="w-4 h-4 text-orange-400" />
+                                                    </div>
+                                                </div>
+                                            ))}
+                                            {verificationNeededLoans.length > 3 && (
+                                                <button
+                                                    onClick={() => router.push('/pengajuan')}
+                                                    className="w-full py-2 text-[10px] font-bold text-orange-700 text-center hover:bg-orange-100 rounded-lg transition-colors"
+                                                >
+                                                    Lihat {verificationNeededLoans.length - 3} lainnya...
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Alert/Action Section for Admin Pusat - Mobile */}
+                            {user?.role === 'admin-pusat' && disbursementNeededLoans.length > 0 && (
+                                <div className="mb-4">
+                                    <div className="bg-purple-50 rounded-2xl p-4 border border-purple-100 shadow-sm">
+                                        <div className="flex items-center gap-2 mb-3">
+                                            <div className="p-1.5 bg-purple-100 rounded-full animate-pulse">
+                                                <Wallet className="w-4 h-4 text-purple-600" />
+                                            </div>
+                                            <h3 className="text-xs font-bold text-purple-900">Perlu Pencairan ({disbursementNeededLoans.length})</h3>
+                                        </div>
+                                        <div className="space-y-2">
+                                            {disbursementNeededLoans.slice(0, 3).map((item, idx) => (
+                                                <div
+                                                    key={item.id}
+                                                    onClick={() => router.push(`/pengajuan/${item.id}`)}
+                                                    className="bg-white rounded-xl p-3 border border-purple-200 shadow-sm active:scale-[0.98] transition-all cursor-pointer"
+                                                >
+                                                    <div className="flex items-center justify-between gap-3">
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="mb-1">
+                                                                <div className="flex items-center justify-between gap-2">
+                                                                    <span className="text-[10px] font-bold text-slate-800 truncate">{item.name}</span>
+                                                                    <span className="px-1.5 py-0.5 rounded text-[8px] font-bold bg-orange-100 text-orange-700 whitespace-nowrap">
+                                                                        Menunggu Pencairan
+                                                                    </span>
+                                                                </div>
+                                                                <p className="text-[9px] text-slate-500 font-medium">{item.unit}</p>
+                                                            </div>
+                                                            <div className="flex items-center gap-2 text-[10px] text-slate-500">
+                                                                <div className="flex items-center gap-1">
+                                                                    <Activity className="w-3 h-3" />
+                                                                    {new Date(item.created_at).toLocaleDateString()}
+                                                                </div>
+                                                                <span>•</span>
+                                                                <div className="flex items-center gap-1">
+                                                                    <Wallet className="w-3 h-3 text-purple-500" />
+                                                                    <span className="text-purple-600 font-medium">Proses Pencairan</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <ChevronRight className="w-4 h-4 text-purple-400" />
+                                                    </div>
+                                                </div>
+                                            ))}
+                                            {disbursementNeededLoans.length > 3 && (
+                                                <button
+                                                    onClick={() => router.push('/pengajuan')}
+                                                    className="w-full py-2 text-[10px] font-bold text-purple-700 text-center hover:bg-purple-100 rounded-lg transition-colors"
+                                                >
+                                                    Lihat {disbursementNeededLoans.length - 3} lainnya...
                                                 </button>
                                             )}
                                         </div>

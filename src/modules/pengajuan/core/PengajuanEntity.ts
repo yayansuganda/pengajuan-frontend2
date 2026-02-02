@@ -15,7 +15,7 @@ export interface Pengajuan {
 
     // Data Diri
     nik: string;
-    nama_lengkap: string;
+    name: string;
     jenis_kelamin?: string;
     tempat_lahir?: string;
     tanggal_lahir?: string;

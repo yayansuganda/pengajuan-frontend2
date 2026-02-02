@@ -316,6 +316,7 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
         { title: 'Flagging', desc: 'Dokumen Flagging', url: pengajuan.flagging_url, key: 'flagging_url' },
         { title: 'Surat Pernyataan Beda Penerima', desc: 'Pernyataan Ahli Waris', url: pengajuan.surat_pernyataan_beda_url, key: 'surat_pernyataan_beda_url' },
         { title: 'Bukti Transfer', desc: 'Bukti Pencairan Dana', url: pengajuan.disbursement_proof_url, key: 'disbursement_proof_url', uploadInfo: { type: 'disbursement', label: 'Bukti Transfer' } },
+        { title: 'Resi Pengiriman Berkas', desc: 'Bukti Pengiriman Fisik', url: pengajuan.shipping_receipt_url, key: 'shipping_receipt_url', uploadInfo: { type: 'shipping', label: 'Resi Pengiriman' } },
     ];
 
     return (
@@ -357,7 +358,7 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                                 )}
                             </div>
                         </div>
-                        <h1 className="text-emerald-900 text-xl font-bold mb-1">{pengajuan.nama_lengkap}</h1>
+                        <h1 className="text-emerald-900 text-xl font-bold mb-1">{pengajuan.name}</h1>
                         <p className="text-emerald-700 text-xs">{pengajuan.nik}</p>
                     </div>
 
@@ -517,6 +518,11 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                                                 canUpload = docKey === 'disbursement_proof_url';
                                             }
 
+                                            // Officer: Upload Shipping Receipt when Dicairkan
+                                            if (user?.role === 'officer' && pengajuan.status === 'Dicairkan') {
+                                                canUpload = docKey === 'shipping_receipt_url';
+                                            }
+
                                             // PDF documents: Pengajuan Permohonan, Dokumen Akad, Flagging, Surat Pernyataan Beda
                                             const isPdfDoc = ['pengajuan_permohonan_url', 'dokumen_akad_url', 'flagging_url', 'surat_pernyataan_beda_url'].includes(docKey);
                                             const acceptType = isPdfDoc ? 'application/pdf' : 'image/*';
@@ -644,7 +650,7 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                                     Cairkan
                                 </button>
                             )}
-                            {user?.role === 'officer' && pengajuan.status === 'Dicairkan' && (
+                            {user?.role === 'officer' && pengajuan.status === 'Dicairkan' && approvalDocs.shipping_receipt_url && (
                                 <button
                                     onClick={() => handleUpdateStatus('Selesai', 'Selesaikan?')}
                                     className="flex-1 px-4 py-3 bg-indigo-600 text-white text-sm font-medium rounded-xl hover:bg-indigo-700 transition-colors shadow-lg"
@@ -659,6 +665,15 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                             <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-xl">
                                 <p className="text-xs text-amber-800 text-center">
                                     📄 Upload semua dokumen persetujuan untuk melanjutkan ke Admin Unit
+                                </p>
+                            </div>
+                        )}
+
+                        {/* Info Message for Officer - Shipping Receipt */}
+                        {user?.role === 'officer' && pengajuan.status === 'Dicairkan' && !approvalDocs.shipping_receipt_url && (
+                            <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-xl">
+                                <p className="text-xs text-amber-800 text-center">
+                                    🚚 Upload resi pengiriman berkas fisik untuk menyelesaikan pengajuan
                                 </p>
                             </div>
                         )}
@@ -737,7 +752,7 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                         </div>
 
                         <div className="space-y-2">
-                            <h1 className="text-2xl sm:text-3xl font-bold">{pengajuan.nama_lengkap}</h1>
+                            <h1 className="text-2xl sm:text-3xl font-bold">{pengajuan.name}</h1>
                             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-white/70 text-sm">
                                 <span className="flex items-center gap-1.5"><CreditCard className="h-3.5 w-3.5" /> {pengajuan.nik}</span>
                                 <span className="flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5" /> {new Date(pengajuan.created_at).toLocaleDateString('id-ID', { dateStyle: 'long' })}</span>
@@ -766,7 +781,7 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                             <div className="space-y-8">
                                 {/* Personal Info */}
                                 <Section title="Informasi Pribadi" icon={<User className="h-5 w-5 text-indigo-600" />}>
-                                    <Field label="Nama Lengkap" value={pengajuan.nama_lengkap} />
+                                    <Field label="Nama Lengkap" value={pengajuan.name} />
                                     <Field label="NIK" value={pengajuan.nik} />
                                     <Field label="Jenis Kelamin" value={d(pengajuan.jenis_kelamin)} />
                                     <Field label="Tempat Lahir" value={d(pengajuan.tempat_lahir)} />
@@ -1012,7 +1027,7 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
 
                         {/* Info Nama & Detail */}
                         <div className="space-y-2">
-                            <h1 className="text-2xl sm:text-3xl font-bold">{pengajuan.nama_lengkap}</h1>
+                            <h1 className="text-2xl sm:text-3xl font-bold">{pengajuan.name}</h1>
                             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-white/70 text-sm">
                                 <span className="flex items-center gap-1.5"><CreditCard className="h-3.5 w-3.5" /> {pengajuan.nik}</span>
                                 <span className="flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5" /> {new Date(pengajuan.created_at).toLocaleDateString('id-ID', { dateStyle: 'long' })}</span>
@@ -1041,7 +1056,7 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                             <div className="space-y-8">
                                 {/* Personal Info */}
                                 <Section title="Informasi Pribadi" icon={<User className="h-5 w-5 text-indigo-600" />}>
-                                    <Field label="Nama Lengkap" value={pengajuan.nama_lengkap} />
+                                    <Field label="Nama Lengkap" value={pengajuan.name} />
                                     <Field label="NIK" value={pengajuan.nik} />
                                     <Field label="Jenis Kelamin" value={d(pengajuan.jenis_kelamin)} />
                                     <Field label="Tempat Lahir" value={d(pengajuan.tempat_lahir)} />
@@ -1268,7 +1283,19 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                         </div>
                         <div className="p-4 bg-slate-100 flex items-center justify-center min-h-[300px]">
                             {previewDoc.type === 'pdf' ? (
-                                <iframe src={previewDoc.url} className="w-full h-[60vh] rounded-lg bg-white shadow-sm border border-slate-200" title="PDF Preview"></iframe>
+                                <object
+                                    data={previewDoc.url}
+                                    type="application/pdf"
+                                    className="w-full h-[60vh] rounded-lg bg-white shadow-sm border border-slate-200"
+                                >
+                                    <div className="flex flex-col items-center justify-center h-full p-6 text-center bg-slate-50">
+                                        <FileText className="w-12 h-12 text-slate-400 mb-3" />
+                                        <p className="text-sm text-slate-600 mb-3">Gagal memuat preview.</p>
+                                        <a href={previewDoc.url} target="_blank" download className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium">
+                                            Download PDF
+                                        </a>
+                                    </div>
+                                </object>
                             ) : (
                                 <img src={previewDoc.url} alt="Preview" className="max-w-full max-h-[60vh] object-contain rounded-lg shadow-sm" />
                             )}
