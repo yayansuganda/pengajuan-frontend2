@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Home, FileText, Search, Settings, X, Users, Building2, Briefcase, CreditCard, Percent, Calendar, MapPin, CheckCircle, Plus } from 'lucide-react';
+import { Home, FileText, Search, Settings, X, Users, Building2, Briefcase, CreditCard, Percent, Calendar, MapPin, CheckCircle, Plus, Calculator } from 'lucide-react';
 import Link from 'next/link';
+import { useAuth } from '@/modules/auth/presentation/useAuth';
 
 interface MobileLayoutWrapperProps {
     children: React.ReactNode;
@@ -8,6 +9,7 @@ interface MobileLayoutWrapperProps {
 }
 
 export const MobileLayoutWrapper: React.FC<MobileLayoutWrapperProps> = ({ children, showBackground = true }) => {
+    const { user } = useAuth();
     const [showSettingsMenu, setShowSettingsMenu] = useState(false);
     const [showPengecekanMenu, setShowPengecekanMenu] = useState(false);
 
@@ -25,6 +27,9 @@ export const MobileLayoutWrapper: React.FC<MobileLayoutWrapperProps> = ({ childr
         { icon: MapPin, label: 'Pengecekan POS', href: '/pengecekan' },
         { icon: CheckCircle, label: 'Pengecekan Status', href: '/cek-status' },
     ];
+
+    // Check if user is super-admin
+    const isSuperAdmin = user?.role === 'super-admin';
 
     // Handler to open Settings menu and close Pengecekan menu
     const handleSettingsClick = () => {
@@ -191,16 +196,25 @@ export const MobileLayoutWrapper: React.FC<MobileLayoutWrapperProps> = ({ childr
                             </div>
                         </Link>
 
-                        {/* 4. Settings - Opens Submenu */}
-                        <button
-                            onClick={handleSettingsClick}
-                            className={`w-11 h-11 rounded-full flex items-center justify-center transition-colors ${showSettingsMenu
-                                ? 'bg-white/20 text-white'
-                                : 'text-slate-400 hover:text-white hover:bg-white/10'
-                                }`}
-                        >
-                            <Settings className="w-5 h-5" />
-                        </button>
+                        {/* 4. Settings/Simulasi - Conditional based on role */}
+                        {isSuperAdmin ? (
+                            <button
+                                onClick={handleSettingsClick}
+                                className={`w-11 h-11 rounded-full flex items-center justify-center transition-colors ${showSettingsMenu
+                                    ? 'bg-white/20 text-white'
+                                    : 'text-slate-400 hover:text-white hover:bg-white/10'
+                                    }`}
+                            >
+                                <Settings className="w-5 h-5" />
+                            </button>
+                        ) : (
+                            <Link
+                                href="/simulasi"
+                                className="w-11 h-11 rounded-full flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+                            >
+                                <Calculator className="w-5 h-5" />
+                            </Link>
+                        )}
 
                         {/* 5. Profile */}
                         <Link

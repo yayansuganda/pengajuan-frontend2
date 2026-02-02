@@ -1365,12 +1365,6 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
                                         <li key={potongan.id} className="flex items-center justify-between text-sm">
                                             <span className="text-gray-700">
                                                 {potongan.nama_potongan}
-                                                <span className="text-xs text-gray-500 ml-2">
-                                                    ({potongan.kategori === 'persentase'
-                                                        ? `${potongan.persentase_nominal}%`
-                                                        : 'Nominal'
-                                                    })
-                                                </span>
                                             </span>
                                             <span className="font-semibold text-indigo-700">{formatRupiah(nilaiPotongan)}</span>
                                         </li>
@@ -1382,9 +1376,6 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
                                     <li className="flex items-center justify-between text-sm">
                                         <span className="text-gray-700">
                                             Ta'awun
-                                            <span className="text-xs text-gray-500 ml-2">
-                                                ({taawunPersen.toFixed(2)}%)
-                                            </span>
                                         </span>
                                         <span className="font-semibold text-indigo-700">
                                             {formatRupiah((taawunPersen / 100) * plafondPengajuan)}
