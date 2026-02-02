@@ -5,6 +5,7 @@ export interface User {
     username: string;
     name: string;
     role: UserRole;
+    unit?: string;
     token?: string;
 }
 

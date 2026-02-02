@@ -44,6 +44,7 @@ const UPLOAD_FIELDS = [
     { name: 'upload_ktp_pemohon', label: 'KTP Pemohon', hasTemplate: false, required: true },
     { name: 'upload_karip_buku_asabri', label: 'KARIP / Buku ASABRI', hasTemplate: false, required: true },
     { name: 'upload_slip_gaji_terakhir', label: 'Slip Gaji Terakhir', hasTemplate: false, required: true },
+    { name: 'upload_sk_pensiun', label: 'SK Pensiun', hasTemplate: false, required: true },
     { name: 'upload_surat_permohonan_anggota', label: 'Surat Permohonan Anggota & Pembiayaan', hasTemplate: true, required: true },
     { name: 'upload_borrower_photos', label: 'Foto Pemohon', hasTemplate: false, required: true, multiple: true },
 ];
@@ -101,7 +102,7 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
     // Initial Form State
     const [formData, setFormData] = useState({
         // Step 1 - Data Pensiun & Pelayanan
-        jenis_pelayanan_id: '', jenis_pembiayaan_id: '',
+        jenis_pelayanan_id: '', jenis_pembiayaan_id: '', kategori_pembiayaan: '',
         // POS fields
         nopen: '', jenis_pensiun: '', nomor_rekening_giro_pos: '',
         // Non-POS fields
@@ -124,7 +125,7 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
         // Step 4 - Upload Dokumen
         upload_ktp_pemohon: '', upload_pengajuan_permohonan: '', upload_dokumen_akad: '',
         upload_flagging: '', upload_surat_pernyataan_beda_penerima: '', upload_karip_buku_asabri: '',
-        upload_slip_gaji_terakhir: '', upload_surat_permohonan_anggota: '', upload_borrower_photos: '',
+        upload_slip_gaji_terakhir: '', upload_sk_pensiun: '', upload_surat_permohonan_anggota: '', upload_borrower_photos: '',
     });
 
     // Store file names for display
@@ -842,6 +843,7 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
         if (currentStep === 1) {
             if (!formData.jenis_pelayanan_id) errors.jenis_pelayanan_id = 'Jenis Pelayanan wajib dipilih';
             if (!formData.jenis_pembiayaan_id) errors.jenis_pembiayaan_id = 'Jenis Pembiayaan wajib dipilih';
+            if (!formData.kategori_pembiayaan) errors.kategori_pembiayaan = 'Kategori Pembiayaan wajib dipilih';
         }
 
         // Step 2: Data Diri
@@ -859,7 +861,17 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
         if (currentStep === 3) {
             if (!formData.jangka_waktu) errors.jangka_waktu = 'Jangka Waktu wajib diisi';
             if (!formData.jumlah_pembiayaan || parseFloat((formData.jumlah_pembiayaan || '').replace(/\./g, '')) <= 0) {
-                errors.jumlah_pembiayaan = 'Plafond Pengajuan wajib diisi dan harus lebih dari 0';
+                errors.jumlah_pembiayaan = 'Jumlah Pengajuan wajib diisi dan harus lebih dari 0';
+            }
+
+            // Validate Sisa Gaji must be at least 100,000 more than Biaya Angsuran
+            const besarAngsuran = parseFloat((formData.besar_angsuran || '').replace(/\./g, '')) || 0;
+            const gajiTersedia = parseFloat((formData.gaji_tersedia || '').replace(/\./g, '')) || 0;
+            const sisaGaji = gajiTersedia - besarAngsuran;
+
+            if (besarAngsuran > 0 && sisaGaji < 100000) {
+                errors.besar_angsuran = 'Sisa Gaji harus lebih besar Rp 100.000 dari Biaya Angsuran/Bulan';
+                errors.gaji_tersedia = 'Sisa Gaji tidak mencukupi (minimal Rp 100.000 lebih dari angsuran)';
             }
         }
 
@@ -1253,6 +1265,12 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
                 true,
                 loadingMasterData
             )}
+            {renderSimpleSelect(
+                "Kategori Pembiayaan",
+                "kategori_pembiayaan",
+                ["Macro", "Micro"],
+                true
+            )}
 
             {/* Conditional fields based on jenis_pelayanan */}
             {isPOS ? (
@@ -1345,10 +1363,10 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
                 <div className="col-span-full mb-2">
                     <h3 className="text-lg font-bold text-gray-900">Simulasi Pembiayaan</h3>
                 </div>
-                {renderInput("Maks Jangka Waktu (Thn)", "maksimal_jangka_waktu_usia", "number", false, "Tahun", true, true)}
+                {renderInput("Maks Jangka Waktu (Bln)", "maksimal_jangka_waktu_usia", "number", false, "Bulan", true, true)}
                 {renderInput("Jangka Waktu (Bln)", "jangka_waktu", "number", true, "Bulan", true)}
                 {renderInput("Maks Pembiayaan", "maksimal_pembiayaan", "number", false, "Rp", true, true)}
-                {renderInput("Plafond Pengajuan", "jumlah_pembiayaan", "number", true, "Rp", true)}
+                {renderInput("Jumlah Pengajuan", "jumlah_pembiayaan", "number", true, "Rp", true)}
 
                 {/* Daftar Potongan */}
                 {potonganList.length > 0 && plafondPengajuan > 0 && (
@@ -1810,7 +1828,7 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
                     <PreviewItem label="Maks Jangka Waktu" value={formData.maksimal_jangka_waktu_usia ? `${formData.maksimal_jangka_waktu_usia} Tahun` : ''} />
                     <PreviewItem label="Jangka Waktu" value={formData.jangka_waktu ? `${formData.jangka_waktu} Bulan` : ''} />
                     <PreviewItem label="Maks Pembiayaan" value={formatCurrency(formData.maksimal_pembiayaan)} />
-                    <PreviewItem label="Plafond Pengajuan" value={formatCurrency(formData.jumlah_pembiayaan)} />
+                    <PreviewItem label="Jumlah Pengajuan" value={formatCurrency(formData.jumlah_pembiayaan)} />
                     <PreviewItem label="Angsuran/Bulan" value={formatCurrency(formData.besar_angsuran)} />
                     <PreviewItem label="Total Potongan" value={formatCurrency(formData.total_potongan)} />
                     <PreviewItem label="Terima Bersih" value={formatCurrency(formData.nominal_terima)} />

@@ -167,7 +167,7 @@ const MobileStatusCard = ({ data }: { data: PengajuanStatusResult }) => {
                 </div>
 
                 <div className="mb-4">
-                    <p className="text-xs text-slate-400 mb-1">Plafond Pengajuan</p>
+                    <p className="text-xs text-slate-400 mb-1">Jumlah Pengajuan</p>
                     <p className="text-xl font-bold text-indigo-600 tracking-tight">{money(data.jumlah_pembiayaan)}</p>
                 </div>
 
@@ -297,7 +297,7 @@ const DesktopStatusCard = ({ data }: { data: PengajuanStatusResult }) => {
                     </div>
                 </div>
                 <div className="text-right">
-                    <p className="text-xs text-slate-500 mb-0.5">Plafond Pengajuan</p>
+                    <p className="text-xs text-slate-500 mb-0.5">Jumlah Pengajuan</p>
                     <p className="text-lg font-bold text-slate-900">{money(data.jumlah_pembiayaan)}</p>
                 </div>
             </div>

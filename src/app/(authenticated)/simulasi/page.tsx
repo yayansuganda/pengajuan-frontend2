@@ -78,8 +78,8 @@ export default function SimulasiPage() {
                             <Calculator className="w-6 h-6 text-white" />
                         </div>
                         <div>
-                            <h1 className="text-xl font-bold text-white drop-shadow-lg">Simulasi Pinjaman</h1>
-                            <p className="text-xs text-white/90 drop-shadow">Hitung cicilan pinjaman Anda</p>
+                            <h1 className="text-xl font-bold text-white drop-shadow-lg">Simulasi Pembiayaan</h1>
+                            <p className="text-xs text-white/90 drop-shadow">Hitung cicilan pembiayaan Anda</p>
                         </div>
                     </div>
                 </div>
@@ -90,14 +90,14 @@ export default function SimulasiPage() {
                     <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-lg p-5 border border-white">
                         <h2 className="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2">
                             <DollarSign className="w-4 h-4 text-emerald-600" />
-                            Data Pinjaman
+                            Data Pembiayaan
                         </h2>
 
                         <div className="space-y-4">
                             {/* Loan Amount */}
                             <div>
                                 <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                                    Jumlah Pinjaman (Rp)
+                                    Jumlah Pembiayaan (Rp)
                                 </label>
                                 <input
                                     type="text"

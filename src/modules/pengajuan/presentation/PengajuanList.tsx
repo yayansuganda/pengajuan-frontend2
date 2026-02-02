@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, Search, Calendar, FileText, ChevronRight, Briefcase } from 'lucide-react';
+import { Plus, Search, Calendar, FileText, ChevronRight, Briefcase, History } from 'lucide-react';
 import { Pengajuan, PengajuanFilter } from '../core/PengajuanEntity';
 import { PengajuanRepositoryImpl } from '../data/PengajuanRepositoryImpl';
 import { useAuth } from '@/modules/auth/presentation/useAuth';
@@ -85,10 +85,19 @@ const MobileView = ({ data, search, setSearch, statusFilter, setStatusFilter, da
         <div className="relative z-10 pt-4 px-4 pb-24 h-full flex flex-col">
             {/* Header & Filter Section */}
             <div className="flex-none mb-4 gap-3 flex flex-col">
-                <div className="flex justify-between items-center">
+                <div className="flex justify-between items-center gap-2">
                     <h1 className="text-lg font-bold text-slate-800">Daftar Pengajuan</h1>
-                    <div className="text-xs font-semibold text-slate-500 bg-slate-100 px-2 py-1 rounded">
-                        Total: {data.length}
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={() => router.push('/pengajuan/history')}
+                            className="flex items-center gap-1.5 text-xs font-semibold text-indigo-700 bg-indigo-50 px-3 py-1.5 rounded-lg border border-indigo-200 hover:bg-indigo-100 transition-colors"
+                        >
+                            <History className="w-3.5 h-3.5" />
+                            History
+                        </button>
+                        <div className="text-xs font-semibold text-slate-500 bg-slate-100 px-2 py-1 rounded">
+                            Total: {data.length}
+                        </div>
                     </div>
                 </div>
 
@@ -204,7 +213,14 @@ const DesktopView = ({ data, search, setSearch, statusFilter, setStatusFilter, d
                 <h1 className="text-2xl font-semibold text-gray-900">Daftar Pengajuan</h1>
                 <p className="mt-2 text-sm text-gray-700">Kelola data pengajuan pembiayaan</p>
             </div>
-            <div className="mt-4 sm:ml-16 sm:mt-0 sm:flex-none">
+            <div className="mt-4 sm:ml-16 sm:mt-0 sm:flex-none flex gap-3">
+                <button
+                    onClick={() => router.push('/pengajuan/history')}
+                    className="flex items-center gap-2 rounded-md bg-white px-3 py-2 text-center text-sm font-semibold text-indigo-600 shadow-sm ring-1 ring-inset ring-indigo-200 hover:bg-indigo-50"
+                >
+                    <History className="w-4 h-4" />
+                    History
+                </button>
                 <button
                     onClick={() => router.push('/pengajuan/create')}
                     className="block rounded-md bg-indigo-600 px-3 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"

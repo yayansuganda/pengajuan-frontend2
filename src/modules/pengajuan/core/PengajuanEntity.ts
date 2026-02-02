@@ -59,6 +59,7 @@ export interface Pengajuan {
         name: string;
         description?: string;
     };
+    kategori_pembiayaan?: string; // Macro or Micro
     maksimal_jangka_waktu_usia?: number;
     jangka_waktu?: number;
     maksimal_pembiayaan?: number;
@@ -80,6 +81,8 @@ export interface Pengajuan {
     flagging_url?: string;
     surat_pernyataan_beda_url?: string;
     karip_buku_asabri_url?: string;
+    surat_permohonan_anggota_url?: string;
+    sk_pensiun_url?: string; // SK Pensiun (Required)
     disbursement_proof_url?: string;
     shipping_receipt_url?: string;
 
