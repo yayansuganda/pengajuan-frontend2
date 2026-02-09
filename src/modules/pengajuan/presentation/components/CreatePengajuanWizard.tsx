@@ -13,6 +13,7 @@ import { PotonganJangkaWaktuRepositoryImpl } from '@/modules/potongan-jangka-wak
 import { PotonganJangkaWaktu } from '@/modules/potongan-jangka-waktu/core/Entity';
 import { SettingRepositoryImpl } from '@/modules/settings/data/RepositoryImpl';
 import { Setting } from '@/modules/settings/core/Entity';
+import { PengecekanRepositoryImpl } from '@/modules/pengecekan/data/PengecekanRepositoryImpl';
 
 const STEPS = [
     { number: 1, title: 'Data Pensiun', icon: Briefcase, description: 'Pelayanan & Bank' },
@@ -142,6 +143,9 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
 
     // Field errors state for inline validation
     const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
+
+    // NOPEN API loading state
+    const [loadingNopen, setLoadingNopen] = useState(false);
 
     // Debug: Log imagePreviews state changes
     useEffect(() => {
@@ -607,6 +611,62 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
             }
         }
     };
+
+    // Fetch data from Pos Indonesia API when NOPEN is entered
+    const handleNopenBlur = async () => {
+        const nopen = formData.nopen.trim();
+
+        // Only fetch if NOPEN is filled and isPOS
+        if (!nopen || !isPOS) return;
+
+        try {
+            setLoadingNopen(true);
+            const pengecekanRepo = new PengecekanRepositoryImpl();
+            const data = await pengecekanRepo.checkPensiunan(nopen);
+
+            // Auto-fill form fields with API data
+            setFormData(prev => ({
+                ...prev,
+                // Data from API
+                nama_lengkap: data.nama_lengkap || prev.nama_lengkap,
+                jenis_pensiun: data.jenis_pensiun || prev.jenis_pensiun,
+                jenis_dapem: data.jenis_dapem || prev.jenis_dapem,
+                bulan_dapem: data.bulan_dapem || prev.bulan_dapem,
+                status_dapem: data.status_dapem || prev.status_dapem,
+                gaji_bersih: data.gaji_bersih ? data.gaji_bersih.toString() : prev.gaji_bersih,
+                nomor_rekening_giro_pos: data.no_rekening || prev.nomor_rekening_giro_pos,
+                kantor_pos_petugas: data.kantor_bayar || prev.kantor_pos_petugas,
+            }));
+
+            // Show success notification
+            Swal.fire({
+                icon: 'success',
+                title: 'Data Ditemukan!',
+                text: `Data pensiunan ${data.nama_lengkap} berhasil dimuat dari sistem Pos Indonesia.`,
+                timer: 3000,
+                showConfirmButton: false,
+                toast: true,
+                position: 'top-end'
+            });
+
+        } catch (error: any) {
+            console.error('Error fetching NOPEN data:', error);
+
+            // Show error notification
+            Swal.fire({
+                icon: 'error',
+                title: 'Data Tidak Ditemukan',
+                text: error.message || 'Gagal mengambil data dari sistem Pos Indonesia. Silakan isi manual.',
+                timer: 4000,
+                showConfirmButton: false,
+                toast: true,
+                position: 'top-end'
+            });
+        } finally {
+            setLoadingNopen(false);
+        }
+    };
+
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>, fieldName: string, isMultiple: boolean = false) => {
         if (isMultiple) {
@@ -1279,7 +1339,32 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
                     <div className="col-span-full mt-4 mb-2 pt-4 border-t border-gray-100">
                         <h3 className="text-lg font-bold text-gray-900">Data Pensiun (POS)</h3>
                     </div>
-                    {renderInput("Nopen", "nopen", "text", false, "Nomor Pensiun", false)}
+                    {/* NOPEN with API integration */}
+                    <div className="col-span-1">
+                        <label htmlFor="nopen" className={labelClasses}>
+                            Nopen <span className="text-sm text-gray-500">(Nomor Pensiun)</span>
+                        </label>
+                        <div className="relative">
+                            <input
+                                type="text"
+                                name="nopen"
+                                id="nopen"
+                                className={`${inputClasses} ${loadingNopen ? 'pr-10' : ''}`}
+                                placeholder="Masukkan NOPEN untuk auto-fill data"
+                                value={formData.nopen}
+                                onChange={handleChange}
+                                onBlur={handleNopenBlur}
+                            />
+                            {loadingNopen && (
+                                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                                    <Loader2 className="w-5 h-5 text-indigo-600 animate-spin" />
+                                </div>
+                            )}
+                        </div>
+                        <p className="mt-1 text-xs text-gray-500">
+                            💡 Data akan otomatis terisi dari sistem Pos Indonesia setelah input NOPEN
+                        </p>
+                    </div>
                     {renderInput("Jenis Pensiun", "jenis_pensiun")}
                     {renderInput("No Giro Pos", "nomor_rekening_giro_pos", "text", false, "", false)}
 
