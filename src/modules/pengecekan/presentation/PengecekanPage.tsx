@@ -114,13 +114,40 @@ const MobileView = ({ nopen, setNopen, handleSearch, result, hasSearched }: Peng
                                     <h3 className="font-bold text-slate-800 text-sm">Informasi Detail</h3>
                                 </div>
                                 <div className="space-y-4">
-                                    <InfoRowMobile label="Tanggal Lahir" value={d(result.tanggal_lahir)} />
-                                    <InfoRowMobile label="Jenis Kelamin" value={d(result.jenis_kelamin)} />
-                                    <InfoRowMobile label="Jenis Pensiun" value={d(result.jenis_pensiun)} />
-                                    <div className="h-px bg-slate-100 my-2"></div>
-                                    <InfoRowMobile label="Bank" value={d(result.nama_bank)} />
-                                    <InfoRowMobile label="No. Rekening" value={d(result.no_rekening)} />
-                                    <InfoRowMobile label="Alamat" value={d(result.alamat)} />
+                                    <div className="bg-indigo-50 rounded-xl p-3 border border-indigo-100">
+                                        <p className="text-[10px] uppercase tracking-wider text-indigo-600 font-semibold mb-2">Data Pensiun</p>
+                                        <div className="space-y-2">
+                                            <InfoRowMobile label="Jenis Pensiun" value={d(result.jenis_pensiun)} />
+                                            <InfoRowMobile label="Jenis Dapem" value={d(result.jenis_dapem)} />
+                                            <InfoRowMobile label="Mitra" value={d(result.mitra)} />
+                                            <InfoRowMobile label="Periode" value={d(result.bulan_dapem)} />
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-emerald-50 rounded-xl p-3 border border-emerald-100">
+                                        <p className="text-[10px] uppercase tracking-wider text-emerald-600 font-semibold mb-2">Kantor & Lokasi</p>
+                                        <div className="space-y-2">
+                                            <InfoRowMobile label="Kantor Bayar" value={d(result.kantor_bayar)} />
+                                            <InfoRowMobile label="Kode Kantor" value={d(result.kode_kantor)} />
+                                            <InfoRowMobile label="Kode KPRK" value={d(result.kode_kprk)} />
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-amber-50 rounded-xl p-3 border border-amber-100">
+                                        <p className="text-[10px] uppercase tracking-wider text-amber-600 font-semibold mb-2">Rekening Bank</p>
+                                        <div className="space-y-2">
+                                            <InfoRowMobile label="Bank" value={d(result.nama_bank)} />
+                                            <InfoRowMobile label="No. Rekening" value={d(result.no_rekening)} />
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
+                                        <p className="text-[10px] uppercase tracking-wider text-slate-600 font-semibold mb-2">Status & Kode</p>
+                                        <div className="space-y-2">
+                                            <InfoRowMobile label="Status Keaktifan" value={d(result.status_keaktifan)} />
+                                            <InfoRowMobile label="Kode Status" value={d(result.status_dapem)} />
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </>
@@ -288,12 +315,49 @@ const DesktopView = ({ nopen, setNopen, handleSearch, result, hasSearched }: Pen
                             </div>
 
                             <div className="p-6 sm:p-8">
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-8">
-                                    <InfoItem label="Tanggal Lahir" value={d(result.tanggal_lahir)} icon={<Calendar className="h-4 w-4" />} />
-                                    <InfoItem label="Jenis Kelamin" value={d(result.jenis_kelamin)} icon={<User className="h-4 w-4" />} />
-                                    <InfoItem label="Jenis Pensiun" value={d(result.jenis_pensiun)} icon={<Wallet className="h-4 w-4" />} />
-                                    <InfoItem label="Kantor Bayar" value={d(result.kantor_bayar)} icon={<Building className="h-4 w-4" />} />
-                                    <InfoItem label="Alamat" value={d(result.alamat)} icon={<MapPin className="h-4 w-4" />} wide />
+                                <div className="space-y-6">
+                                    {/* Data Pensiun Section */}
+                                    <div>
+                                        <h3 className="text-sm font-bold text-slate-900 mb-4 flex items-center gap-2">
+                                            <Wallet className="h-4 w-4 text-indigo-600" />
+                                            Data Pensiun
+                                        </h3>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-4">
+                                            <InfoItem label="Jenis Pensiun" value={d(result.jenis_pensiun)} icon={<Wallet className="h-4 w-4" />} />
+                                            <InfoItem label="Jenis Dapem" value={d(result.jenis_dapem)} icon={<Wallet className="h-4 w-4" />} />
+                                            <InfoItem label="Mitra" value={d(result.mitra)} icon={<Building className="h-4 w-4" />} />
+                                            <InfoItem label="Periode" value={d(result.bulan_dapem)} icon={<Calendar className="h-4 w-4" />} />
+                                        </div>
+                                    </div>
+
+                                    <div className="h-px bg-slate-200"></div>
+
+                                    {/* Kantor & Lokasi Section */}
+                                    <div>
+                                        <h3 className="text-sm font-bold text-slate-900 mb-4 flex items-center gap-2">
+                                            <Building className="h-4 w-4 text-emerald-600" />
+                                            Kantor & Lokasi
+                                        </h3>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-4">
+                                            <InfoItem label="Kantor Bayar" value={d(result.kantor_bayar)} icon={<Building className="h-4 w-4" />} />
+                                            <InfoItem label="Kode Kantor" value={d(result.kode_kantor)} icon={<Building className="h-4 w-4" />} />
+                                            <InfoItem label="Kode KPRK" value={d(result.kode_kprk)} icon={<Building className="h-4 w-4" />} />
+                                        </div>
+                                    </div>
+
+                                    <div className="h-px bg-slate-200"></div>
+
+                                    {/* Status Section */}
+                                    <div>
+                                        <h3 className="text-sm font-bold text-slate-900 mb-4 flex items-center gap-2">
+                                            <AlertCircle className="h-4 w-4 text-amber-600" />
+                                            Status & Kode
+                                        </h3>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+                                            <InfoItem label="Status Keaktifan" value={d(result.status_keaktifan)} icon={<AlertCircle className="h-4 w-4" />} />
+                                            <InfoItem label="Kode Status" value={d(result.status_dapem)} icon={<AlertCircle className="h-4 w-4" />} />
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
