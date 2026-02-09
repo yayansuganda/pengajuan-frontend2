@@ -3,6 +3,7 @@ export interface PotonganJangkaWaktu {
     min_bulan: number;
     max_bulan: number;
     potongan_persen: number;
+    is_pos: boolean; // Flag untuk membedakan POS atau non-POS
     description?: string;
     is_active: boolean;
     is_view: boolean;
@@ -15,6 +16,7 @@ export interface CreatePotonganJangkaWaktuDTO {
     min_bulan: number;
     max_bulan: number;
     potongan_persen: number;
+    is_pos?: boolean;
     description?: string;
     is_active?: boolean;
     is_view?: boolean;
@@ -24,6 +26,7 @@ export interface UpdatePotonganJangkaWaktuDTO {
     min_bulan: number;
     max_bulan: number;
     potongan_persen: number;
+    is_pos?: boolean;
     description?: string;
     is_active?: boolean;
     is_view?: boolean;

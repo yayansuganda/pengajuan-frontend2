@@ -295,7 +295,7 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
                         ...prev,
                         // Data Diri
                         nik: data.nik || '',
-                        nama_lengkap: data.name || '',
+                        nama_lengkap: data.nama_lengkap || '',
                         jenis_kelamin: data.jenis_kelamin || 'Laki-laki',
                         tempat_lahir: data.tempat_lahir || '',
                         tanggal_lahir: data.tanggal_lahir || '',
@@ -390,9 +390,8 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
 
             // Only set if positive
             if (maksJangkaWaktu > 0) {
-                // Convert back to years for display
-                const years = Math.floor(maksJangkaWaktu / 12);
-                setFormData(prev => ({ ...prev, maksimal_jangka_waktu_usia: years.toString() }));
+                // Use months directly
+                setFormData(prev => ({ ...prev, maksimal_jangka_waktu_usia: maksJangkaWaktu.toString() }));
             } else {
                 setFormData(prev => ({ ...prev, maksimal_jangka_waktu_usia: '0' }));
             }
@@ -405,13 +404,12 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
         const maksJangkaWaktu = parseInt(formData.maksimal_jangka_waktu_usia) || 0;
 
         if (gajiTersedia > 0 && maksJangkaWaktu > 0) {
-            // Calculate: Gaji Tersedia * Maks Jangka Waktu (in years) * 12 months
-            const maksPembiayaan = gajiTersedia * maksJangkaWaktu * 12;
+            // Calculate: Gaji Tersedia * Maks Jangka Waktu (in months)
+            const maksPembiayaan = gajiTersedia * maksJangkaWaktu;
 
             console.log('💰 Maks Pembiayaan Calculation:', {
                 gajiTersedia,
-                maksJangkaWaktu: `${maksJangkaWaktu} tahun`,
-                maksJangkaWaktuBulan: maksJangkaWaktu * 12,
+                maksJangkaWaktu: `${maksJangkaWaktu} bulan`,
                 maksPembiayaan
             });
 

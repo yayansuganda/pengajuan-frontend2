@@ -92,7 +92,7 @@ export default function PengajuanHistoryPage() {
                 if (user?.unit) {
                     filteredByUnit = allData.filter((item: Pengajuan) => {
                         const match = item.unit === user.unit;
-                        console.log(`  Item: "${item.name}" | item.unit="${item.unit}" | user.unit="${user.unit}" | Match: ${match}`);
+                        console.log(`  Item: "${item.nama_lengkap}" | item.unit="${item.unit}" | user.unit="${user.unit}" | Match: ${match}`);
                         return match;
                     });
                     console.log('- After unit filter:', filteredByUnit.length);
@@ -186,7 +186,7 @@ export default function PengajuanHistoryPage() {
                             >
                                 <div className="flex items-start justify-between mb-3">
                                     <div className="flex-1">
-                                        <h3 className="font-semibold text-slate-800 text-sm mb-1">{item.name}</h3>
+                                        <h3 className="font-semibold text-slate-800 text-sm mb-1">{item.nama_lengkap}</h3>
                                         <p className="text-xs text-slate-500">NIK: {item.nik}</p>
                                         {item.unit && (
                                             <p className="text-xs text-slate-500">Unit: {item.unit}</p>
@@ -277,7 +277,7 @@ export default function PengajuanHistoryPage() {
                                 <tr key={item.id} className="hover:bg-gray-50">
                                     <td className="whitespace-nowrap py-4 pl-4 pr-3">
                                         <div>
-                                            <div className="font-medium text-gray-900">{item.name}</div>
+                                            <div className="font-medium text-gray-900">{item.nama_lengkap}</div>
                                             <div className="text-sm text-gray-500">NIK: {item.nik}</div>
                                         </div>
                                     </td>

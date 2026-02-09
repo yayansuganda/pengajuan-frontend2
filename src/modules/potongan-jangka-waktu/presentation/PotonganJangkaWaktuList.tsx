@@ -73,11 +73,17 @@ const MobileView = ({ data, openCreateModal, openEditModal, handleDelete }: List
                                     </div>
                                 </div>
                                 <div>
-                                    <p className="text-[10px] uppercase text-slate-400 font-semibold mb-0.5">Status</p>
-                                    <span className={`text-xs font-bold ${item.is_active ? 'text-emerald-600' : 'text-slate-500'}`}>
-                                        {item.is_active ? 'Aktif' : 'Nonaktif'}
+                                    <p className="text-[10px] uppercase text-slate-400 font-semibold mb-0.5">Jenis</p>
+                                    <span className={`text-xs font-bold px-2 py-0.5 rounded ${item.is_pos ? 'bg-blue-50 text-blue-700' : 'bg-slate-100 text-slate-700'}`}>
+                                        {item.is_pos ? 'POS' : 'Non-POS'}
                                     </span>
                                 </div>
+                            </div>
+                            <div className="mt-2">
+                                <p className="text-[10px] uppercase text-slate-400 font-semibold mb-0.5">Status</p>
+                                <span className={`text-xs font-bold ${item.is_active ? 'text-emerald-600' : 'text-slate-500'}`}>
+                                    {item.is_active ? 'Aktif' : 'Nonaktif'}
+                                </span>
                             </div>
                         </div>
                     ))
@@ -119,6 +125,7 @@ const DesktopView = ({
                         <tr>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rentang Waktu</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Potongan</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jenis</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Deskripsi</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                             <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
@@ -126,7 +133,7 @@ const DesktopView = ({
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
                         {data.length === 0 ? (
-                            <tr><td colSpan={5} className="px-6 py-12 text-center text-gray-500">Tidak ada data</td></tr>
+                            <tr><td colSpan={7} className="px-6 py-12 text-center text-gray-500">Tidak ada data</td></tr>
                         ) : (
                             data.map((item) => (
                                 <tr key={item.id} className="hover:bg-gray-50">
@@ -143,6 +150,14 @@ const DesktopView = ({
                                                 {item.potongan_persen}%
                                             </span>
                                         </div>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                        <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${item.is_pos
+                                            ? 'bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-600/20'
+                                            : 'bg-slate-50 text-slate-700 ring-1 ring-inset ring-slate-600/20'
+                                            }`}>
+                                            {item.is_pos ? '📮 POS' : '🏦 Non-POS'}
+                                        </span>
                                     </td>
                                     <td className="px-6 py-4 text-sm text-gray-500">{item.description || '-'}</td>
                                     <td className="px-6 py-4 whitespace-nowrap">
@@ -183,7 +198,7 @@ export const PotonganJangkaWaktuList: React.FC = () => {
     const [limit] = useState(100);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingItem, setEditingItem] = useState<PotonganJangkaWaktu | null>(null);
-    const [formData, setFormData] = useState({ min_bulan: 0, max_bulan: 0, potongan_persen: 0, description: '', is_active: true });
+    const [formData, setFormData] = useState({ min_bulan: 0, max_bulan: 0, potongan_persen: 0, is_pos: false, description: '', is_active: true });
 
     useEffect(() => {
         if (user && user.role !== 'super-admin') { router.push('/dashboard'); return; }
@@ -218,15 +233,22 @@ export const PotonganJangkaWaktuList: React.FC = () => {
         }
     };
 
-    const openCreateModal = () => { setEditingItem(null); setFormData({ min_bulan: 0, max_bulan: 0, potongan_persen: 0, description: '', is_active: true }); setIsModalOpen(true); };
-    const openEditModal = (item: PotonganJangkaWaktu) => { setEditingItem(item); setFormData({ min_bulan: item.min_bulan || 0, max_bulan: item.max_bulan || 0, potongan_persen: item.potongan_persen || 0, description: item.description || '', is_active: item.is_active ?? true }); setIsModalOpen(true); };
-    const closeModal = () => { setIsModalOpen(false); setEditingItem(null); setFormData({ min_bulan: 0, max_bulan: 0, potongan_persen: 0, description: '', is_active: true }); };
+    const openCreateModal = () => { setEditingItem(null); setFormData({ min_bulan: 0, max_bulan: 0, potongan_persen: 0, is_pos: false, description: '', is_active: true }); setIsModalOpen(true); };
+    const openEditModal = (item: PotonganJangkaWaktu) => { setEditingItem(item); setFormData({ min_bulan: item.min_bulan || 0, max_bulan: item.max_bulan || 0, potongan_persen: item.potongan_persen || 0, is_pos: item.is_pos ?? false, description: item.description || '', is_active: item.is_active ?? true }); setIsModalOpen(true); };
+    const closeModal = () => { setIsModalOpen(false); setEditingItem(null); setFormData({ min_bulan: 0, max_bulan: 0, potongan_persen: 0, is_pos: false, description: '', is_active: true }); };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (formData.min_bulan <= 0 || formData.max_bulan <= 0) { showError('Rentang bulan harus lebih dari 0'); return; }
         if (formData.min_bulan > formData.max_bulan) { showError('Bulan minimum tidak boleh lebih besar dari bulan maksimum'); return; }
         if (formData.potongan_persen <= 0 || formData.potongan_persen > 100) { showError('Potongan persen harus antara 0-100'); return; }
+
+        // Debug logging
+        console.log('=== FRONTEND DEBUG ===');
+        console.log('FormData:', formData);
+        console.log('is_pos value:', formData.is_pos);
+        console.log('=====================');
+
         try {
             showLoading(editingItem ? 'Mengupdate data...' : 'Menambahkan data...');
             if (editingItem) { await repository.update(editingItem.id, formData as UpdatePotonganJangkaWaktuDTO); hideLoading(); await showSuccess('Data berhasil diupdate'); }
@@ -278,6 +300,10 @@ export const PotonganJangkaWaktuList: React.FC = () => {
                                         <label className="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wide">Deskripsi</label>
                                         <textarea rows={3} value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} className="w-full px-4 py-2.5 text-sm text-gray-900 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none" />
                                     </div>
+                                    <label className="flex items-center gap-2 cursor-pointer p-2 bg-slate-50 rounded-lg">
+                                        <input type="checkbox" checked={formData.is_pos} onChange={(e) => setFormData({ ...formData, is_pos: e.target.checked })} className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500" />
+                                        <span className="text-sm font-medium text-slate-700">Untuk POS</span>
+                                    </label>
                                     <label className="flex items-center gap-2 cursor-pointer p-2 bg-slate-50 rounded-lg">
                                         <input type="checkbox" checked={formData.is_active} onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })} className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500" />
                                         <span className="text-sm font-medium text-slate-700">Status Aktif</span>

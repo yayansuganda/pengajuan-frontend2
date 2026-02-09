@@ -358,9 +358,24 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                                 )}
                             </div>
                         </div>
-                        <h1 className="text-emerald-900 text-xl font-bold mb-1">{pengajuan.name}</h1>
+                        <h1 className="text-emerald-900 text-xl font-bold mb-1">{pengajuan.nama_lengkap}</h1>
                         <p className="text-emerald-700 text-xs">{pengajuan.nik}</p>
                     </div>
+
+                    {/* Rejection Reason Alert - Mobile */}
+                    {pengajuan.status === 'Ditolak' && pengajuan.reject_reason && (
+                        <div className="mb-4 px-2">
+                            <div className="bg-rose-50 border-l-4 border-rose-500 rounded-lg p-4">
+                                <div className="flex items-start gap-3">
+                                    <XCircle className="w-5 h-5 text-rose-500 flex-shrink-0 mt-0.5" />
+                                    <div className="flex-1">
+                                        <h3 className="text-sm font-bold text-rose-900 mb-1">Alasan Penolakan</h3>
+                                        <p className="text-xs text-rose-800 leading-relaxed">{pengajuan.reject_reason}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
                     {/* Main Card */}
                     <div className="bg-white rounded-3xl shadow-xl shadow-slate-900/10 p-5">
@@ -752,7 +767,7 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                         </div>
 
                         <div className="space-y-2">
-                            <h1 className="text-2xl sm:text-3xl font-bold">{pengajuan.name}</h1>
+                            <h1 className="text-2xl sm:text-3xl font-bold">{pengajuan.nama_lengkap}</h1>
                             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-white/70 text-sm">
                                 <span className="flex items-center gap-1.5"><CreditCard className="h-3.5 w-3.5" /> {pengajuan.nik}</span>
                                 <span className="flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5" /> {new Date(pengajuan.created_at).toLocaleDateString('id-ID', { dateStyle: 'long' })}</span>
@@ -760,6 +775,23 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                         </div>
                     </div>
                 </div >
+
+                {/* Rejection Reason Alert - Desktop */}
+                {pengajuan.status === 'Ditolak' && pengajuan.reject_reason && (
+                    <div className="bg-rose-50 border-l-4 border-rose-500 rounded-xl p-5 shadow-sm">
+                        <div className="flex items-start gap-4">
+                            <div className="flex-shrink-0">
+                                <div className="w-10 h-10 bg-rose-100 rounded-full flex items-center justify-center">
+                                    <XCircle className="w-6 h-6 text-rose-600" />
+                                </div>
+                            </div>
+                            <div className="flex-1">
+                                <h3 className="text-base font-bold text-rose-900 mb-2">Alasan Penolakan</h3>
+                                <p className="text-sm text-rose-800 leading-relaxed">{pengajuan.reject_reason}</p>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 {/* Financial Summary */}
                 < div className="grid grid-cols-2 lg:grid-cols-4 gap-3" >
@@ -781,7 +813,7 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                             <div className="space-y-8">
                                 {/* Personal Info */}
                                 <Section title="Informasi Pribadi" icon={<User className="h-5 w-5 text-indigo-600" />}>
-                                    <Field label="Nama Lengkap" value={pengajuan.name} />
+                                    <Field label="Nama Lengkap" value={pengajuan.nama_lengkap} />
                                     <Field label="NIK" value={pengajuan.nik} />
                                     <Field label="Jenis Kelamin" value={d(pengajuan.jenis_kelamin)} />
                                     <Field label="Tempat Lahir" value={d(pengajuan.tempat_lahir)} />
@@ -1027,7 +1059,7 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
 
                         {/* Info Nama & Detail */}
                         <div className="space-y-2">
-                            <h1 className="text-2xl sm:text-3xl font-bold">{pengajuan.name}</h1>
+                            <h1 className="text-2xl sm:text-3xl font-bold">{pengajuan.nama_lengkap}</h1>
                             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-white/70 text-sm">
                                 <span className="flex items-center gap-1.5"><CreditCard className="h-3.5 w-3.5" /> {pengajuan.nik}</span>
                                 <span className="flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5" /> {new Date(pengajuan.created_at).toLocaleDateString('id-ID', { dateStyle: 'long' })}</span>
@@ -1035,6 +1067,23 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                         </div>
                     </div>
                 </div>
+
+                {/* Rejection Reason Alert - Desktop (Second View) */}
+                {pengajuan.status === 'Ditolak' && pengajuan.reject_reason && (
+                    <div className="bg-rose-50 border-l-4 border-rose-500 rounded-xl p-5 shadow-sm">
+                        <div className="flex items-start gap-4">
+                            <div className="flex-shrink-0">
+                                <div className="w-10 h-10 bg-rose-100 rounded-full flex items-center justify-center">
+                                    <XCircle className="w-6 h-6 text-rose-600" />
+                                </div>
+                            </div>
+                            <div className="flex-1">
+                                <h3 className="text-base font-bold text-rose-900 mb-2">Alasan Penolakan</h3>
+                                <p className="text-sm text-rose-800 leading-relaxed">{pengajuan.reject_reason}</p>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 {/* Financial Summary */}
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -1056,7 +1105,7 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                             <div className="space-y-8">
                                 {/* Personal Info */}
                                 <Section title="Informasi Pribadi" icon={<User className="h-5 w-5 text-indigo-600" />}>
-                                    <Field label="Nama Lengkap" value={pengajuan.name} />
+                                    <Field label="Nama Lengkap" value={pengajuan.nama_lengkap} />
                                     <Field label="NIK" value={pengajuan.nik} />
                                     <Field label="Jenis Kelamin" value={d(pengajuan.jenis_kelamin)} />
                                     <Field label="Tempat Lahir" value={d(pengajuan.tempat_lahir)} />
