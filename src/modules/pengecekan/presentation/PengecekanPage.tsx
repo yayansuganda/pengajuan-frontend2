@@ -23,11 +23,13 @@ interface PengecekanTemplateProps {
     setNopen: (val: string) => void;
     handleSearch: (e: React.FormEvent) => void;
     result: Pensiunan | null;
+
     hasSearched: boolean;
+    forceVisible?: boolean;
 }
 
-const MobileView = ({ nopen, setNopen, handleSearch, result, hasSearched }: PengecekanTemplateProps) => (
-    <MobileLayoutWrapper>
+const MobileView = ({ nopen, setNopen, handleSearch, result, hasSearched, forceVisible }: PengecekanTemplateProps) => (
+    <MobileLayoutWrapper forceVisible={forceVisible} moduleName={forceVisible ? 'fronting' : 'default'}>
         <div className="pt-6 px-4 pb-24">
             {/* Header & Search */}
             <div className="mb-6">
@@ -401,7 +403,13 @@ const DesktopView = ({ nopen, setNopen, handleSearch, result, hasSearched }: Pen
 
 // --- Main Page Component ---
 
-export const PengecekanPage = () => {
+// --- Main Page Component ---
+interface PengecekanPageProps {
+    viewMode?: 'mobile' | 'desktop' | 'responsive';
+    forceVisible?: boolean;
+}
+
+export const PengecekanPage: React.FC<PengecekanPageProps> = ({ viewMode = 'responsive', forceVisible = false }) => {
     const [nopen, setNopen] = useState('');
     const [result, setResult] = useState<Pensiunan | null>(null);
     const [hasSearched, setHasSearched] = useState(false);
@@ -424,29 +432,34 @@ export const PengecekanPage = () => {
         }
     };
 
+    const isMobileMode = viewMode === 'mobile';
+
     return (
         <>
             {/* Mobile View */}
-            <div className="md:hidden">
+            <div className={isMobileMode ? '' : 'md:hidden'}>
                 <MobileView
                     nopen={nopen}
                     setNopen={setNopen}
                     handleSearch={handleSearch}
                     result={result}
                     hasSearched={hasSearched}
+                    forceVisible={isMobileMode}
                 />
             </div>
 
             {/* Desktop View */}
-            <div className="hidden md:block">
-                <DesktopView
-                    nopen={nopen}
-                    setNopen={setNopen}
-                    handleSearch={handleSearch}
-                    result={result}
-                    hasSearched={hasSearched}
-                />
-            </div>
+            {!isMobileMode && (
+                <div className="hidden md:block">
+                    <DesktopView
+                        nopen={nopen}
+                        setNopen={setNopen}
+                        handleSearch={handleSearch}
+                        result={result}
+                        hasSearched={hasSearched}
+                    />
+                </div>
+            )}
         </>
     );
 };

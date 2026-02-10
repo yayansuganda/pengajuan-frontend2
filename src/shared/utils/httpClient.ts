@@ -64,9 +64,19 @@ function createHttpClient(): AxiosInstance {
 
             if (error.response?.status === 401) {
                 if (typeof window !== 'undefined') {
-                    localStorage.removeItem('token');
-                    localStorage.removeItem('user');
-                    window.location.href = '/login';
+                    // CHECK: Jangan redirect kalau di route fronting!
+                    const currentPath = window.location.pathname;
+                    const isFrontingRoute = currentPath.startsWith('/fronting');
+
+                    if (!isFrontingRoute) {
+                        // Only redirect to login if NOT in fronting module
+                        localStorage.removeItem('token');
+                        localStorage.removeItem('user');
+                        window.location.href = '/login';
+                    } else {
+                        // In fronting module, just log the error, don't redirect
+                        console.log('[httpClient] 401 in fronting route, skipping redirect to login');
+                    }
                 }
             }
 

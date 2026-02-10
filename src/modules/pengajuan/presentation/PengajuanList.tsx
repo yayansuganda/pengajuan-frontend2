@@ -6,6 +6,7 @@ import { Plus, Search, Calendar, FileText, ChevronRight, Briefcase, History } fr
 import { Pengajuan, PengajuanFilter } from '../core/PengajuanEntity';
 import { PengajuanRepositoryImpl } from '../data/PengajuanRepositoryImpl';
 import { useAuth } from '@/modules/auth/presentation/useAuth';
+import { getFrontingUser } from '@/modules/fronting/core/frontingAuth';
 // Components
 import { MobileLayoutWrapper } from '@/modules/pengajuan/presentation/components/MobileLayoutWrapper';
 
@@ -23,6 +24,7 @@ interface ViewProps {
     isLoading: boolean;
     router: any;
     user: any;
+    forceVisible?: boolean;
 }
 
 const STATUS_OPTIONS = [
@@ -69,8 +71,8 @@ const formatDate = (dateString: string) => {
 };
 
 // --- Mobile View ---
-const MobileView = ({ data, search, setSearch, statusFilter, setStatusFilter, dateFilter, setDateFilter, isLoading, router }: ViewProps) => (
-    <MobileLayoutWrapper showBackground={false}>
+const MobileView = ({ data, search, setSearch, statusFilter, setStatusFilter, dateFilter, setDateFilter, isLoading, router, user, forceVisible }: ViewProps) => (
+    <MobileLayoutWrapper showBackground={false} forceVisible={forceVisible} moduleName={forceVisible ? 'fronting' : 'default'}>
         {/* Layer 1: Full Page Background */}
         <div className="fixed inset-0 z-0 pointer-events-none">
             <img src="/images/loan_header_bg.png" alt="bg" className="w-full h-full object-cover" />
@@ -100,6 +102,8 @@ const MobileView = ({ data, search, setSearch, statusFilter, setStatusFilter, da
                         </div>
                     </div>
                 </div>
+                
+                
 
                 <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 space-y-3">
                     {/* Search Bar */}
@@ -151,11 +155,23 @@ const MobileView = ({ data, search, setSearch, statusFilter, setStatusFilter, da
                         {[1, 2, 3, 4].map(i => <div key={i} className="h-20 bg-white rounded-lg border border-slate-100 animate-pulse" />)}
                     </div>
                 ) : data.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-16 text-center">
+                    <div className="flex flex-col items-center justify-center py-16 text-center px-4">
                         <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-3">
                             <FileText className="w-8 h-8 text-slate-300" />
                         </div>
-                        <p className="text-slate-500 text-sm font-medium">Data tidak ditemukan</p>
+                        <p className="text-slate-700 text-sm font-semibold mb-1">Belum ada pengajuan</p>
+                        <p className="text-slate-500 text-xs mb-4">
+                            {(user?.role === 'petugas-pos' || user?.role === 'admin-pos') 
+                                ? 'Buat pengajuan baru untuk melihat data di sini'
+                                : 'Data tidak ditemukan'}
+                        </p>
+                        <button
+                            onClick={() => router.push('/pengajuan/create')}
+                            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors"
+                        >
+                            <Plus className="w-4 h-4" />
+                            Buat Pengajuan
+                        </button>
                     </div>
                 ) : (
                     data.map((item) => (
@@ -206,12 +222,30 @@ const MobileView = ({ data, search, setSearch, statusFilter, setStatusFilter, da
 );
 
 // --- Desktop View ---
-const DesktopView = ({ data, search, setSearch, statusFilter, setStatusFilter, dateFilter, setDateFilter, isLoading, router }: ViewProps) => (
+const DesktopView = ({ data, search, setSearch, statusFilter, setStatusFilter, dateFilter, setDateFilter, isLoading, router, user }: ViewProps) => (
     <div className="px-4 sm:px-6 lg:px-8">
         <div className="sm:flex sm:items-center mb-6">
             <div className="sm:flex-auto">
                 <h1 className="text-2xl font-semibold text-gray-900">Daftar Pengajuan</h1>
                 <p className="mt-2 text-sm text-gray-700">Kelola data pengajuan pembiayaan</p>
+                
+                {/* NIPPOS Filter Badge untuk Petugas Pos */}
+                {(user?.role === 'petugas-pos' || user?.role === 'admin-pos') && (() => {
+                    const frontingUser = getFrontingUser();
+                    return frontingUser?.nippos ? (
+                        <div className="mt-3 inline-flex items-center gap-2 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg px-4 py-2">
+                            <span className="text-lg">🔍</span>
+                            <div>
+                                <p className="text-xs font-semibold text-blue-900">
+                                    Filter Aktif untuk NIPPOS
+                                </p>
+                                <p className="text-xs text-blue-700">
+                                    <span className="font-mono font-bold">{frontingUser.nippos}</span> - {frontingUser.name}
+                                </p>
+                            </div>
+                        </div>
+                    ) : null;
+                })()}
             </div>
             <div className="mt-4 sm:ml-16 sm:mt-0 sm:flex-none flex gap-3">
                 <button
@@ -316,7 +350,12 @@ const DesktopView = ({ data, search, setSearch, statusFilter, setStatusFilter, d
 );
 
 // --- Main Container ---
-export const PengajuanList: React.FC = () => {
+interface PengajuanListProps {
+    viewMode?: 'mobile' | 'desktop' | 'responsive';
+    forceVisible?: boolean;
+}
+
+export const PengajuanList: React.FC<PengajuanListProps> = ({ viewMode = 'responsive', forceVisible = false }) => {
     const router = useRouter();
     const { user } = useAuth();
     const [data, setData] = useState<Pengajuan[]>([]);
@@ -326,10 +365,17 @@ export const PengajuanList: React.FC = () => {
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
+        // IMPORTANT: /fronting/pengajuan HARUS fetch data (dengan filter NIPPOS)
+        // ONLY skip jika benar-benar tidak ada auth
+        console.log('[PengajuanList] useEffect triggered');
+        console.log('[PengajuanList] Current path:', typeof window !== 'undefined' ? window.location.pathname : 'SSR');
+        console.log('[PengajuanList] User:', user);
+        
         fetchData();
-    }, [statusFilter, dateFilter]); // Fetch immediately on select change
+    }, [statusFilter, dateFilter, user]); // Fetch immediately on select change or user change
 
     useEffect(() => {
+        // Debounce search untuk semua routes (termasuk /fronting/pengajuan)
         const timer = setTimeout(() => {
             fetchData(); // Fetch debounce on text search
         }, 500);
@@ -337,21 +383,79 @@ export const PengajuanList: React.FC = () => {
     }, [search]);
 
     const fetchData = async () => {
+        console.log('[PengajuanList] 📊 ========== FETCH DATA ==========');
+        console.log('[PengajuanList] Current path:', typeof window !== 'undefined' ? window.location.pathname : 'SSR');
+        console.log('[PengajuanList] User:', user);
+        
+        // FORCE CHECK: Jika di route /fronting/pengajuan, SELALU apply filter NIPPOS
+        const isFrontingRoute = typeof window !== 'undefined' && window.location.pathname.includes('/fronting');
+        console.log('[PengajuanList] Is fronting route?', isFrontingRoute);
+        
         try {
             setIsLoading(true);
             const filter: PengajuanFilter = {};
             if (search) filter.search = search;
             if (statusFilter) filter.status = statusFilter;
-            // Assuming backend supports 'date' or we filter client side.
-            // Sending as custom param if supported or just ignoring if not.
-            // If client side filtering needed:
+            
+            // FILTER BY NIPPOS
+            // Prioritas 1: Jika di /fronting route, SELALU ambil dari localStorage
+            // Prioritas 2: Jika role petugas-pos/admin-pos, SELALU ambil dari localStorage
+            const isPetugasPos = user?.role === 'petugas-pos' || user?.role === 'admin-pos';
+            const shouldFilterByNIPPOS = isFrontingRoute || isPetugasPos;
+            
+            console.log('[PengajuanList] Should filter by NIPPOS?', shouldFilterByNIPPOS);
+            console.log('[PengajuanList] Is Petugas Pos role?', isPetugasPos);
+            
+            if (shouldFilterByNIPPOS) {
+                // Ambil NIPPOS dari localStorage
+                const frontingUser = getFrontingUser();
+                console.log('[PengajuanList] ========== LOCALSTORAGE CHECK ==========');
+                console.log('[PengajuanList] fronting_user:', frontingUser);
+                console.log('[PengajuanList] NIPPOS:', frontingUser?.nippos);
+                console.log('[PengajuanList] Name:', frontingUser?.name);
+                
+                if (frontingUser && frontingUser.nippos) {
+                    console.log('[PengajuanList] ✅ APPLYING NIPPOS FILTER:', frontingUser.nippos);
+                    filter.petugas_nippos = frontingUser.nippos;
+                } else {
+                    console.error('[PengajuanList] ❌❌❌ NO NIPPOS IN LOCALSTORAGE! ❌❌❌');
+                    console.error('[PengajuanList] This is the problem! User must access /fronting/?data=... first!');
+                    setData([]);
+                    setIsLoading(false);
+                    return;
+                }
+            }
 
+            console.log('[PengajuanList] 📊 ========== MAKING API REQUEST ==========');
+            console.log('[PengajuanList] Filter object:', JSON.stringify(filter, null, 2));
+            console.log('[PengajuanList] API URL will be: /pengajuan with params:', filter);
+            
             const result = await repository.getPengajuanList(filter);
+            
+            console.log('[PengajuanList] ✅ ========== API RESPONSE ==========');
+            console.log('[PengajuanList] Total items received:', result.length);
+            console.log('[PengajuanList] Raw response:', result);
 
             let filteredResult = result;
             if (dateFilter) {
                 // Client side date filtering as basic implementation
                 filteredResult = result.filter(item => item.created_at.startsWith(dateFilter));
+                console.log('[PengajuanList] 📅 After date filter:', filteredResult.length, 'items');
+            }
+
+            // Debug: Verify filter for Petugas Pos
+            if (user?.role === 'petugas-pos' || user?.role === 'admin-pos') {
+                const frontingUser = getFrontingUser();
+                if (frontingUser?.nippos && filteredResult.length > 0) {
+                    const matchingCount = filteredResult.filter(item => item.petugas_nippos === frontingUser.nippos).length;
+                    const nullCount = filteredResult.filter(item => !item.petugas_nippos).length;
+                    console.log('[PengajuanList] 🔍 Filter Verification:');
+                    console.log('  - Expected NIPPOS:', frontingUser.nippos);
+                    console.log('  - Total items:', filteredResult.length);
+                    console.log('  - Matching NIPPOS:', matchingCount);
+                    console.log('  - NULL NIPPOS:', nullCount);
+                    console.log('  - Other NIPPOS:', filteredResult.length - matchingCount - nullCount);
+                }
             }
 
             setData(filteredResult);
@@ -362,12 +466,18 @@ export const PengajuanList: React.FC = () => {
         }
     };
 
-    const viewProps = { data, search, setSearch, statusFilter, setStatusFilter, dateFilter, setDateFilter, isLoading, router, user };
+    const viewProps = { data, search, setSearch, statusFilter, setStatusFilter, dateFilter, setDateFilter, isLoading, router, user, forceVisible };
+
+    const isMobileMode = viewMode === 'mobile';
 
     return (
         <>
-            <div className="md:hidden"><MobileView {...viewProps} /></div>
-            <div className="hidden md:block"><DesktopView {...viewProps} /></div>
+            <div className={isMobileMode ? '' : 'md:hidden'}>
+                <MobileView {...viewProps} />
+            </div>
+            {!isMobileMode && (
+                <div className="hidden md:block"><DesktopView {...viewProps} /></div>
+            )}
         </>
     );
 };

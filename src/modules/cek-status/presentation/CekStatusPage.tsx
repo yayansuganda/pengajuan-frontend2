@@ -29,11 +29,13 @@ interface CekStatusTemplateProps {
     setNik: (val: string) => void;
     handleSearch: (e: React.FormEvent) => void;
     results: PengajuanStatusResult[];
+
     hasSearched: boolean;
+    forceVisible?: boolean;
 }
 
-const MobileView = ({ nik, setNik, handleSearch, results, hasSearched }: CekStatusTemplateProps) => (
-    <MobileLayoutWrapper>
+const MobileView = ({ nik, setNik, handleSearch, results, hasSearched, forceVisible }: CekStatusTemplateProps) => (
+    <MobileLayoutWrapper forceVisible={forceVisible} moduleName={forceVisible ? 'fronting' : 'default'}>
         <div className="pt-6 px-4 pb-24">
             {/* Header & Search */}
             <div className="mb-6">
@@ -357,7 +359,13 @@ const DesktopStatusCard = ({ data }: { data: PengajuanStatusResult }) => {
 
 // --- Main Page Component ---
 
-export const CekStatusPage = () => {
+// --- Main Page Component ---
+interface CekStatusPageProps {
+    viewMode?: 'mobile' | 'desktop' | 'responsive';
+    forceVisible?: boolean;
+}
+
+export const CekStatusPage: React.FC<CekStatusPageProps> = ({ viewMode = 'responsive', forceVisible = false }) => {
     const [nik, setNik] = useState('');
     const [results, setResults] = useState<PengajuanStatusResult[]>([]);
     const [hasSearched, setHasSearched] = useState(false);
@@ -380,29 +388,34 @@ export const CekStatusPage = () => {
         }
     };
 
+    const isMobileMode = viewMode === 'mobile';
+
     return (
         <>
             {/* Mobile View */}
-            <div className="md:hidden">
+            <div className={isMobileMode ? '' : 'md:hidden'}>
                 <MobileView
                     nik={nik}
                     setNik={setNik}
                     handleSearch={handleSearch}
                     results={results}
                     hasSearched={hasSearched}
+                    forceVisible={isMobileMode}
                 />
             </div>
 
             {/* Desktop View */}
-            <div className="hidden md:block">
-                <DesktopView
-                    nik={nik}
-                    setNik={setNik}
-                    handleSearch={handleSearch}
-                    results={results}
-                    hasSearched={hasSearched}
-                />
-            </div>
+            {!isMobileMode && (
+                <div className="hidden md:block">
+                    <DesktopView
+                        nik={nik}
+                        setNik={setNik}
+                        handleSearch={handleSearch}
+                        results={results}
+                        hasSearched={hasSearched}
+                    />
+                </div>
+            )}
         </>
     );
 };

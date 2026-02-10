@@ -70,6 +70,18 @@ export interface Pengajuan {
     nominal_terima?: number;
     kantor_pos_petugas?: string;
 
+    // Data Petugas POS (from fronting_user)
+    petugas_nippos?: string;
+    petugas_name?: string;
+    petugas_account_no?: string;
+    petugas_phone?: string;
+    petugas_kcu_code?: string;
+    petugas_kcu_name?: string;
+    petugas_kc_code?: string;
+    petugas_kc_name?: string;
+    petugas_kcp_code?: string;
+    petugas_kcp_name?: string;
+
     // Status & Metadata
     approval?: string;
 
@@ -113,6 +125,7 @@ export interface Pengajuan {
 export interface PengajuanFilter {
     status?: string;
     search?: string;
+    petugas_nippos?: string;
     limit?: number;
     page?: number;
 }

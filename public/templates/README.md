@@ -1,33 +1,41 @@
-# Template PDF untuk Dokumen Persetujuan
+# Templates Folder
 
-Folder ini berisi template PDF yang dapat didownload oleh Officer untuk diisi.
+Folder ini berisi file template dokumen yang dapat didownload oleh user.
 
-## File Template:
+## File yang Diperlukan:
 
-1. **template-pengajuan-permohonan.pdf**
-   - Template untuk Formulir Pengajuan Permohonan
-   - Berisi form yang harus diisi oleh pemohon
+### 1. SURAT_PERMOHONAN_ANGGOTA_PEMBIAYAAN.pdf
+**Deskripsi**: Template Surat Permohonan Anggota & Pembiayaan untuk pengajuan pembiayaan pensiunan.
 
-2. **template-dokumen-akad.pdf**
-   - Template untuk Dokumen Akad (Surat Perjanjian)
-   - Berisi perjanjian antara koperasi dan pemohon
+**Cara Menambahkan**:
+1. Dapatkan file PDF template dari tim admin/legal
+2. Rename file menjadi: `SURAT_PERMOHONAN_ANGGOTA_PEMBIAYAAN.pdf`
+3. Simpan di folder ini: `/public/templates/`
+4. File akan otomatis accessible di: `http://localhost:3000/templates/SURAT_PERMOHONAN_ANGGOTA_PEMBIAYAAN.pdf`
 
-3. **template-flagging.pdf**
-   - Template untuk Dokumen Flagging
-   - Berisi informasi flagging pemohon
+## Status Saat Ini:
 
-4. **template-surat-pernyataan-beda.pdf**
-   - Template untuk Surat Pernyataan Beda Penerima
-   - Berisi pernyataan ahli waris jika penerima berbeda
+❌ **SURAT_PERMOHONAN_ANGGOTA_PEMBIAYAAN.pdf** - Belum tersedia
 
-## Cara Menggunakan:
+Jika user klik "Download Template", akan muncul popup info bahwa template belum tersedia.
 
-1. Officer download template yang dibutuhkan
-2. Isi template sesuai dengan data pemohon
-3. Simpan sebagai PDF
-4. Upload kembali ke sistem
+## Cara Menambahkan Template Baru:
+
+1. Simpan file PDF ke folder `/public/templates/`
+2. Update file `CreatePengajuanWizard.tsx` di bagian `UPLOAD_FIELDS`:
+   ```typescript
+   { 
+     name: 'upload_nama_field', 
+     label: 'Nama Dokumen', 
+     hasTemplate: true,  // Set true untuk menampilkan button download
+     required: true 
+   }
+   ```
+3. Update link download di render function jika nama file berbeda
 
 ## Catatan:
 
-File-file template ini saat ini masih kosong (placeholder).
-Anda perlu mengganti file-file ini dengan template PDF yang sebenarnya sesuai dengan format yang digunakan oleh koperasi Anda.
+- File di folder `/public/` dapat diakses langsung via URL tanpa `/public/` prefix
+- Contoh: file `/public/templates/file.pdf` → URL: `/templates/file.pdf`
+- Maksimal ukuran file di Next.js: ~50MB (tergantung hosting)
+- Format yang disupport: PDF, DOC, DOCX, XLS, XLSX

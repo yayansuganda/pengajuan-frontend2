@@ -319,8 +319,11 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
         { title: 'Resi Pengiriman Berkas', desc: 'Bukti Pengiriman Fisik', url: pengajuan.shipping_receipt_url, key: 'shipping_receipt_url', uploadInfo: { type: 'shipping', label: 'Resi Pengiriman' } },
     ];
 
+    // Check if user is Petugas Pos or Admin Pos to use fronting navigation
+    const isPetugasPos = user?.role === 'petugas-pos' || user?.role === 'admin-pos';
+    
     return (
-        <MobileLayoutWrapper showBackground={false}>
+        <MobileLayoutWrapper showBackground={false} moduleName={isPetugasPos ? 'fronting' : 'default'}>
             {/* Mobile Layout */}
             <div className="md:hidden">
                 {/* Layer 1: Full Page Background */}

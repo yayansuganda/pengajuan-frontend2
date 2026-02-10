@@ -11,21 +11,45 @@ export const usePengajuan = () => {
     const [error, setError] = useState('');
 
     useEffect(() => {
+        // SKIP fetch kalau di fronting module (no auth)
+        if (typeof window !== 'undefined') {
+            const isFrontingRoute = window.location.pathname.startsWith('/fronting');
+            if (isFrontingRoute) {
+                console.log('[usePengajuan] Skipping fetch in fronting module (no auth required)');
+                setLoading(false);
+                return;
+            }
+        }
         fetchPengajuan();
     }, []);
 
     const fetchPengajuan = async () => {
+        // Check if in fronting module
+        const isFrontingRoute = typeof window !== 'undefined' && window.location.pathname.startsWith('/fronting');
+
         try {
-            showLoading('Memuat data pengajuan...');
+            if (!isFrontingRoute) {
+                showLoading('Memuat data pengajuan...');
+            }
             setLoading(true);
             const data = await pengajuanRepository.getPengajuanList();
             setPengajuanList(Array.isArray(data) ? data : []);
-            hideLoading();
+            if (!isFrontingRoute) {
+                hideLoading();
+            }
         } catch (err: any) {
-            hideLoading();
+            if (!isFrontingRoute) {
+                hideLoading();
+            }
             const errorMessage = err.message || 'Failed to fetch pengajuan list';
             setError(errorMessage);
-            showError(errorMessage);
+
+            // Don't show error popup in fronting module
+            if (!isFrontingRoute) {
+                showError(errorMessage);
+            } else {
+                console.log('[usePengajuan] Error in fronting module (silent):', errorMessage);
+            }
             console.error(err);
             setPengajuanList([]); // Ensure it's always an array
         } finally {
@@ -34,17 +58,28 @@ export const usePengajuan = () => {
     };
 
     const createPengajuan = async (data: any) => {
+        const isFrontingRoute = typeof window !== 'undefined' && window.location.pathname.startsWith('/fronting');
+
         try {
-            showLoading('Menyimpan pengajuan...');
+            if (!isFrontingRoute) {
+                showLoading('Menyimpan pengajuan...');
+            }
             setLoading(true);
             await pengajuanRepository.createPengajuan(data);
-            hideLoading();
+            if (!isFrontingRoute) {
+                hideLoading();
+            }
             // Optional: Show success message or redirect happens in component
         } catch (err: any) {
-            hideLoading();
+            if (!isFrontingRoute) {
+                hideLoading();
+            }
             const errorMessage = err.response?.data?.error || err.message || 'Gagal menyimpan pengajuan';
             setError(errorMessage);
-            showError(errorMessage);
+
+            if (!isFrontingRoute) {
+                showError(errorMessage);
+            }
             console.error(err);
             throw err; // Re-throw so component knows it failed
         } finally {
@@ -53,16 +88,27 @@ export const usePengajuan = () => {
     };
 
     const updatePengajuan = async (id: string, data: any) => {
+        const isFrontingRoute = typeof window !== 'undefined' && window.location.pathname.startsWith('/fronting');
+
         try {
-            showLoading('Menyimpan perubahan...');
+            if (!isFrontingRoute) {
+                showLoading('Menyimpan perubahan...');
+            }
             setLoading(true);
             await pengajuanRepository.updatePengajuan(id, data);
-            hideLoading();
+            if (!isFrontingRoute) {
+                hideLoading();
+            }
         } catch (err: any) {
-            hideLoading();
+            if (!isFrontingRoute) {
+                hideLoading();
+            }
             const errorMessage = err.response?.data?.error || err.message || 'Gagal menyimpan perubahan';
             setError(errorMessage);
-            showError(errorMessage);
+
+            if (!isFrontingRoute) {
+                showError(errorMessage);
+            }
             console.error(err);
             throw err;
         } finally {

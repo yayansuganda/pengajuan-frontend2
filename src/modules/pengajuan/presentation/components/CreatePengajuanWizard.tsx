@@ -14,6 +14,7 @@ import { PotonganJangkaWaktu } from '@/modules/potongan-jangka-waktu/core/Entity
 import { SettingRepositoryImpl } from '@/modules/settings/data/RepositoryImpl';
 import { Setting } from '@/modules/settings/core/Entity';
 import { PengecekanRepositoryImpl } from '@/modules/pengecekan/data/PengecekanRepositoryImpl';
+import { useAuth } from '@/modules/auth/presentation/useAuth';
 
 const STEPS = [
     { number: 1, title: 'Data Pensiun', icon: Briefcase, description: 'Pelayanan & Bank' },
@@ -84,6 +85,7 @@ import { PengajuanRepositoryImpl } from '@/modules/pengajuan/data/PengajuanRepos
 
 export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ pengajuanId }) => {
     const router = useRouter();
+    const { user } = useAuth();
     const { createPengajuan, updatePengajuan } = usePengajuan();
     const [currentStep, setCurrentStep] = useState(1);
     const [fetchingDetail, setFetchingDetail] = useState(false);
@@ -127,6 +129,18 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
         upload_ktp_pemohon: '', upload_pengajuan_permohonan: '', upload_dokumen_akad: '',
         upload_flagging: '', upload_surat_pernyataan_beda_penerima: '', upload_karip_buku_asabri: '',
         upload_slip_gaji_terakhir: '', upload_sk_pensiun: '', upload_surat_permohonan_anggota: '', upload_borrower_photos: '',
+
+        // Fronting User Data (from localStorage) - for POS
+        petugas_nippos: '',
+        petugas_name: '',
+        petugas_account_no: '',
+        petugas_phone: '',
+        petugas_kcu_code: '',
+        petugas_kcu_name: '',
+        petugas_kc_code: '',
+        petugas_kc_name: '',
+        petugas_kcp_code: '',
+        petugas_kcp_name: '',
     });
 
     // Store file names for display
@@ -224,6 +238,81 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
         fetchMasterData();
         fetchMasterData();
     }, []);
+
+    // Auto-set Jenis Pelayanan to POS if user is Petugas Pos or Admin Pos
+    useEffect(() => {
+        // Only auto-set if:
+        // 1. Not editing existing pengajuan (pengajuanId is not set)
+        // 2. Jenis pelayanan list is loaded
+        // 3. User role is petugas-pos or admin-pos
+        if (pengajuanId || !jenisPelayananList.length) return;
+
+        const isPetugasPos = user?.role === 'petugas-pos' || user?.role === 'admin-pos';
+        if (!isPetugasPos) return;
+
+        // Find POS jenis pelayanan
+        const posJenisPelayanan = jenisPelayananList.find(jp => jp.name?.toUpperCase() === 'POS');
+        
+        if (posJenisPelayanan && formData.jenis_pelayanan_id !== posJenisPelayanan.id.toString()) {
+            console.log('[CreatePengajuanWizard] Auto-setting Jenis Pelayanan to POS for user:', user?.role);
+            setFormData(prev => ({ 
+                ...prev, 
+                jenis_pelayanan_id: posJenisPelayanan.id.toString() 
+            }));
+        }
+    }, [jenisPelayananList, pengajuanId, user, formData.jenis_pelayanan_id]);
+
+    // Auto-fill Petugas Pos data from localStorage (fronting_user)
+    useEffect(() => {
+        // Only for Petugas Pos/Admin Pos and not editing
+        if (pengajuanId) return;
+        
+        const isPetugasPos = user?.role === 'petugas-pos' || user?.role === 'admin-pos';
+        if (!isPetugasPos) return;
+
+        // Get fronting user data from localStorage
+        try {
+            const frontingUserStr = localStorage.getItem('fronting_user');
+            if (!frontingUserStr) {
+                console.warn('[CreatePengajuanWizard] ⚠️ No fronting_user in localStorage');
+                return;
+            }
+            
+            const frontingUser = JSON.parse(frontingUserStr);
+            console.log('[CreatePengajuanWizard] 📋 Auto-filling Petugas Pos data from localStorage:');
+            console.log('  - NIPPOS:', frontingUser.nippos);
+            console.log('  - Name:', frontingUser.name);
+            console.log('  - KCU Name (for Kantor Pos Petugas):', frontingUser.kcu_name);
+            
+            setFormData(prev => {
+                // Only update if not already filled (prevent overwrite)
+                if (prev.petugas_nippos) {
+                    console.log('[CreatePengajuanWizard] ℹ️ Data already filled, skipping...');
+                    return prev;
+                }
+                
+                console.log('[CreatePengajuanWizard] ✅ Filling formData with localStorage data');
+                return {
+                    ...prev,
+                    // Auto-fill kantor_pos_petugas from kcu_name
+                    kantor_pos_petugas: frontingUser.kcu_name || prev.kantor_pos_petugas,
+                    // Save all fronting user data
+                    petugas_nippos: frontingUser.nippos || '',
+                    petugas_name: frontingUser.name || '',
+                    petugas_account_no: frontingUser.account_no || '',
+                    petugas_phone: frontingUser.phone || '',
+                    petugas_kcu_code: frontingUser.kcu_code || '',
+                    petugas_kcu_name: frontingUser.kcu_name || '',
+                    petugas_kc_code: frontingUser.kc_code || '',
+                    petugas_kc_name: frontingUser.kc_name || '',
+                    petugas_kcp_code: frontingUser.kcp_code || '',
+                    petugas_kcp_name: frontingUser.kcp_name || '',
+                };
+            });
+        } catch (error) {
+            console.error('[CreatePengajuanWizard] ❌ Error reading fronting_user from localStorage:', error);
+        }
+    }, [pengajuanId, user, currentStep]); // Tambahkan currentStep untuk re-run saat navigasi
 
     // Fetch existing data for editing
     useEffect(() => {
@@ -557,6 +646,11 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
             setFormData(prev => ({ ...prev, nominal_terima: '' }));
         }
     }, [formData.jumlah_pembiayaan, formData.total_potongan]);
+
+    // Check if user is Petugas Pos or Admin Pos
+    const isPetugasPos = useMemo(() => {
+        return user?.role === 'petugas-pos' || user?.role === 'admin-pos';
+    }, [user?.role]);
 
     // Check if selected jenis pelayanan is POS
     const isPOS = useMemo(() => {
@@ -1119,6 +1213,18 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
                 nominal_terima: parseFloat((formData.nominal_terima || '').replace(/\./g, '')) || 0,
                 kantor_pos_petugas: formData.kantor_pos_petugas,
 
+                // Data Petugas POS (from localStorage fronting_user)
+                petugas_nippos: formData.petugas_nippos || '',
+                petugas_name: formData.petugas_name || '',
+                petugas_account_no: formData.petugas_account_no || '',
+                petugas_phone: formData.petugas_phone || '',
+                petugas_kcu_code: formData.petugas_kcu_code || '',
+                petugas_kcu_name: formData.petugas_kcu_name || '',
+                petugas_kc_code: formData.petugas_kc_code || '',
+                petugas_kc_name: formData.petugas_kc_name || '',
+                petugas_kcp_code: formData.petugas_kcp_code || '',
+                petugas_kcp_name: formData.petugas_kcp_name || '',
+
                 // Files & Metadata
                 ktp_url: formData.upload_ktp_pemohon || '',
                 slip_gaji_url: formData.upload_slip_gaji_terakhir || '',
@@ -1162,8 +1268,16 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
                 timer: 2000
             });
 
-            // Redirect to list
-            router.push('/pengajuan');
+            // Redirect based on user role
+            if (isPetugasPos) {
+                // Petugas Pos / Admin Pos → redirect to fronting page
+                console.log('[CreatePengajuanWizard] ✅ Redirecting Petugas Pos to /fronting');
+                router.push('/fronting');
+            } else {
+                // Other roles → redirect to pengajuan list
+                console.log('[CreatePengajuanWizard] ✅ Redirecting to /pengajuan');
+                router.push('/pengajuan');
+            }
 
         } catch (error: any) {
             console.error('Submit Error:', error);
@@ -1210,7 +1324,7 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
         );
     };
 
-    const renderSelect = (label: string, name: string, options: { value: string; label: string }[], required: boolean = false, loading: boolean = false) => {
+    const renderSelect = (label: string, name: string, options: { value: string; label: string }[], required: boolean = false, loading: boolean = false, disabled: boolean = false) => {
         const hasError = fieldErrors[name];
 
         return (
@@ -1223,10 +1337,10 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
                         name={name}
                         id={name}
                         required={required}
-                        className={`${inputClasses} ${hasError ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
+                        className={`${inputClasses} ${hasError ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''} ${disabled ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                         value={formData[name as keyof typeof formData]}
                         onChange={handleChange}
-                        disabled={loading}
+                        disabled={loading || disabled}
                     >
                         <option value="">{loading ? 'Memuat...' : 'Pilih...'}</option>
                         {options.map(opt => (
@@ -1330,12 +1444,29 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
             <div className="col-span-full mb-2">
                 <h3 className="text-lg font-bold text-gray-900">Data Pelayanan</h3>
             </div>
-            {renderSelect(
-                "Jenis Pelayanan",
-                "jenis_pelayanan_id",
-                jenisPelayananList.map(jp => ({ value: jp.id.toString(), label: jp.name })),
-                true,
-                loadingMasterData
+            {/* Hidden field untuk Petugas Pos / Admin Pos saat create */}
+            {isPetugasPos && !pengajuanId ? (
+                <div className="col-span-1">
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                        <div className="flex items-center gap-2">
+                            <AlertCircle className="w-4 h-4 text-blue-600" />
+                            <div>
+                                <p className="text-sm font-semibold text-blue-900">Jenis Pelayanan: POS</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            ) : (
+                <div className="col-span-1">
+                    {renderSelect(
+                        "Jenis Pelayanan",
+                        "jenis_pelayanan_id",
+                        jenisPelayananList.map(jp => ({ value: jp.id.toString(), label: jp.name })),
+                        true,
+                        loadingMasterData,
+                        false
+                    )}
+                </div>
             )}
             {renderSelect(
                 "Jenis Pembiayaan",
@@ -1567,8 +1698,20 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
                         {field.hasTemplate && (
                             <a
                                 href="/templates/SURAT_PERMOHONAN_ANGGOTA_PEMBIAYAAN.pdf"
-                                download="SURAT_PERMOHONAN_ANGGOTA_PEMBIAYAAN.pdf"
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    // Show info that template is not available yet
+                                    Swal.fire({
+                                        icon: 'info',
+                                        title: 'Template Belum Tersedia',
+                                        text: 'Template Surat Permohonan Anggota & Pembiayaan belum tersedia. Silakan hubungi admin untuk mendapatkan template.',
+                                        confirmButtonText: 'OK',
+                                        confirmButtonColor: '#3B82F6'
+                                    });
+                                }}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors cursor-pointer"
                             >
                                 <Download className="w-3.5 h-3.5" />
                                 Download Template

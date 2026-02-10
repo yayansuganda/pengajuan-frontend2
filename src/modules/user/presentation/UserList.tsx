@@ -23,6 +23,8 @@ const ROLES = [
     { value: 'juru-buku', label: 'Juru Buku' },
     { value: 'admin-unit', label: 'Admin Unit' },
     { value: 'admin-pusat', label: 'Admin Pusat' },
+    { value: 'petugas-pos', label: 'Petugas Pos' },
+    { value: 'admin-pos', label: 'Admin Pos' },
     { value: 'super-admin', label: 'Super Admin' },
 ];
 
@@ -30,10 +32,12 @@ const getRoleBadgeColor = (role: string) => {
     switch (role) {
         case 'super-admin': return 'bg-purple-100 text-purple-800';
         case 'admin-pusat': return 'bg-indigo-100 text-indigo-800';
+        case 'admin-pos': return 'bg-teal-100 text-teal-800';
         case 'admin-unit': return 'bg-blue-100 text-blue-800';
         case 'manager': return 'bg-green-100 text-green-800';
         case 'verifier': return 'bg-yellow-100 text-yellow-800';
         case 'juru-buku': return 'bg-orange-100 text-orange-800';
+        case 'petugas-pos': return 'bg-cyan-100 text-cyan-800';
         case 'officer': return 'bg-gray-100 text-gray-800';
         default: return 'bg-gray-100 text-gray-800';
     }

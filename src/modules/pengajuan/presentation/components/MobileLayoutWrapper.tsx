@@ -1,15 +1,26 @@
+'use client';
+
 import React, { useState } from 'react';
-import { Home, FileText, Search, Settings, X, Users, Building2, Briefcase, CreditCard, Percent, Calendar, MapPin, CheckCircle, Plus, Calculator } from 'lucide-react';
+import { Home, FileText, Search, Settings, X, Users, Building2, Briefcase, CreditCard, Percent, Calendar, MapPin, CheckCircle, Plus, Calculator, HelpCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/modules/auth/presentation/useAuth';
 
 interface MobileLayoutWrapperProps {
     children: React.ReactNode;
     showBackground?: boolean;
+    moduleName?: 'default' | 'fronting';
 }
 
-export const MobileLayoutWrapper: React.FC<MobileLayoutWrapperProps> = ({ children, showBackground = true }) => {
-    const { user } = useAuth();
+export const MobileLayoutWrapper: React.FC<MobileLayoutWrapperProps & { forceVisible?: boolean }> = ({ children, showBackground = true, forceVisible = false, moduleName = 'default' }) => {
+    // Make useAuth optional - for fronting module, auth is not required
+    let user = null;
+    try {
+        const auth = useAuth();
+        user = auth?.user;
+    } catch {
+        // If useAuth throws (e.g., no AuthProvider), user remains null
+    }
+
     const [showSettingsMenu, setShowSettingsMenu] = useState(false);
     const [showPengecekanMenu, setShowPengecekanMenu] = useState(false);
 
@@ -26,6 +37,12 @@ export const MobileLayoutWrapper: React.FC<MobileLayoutWrapperProps> = ({ childr
     const pengecekanMenuItems = [
         { icon: MapPin, label: 'Pengecekan POS', href: '/pengecekan' },
         { icon: CheckCircle, label: 'Pengecekan Status', href: '/cek-status' },
+    ];
+
+    // Fronting-specific pengecekan menu items
+    const frontingPengecekanMenuItems = [
+        { icon: MapPin, label: 'Pengecekan POS', href: '/fronting/pengecekan-pos' },
+        { icon: CheckCircle, label: 'Pengecekan Status', href: '/fronting/pengecekan-status' },
     ];
 
     // Check if user is super-admin
@@ -46,7 +63,7 @@ export const MobileLayoutWrapper: React.FC<MobileLayoutWrapperProps> = ({ childr
     return (
         <>
             {/* Mobile Layout */}
-            <div className="md:hidden min-h-screen bg-slate-100 pb-28">
+            <div className={`${forceVisible ? '' : 'md:hidden'} min-h-screen bg-slate-100 pb-28 ${forceVisible ? 'max-w-md mx-auto shadow-2xl min-h-screen relative' : ''}`}>
                 {/* Layer 1: Global Full Page Background */}
                 <div className="fixed inset-0 z-0 pointer-events-none">
                     <img src="/images/loan_header_bg.png" alt="bg-full" className="w-full h-full object-cover" />
@@ -68,6 +85,9 @@ export const MobileLayoutWrapper: React.FC<MobileLayoutWrapperProps> = ({ childr
                 <div className="relative z-10">
                     {children}
                 </div>
+
+                {/* Desktop Layout - Show children as is */}
+
 
                 {/* Settings Submenu Overlay */}
                 {showSettingsMenu && (
@@ -141,9 +161,9 @@ export const MobileLayoutWrapper: React.FC<MobileLayoutWrapperProps> = ({ childr
                                     </button>
                                 </div>
 
-                                {/* Menu Items */}
+                                {/* Menu Items - Use different items based on module */}
                                 <div className="p-4 space-y-2">
-                                    {pengecekanMenuItems.map((item, idx) => {
+                                    {(moduleName === 'fronting' ? frontingPengecekanMenuItems : pengecekanMenuItems).map((item, idx) => {
                                         const Icon = item.icon;
                                         return (
                                             <Link
@@ -167,68 +187,116 @@ export const MobileLayoutWrapper: React.FC<MobileLayoutWrapperProps> = ({ childr
                     </div>
                 )}
 
-                {/* Floating Bottom Navigation */}
-                <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
-                    <div className="bg-slate-900 rounded-full px-2 py-1.5 flex items-center gap-1 shadow-2xl shadow-slate-900/40">
-                        {/* 1. Pengajuan */}
-                        <Link
-                            href="/pengajuan"
-                            className="w-11 h-11 rounded-full flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
-                        >
-                            <FileText className="w-5 h-5" />
-                        </Link>
+                {/* Floating Bottom Navigation - Default */}
+                {moduleName === 'default' && (
+                    <div className={`fixed bottom-6 ${forceVisible ? 'left-1/2 -translate-x-1/2' : 'left-1/2 -translate-x-1/2'} z-50`}>
+                        <div className="bg-slate-900 rounded-full px-2 py-1.5 flex items-center gap-1 shadow-2xl shadow-slate-900/40">
+                            {/* 1. Pengajuan */}
+                            <Link
+                                href="/pengajuan"
+                                className="w-11 h-11 rounded-full flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+                            >
+                                <FileText className="w-5 h-5" />
+                            </Link>
 
-                        {/* 2. Pengecekan - Opens Submenu */}
-                        <button
-                            onClick={handlePengecekanClick}
-                            className={`w-11 h-11 rounded-full flex items-center justify-center transition-colors ${showPengecekanMenu
-                                ? 'bg-white/20 text-white'
-                                : 'text-slate-400 hover:text-white hover:bg-white/10'
-                                }`}
-                        >
-                            <Search className="w-5 h-5" />
-                        </button>
-
-                        {/* 3. Dashboard - Center FAB */}
-                        <Link href="/dashboard" className="-mt-5 mx-1">
-                            <div className="w-14 h-14 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full flex items-center justify-center shadow-lg shadow-emerald-600/40 border-4 border-white hover:scale-105 active:scale-95 transition-transform">
-                                <Home className="w-6 h-6 text-white" strokeWidth={2.5} />
-                            </div>
-                        </Link>
-
-                        {/* 4. Settings/Simulasi - Conditional based on role */}
-                        {isSuperAdmin ? (
+                            {/* 2. Pengecekan - Opens Submenu */}
                             <button
-                                onClick={handleSettingsClick}
-                                className={`w-11 h-11 rounded-full flex items-center justify-center transition-colors ${showSettingsMenu
+                                onClick={handlePengecekanClick}
+                                className={`w-11 h-11 rounded-full flex items-center justify-center transition-colors ${showPengecekanMenu
                                     ? 'bg-white/20 text-white'
                                     : 'text-slate-400 hover:text-white hover:bg-white/10'
                                     }`}
                             >
-                                <Settings className="w-5 h-5" />
+                                <Search className="w-5 h-5" />
                             </button>
-                        ) : (
+
+                            {/* 3. Dashboard - Center FAB */}
+                            <Link href="/dashboard" className="-mt-5 mx-1">
+                                <div className="w-14 h-14 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full flex items-center justify-center shadow-lg shadow-emerald-600/40 border-4 border-white hover:scale-105 active:scale-95 transition-transform">
+                                    <Home className="w-6 h-6 text-white" strokeWidth={2.5} />
+                                </div>
+                            </Link>
+
+                            {/* 4. Settings/Simulasi - Conditional based on role */}
+                            {isSuperAdmin ? (
+                                <button
+                                    onClick={handleSettingsClick}
+                                    className={`w-11 h-11 rounded-full flex items-center justify-center transition-colors ${showSettingsMenu
+                                        ? 'bg-white/20 text-white'
+                                        : 'text-slate-400 hover:text-white hover:bg-white/10'
+                                        }`}
+                                >
+                                    <Settings className="w-5 h-5" />
+                                </button>
+                            ) : (
+                                <Link
+                                    href="/simulasi"
+                                    className="w-11 h-11 rounded-full flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+                                >
+                                    <Calculator className="w-5 h-5" />
+                                </Link>
+                            )}
+
+                            {/* 5. Profile */}
                             <Link
-                                href="/simulasi"
+                                href="/profile"
                                 className="w-11 h-11 rounded-full flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
                             >
-                                <Calculator className="w-5 h-5" />
+                                <Users className="w-5 h-5" />
                             </Link>
-                        )}
-
-                        {/* 5. Profile */}
-                        <Link
-                            href="/profile"
-                            className="w-11 h-11 rounded-full flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
-                        >
-                            <Users className="w-5 h-5" />
-                        </Link>
+                        </div>
                     </div>
-                </div>
+                )}
+
+                {/* Floating Bottom Navigation - Fronting Module */}
+                {moduleName === 'fronting' && (
+                    <div className={`fixed bottom-6 ${forceVisible ? 'left-1/2 -translate-x-1/2' : 'left-1/2 -translate-x-1/2'} z-50`}>
+                        <div className="bg-slate-900 rounded-full px-2 py-1.5 flex items-center gap-1 shadow-2xl shadow-slate-900/40">
+                            {/* 1. Pengajuan */}
+                            <Link
+                                href="/fronting/pengajuan"
+                                className="w-11 h-11 rounded-full flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+                            >
+                                <FileText className="w-5 h-5" />
+                            </Link>
+
+                            {/* 2. Pengecekan - LANGSUNG KE PENGECEKAN-POS (tidak pakai popup) */}
+                            <Link
+                                href="/fronting/pengecekan-pos"
+                                className="w-11 h-11 rounded-full flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+                            >
+                                <Search className="w-5 h-5" />
+                            </Link>
+
+                            {/* 3. Dashboard - Center FAB */}
+                            <Link href="/fronting" className="-mt-5 mx-1">
+                                <div className="w-14 h-14 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full flex items-center justify-center shadow-lg shadow-emerald-600/40 border-4 border-white hover:scale-105 active:scale-95 transition-transform">
+                                    <Home className="w-6 h-6 text-white" strokeWidth={2.5} />
+                                </div>
+                            </Link>
+
+                            {/* 4. Cek Status */}
+                            <Link
+                                href="/fronting/cek-status"
+                                className="w-11 h-11 rounded-full flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+                            >
+                                <CheckCircle className="w-5 h-5" />
+                            </Link>
+
+                            {/* 5. Help */}
+                            <Link
+                                href="/fronting/help"
+                                className="w-11 h-11 rounded-full flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+                            >
+                                <HelpCircle className="w-5 h-5" />
+                            </Link>
+                        </div>
+                    </div>
+                )}
             </div>
 
-            {/* Desktop Layout - Show children as is */}
-            <div className="hidden md:block">
+            {/* Desktop Layout - Show children as is. If forceVisible is true (meaning we want to show Mobile layout on desktop), we must HIDE this desktop layout block to avoid duplication/clutter. */}
+            <div className={`hidden md:block ${forceVisible ? '!hidden' : ''}`}>
                 {children}
             </div>
         </>
