@@ -27,6 +27,7 @@ export interface Pengajuan {
     kabupaten?: string;
     provinsi?: string;
     kode_pos?: string;
+    nomor_telephone?: string;
     nama_ibu_kandung?: string;
     pendidikan_terakhir?: string;
     usia?: number;
@@ -82,7 +83,8 @@ export interface Pengajuan {
     surat_pernyataan_beda_url?: string;
     karip_buku_asabri_url?: string;
     surat_permohonan_anggota_url?: string;
-    sk_pensiun_url?: string; // SK Pensiun (Required)
+    potongan_detail?: string; // JSON String of PotonganItem[]
+    sk_pensiun_url?: string; // SK Pensiun (Optional)
     disbursement_proof_url?: string;
     shipping_receipt_url?: string;
 

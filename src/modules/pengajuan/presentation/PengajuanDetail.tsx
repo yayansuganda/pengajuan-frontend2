@@ -7,7 +7,7 @@ import {
     ArrowLeft, User, MapPin, Briefcase, Calendar, FileText,
     CreditCard, Upload, XCircle, CheckCircle, Clock,
     Wallet, Landmark, FolderOpen, Banknote, Camera, Receipt, Eye, ExternalLink,
-    Home, Plus, LayoutGrid
+    Home, Plus, LayoutGrid, Calculator
 } from 'lucide-react';
 import { Pengajuan } from '../core/PengajuanEntity';
 import { PengajuanRepositoryImpl } from '../data/PengajuanRepositoryImpl';
@@ -412,32 +412,48 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                         {/* Tab Content */}
                         {activeTab === 'detail' && (
                             <div className="space-y-4 text-sm">
-                                {/* Personal Info - Compact */}
+                                {/* Personal Info */}
                                 <div>
                                     <h3 className="text-xs font-bold text-slate-900 mb-2 flex items-center gap-1.5">
                                         <User className="h-3.5 w-3.5 text-indigo-600" /> Informasi Pribadi
                                     </h3>
                                     <div className="space-y-2 text-xs">
                                         <div className="flex justify-between py-1.5 border-b border-slate-50">
+                                            <span className="text-slate-500">Nama Lengkap</span>
+                                            <span className="font-medium text-slate-900">{pengajuan.nama_lengkap}</span>
+                                        </div>
+                                        <div className="flex justify-between py-1.5 border-b border-slate-50">
+                                            <span className="text-slate-500">NIK</span>
+                                            <span className="font-medium text-slate-900">{pengajuan.nik}</span>
+                                        </div>
+                                        <div className="flex justify-between py-1.5 border-b border-slate-50">
                                             <span className="text-slate-500">Jenis Kelamin</span>
                                             <span className="font-medium text-slate-900">{d(pengajuan.jenis_kelamin)}</span>
                                         </div>
                                         <div className="flex justify-between py-1.5 border-b border-slate-50">
-                                            <span className="text-slate-500">Tempat Lahir</span>
-                                            <span className="font-medium text-slate-900">{d(pengajuan.tempat_lahir)}</span>
-                                        </div>
-                                        <div className="flex justify-between py-1.5 border-b border-slate-50">
-                                            <span className="text-slate-500">Tanggal Lahir</span>
-                                            <span className="font-medium text-slate-900">{pengajuan.tanggal_lahir ? new Date(pengajuan.tanggal_lahir).toLocaleDateString('id-ID') : '-'}</span>
+                                            <span className="text-slate-500">Tempat, Tanggal Lahir</span>
+                                            <span className="font-medium text-slate-900">{d(pengajuan.tempat_lahir)}, {pengajuan.tanggal_lahir ? new Date(pengajuan.tanggal_lahir).toLocaleDateString('id-ID') : '-'}</span>
                                         </div>
                                         <div className="flex justify-between py-1.5 border-b border-slate-50">
                                             <span className="text-slate-500">Usia</span>
                                             <span className="font-medium text-slate-900">{pengajuan.usia ? `${pengajuan.usia} Tahun` : '-'}</span>
                                         </div>
+                                        <div className="flex justify-between py-1.5 border-b border-slate-50">
+                                            <span className="text-slate-500">No. Telepon</span>
+                                            <span className="font-medium text-slate-900">{d(pengajuan.nomor_telephone)}</span>
+                                        </div>
+                                        <div className="flex justify-between py-1.5 border-b border-slate-50">
+                                            <span className="text-slate-500">Nama Ibu Kandung</span>
+                                            <span className="font-medium text-slate-900">{d(pengajuan.nama_ibu_kandung)}</span>
+                                        </div>
+                                        <div className="flex justify-between py-1.5 border-b border-slate-50">
+                                            <span className="text-slate-500">Pendidikan Terakhir</span>
+                                            <span className="font-medium text-slate-900">{d(pengajuan.pendidikan_terakhir)}</span>
+                                        </div>
                                     </div>
                                 </div>
 
-                                {/* Address - Compact */}
+                                {/* Address */}
                                 <div>
                                     <h3 className="text-xs font-bold text-slate-900 mb-2 flex items-center gap-1.5">
                                         <MapPin className="h-3.5 w-3.5 text-emerald-600" /> Alamat
@@ -448,6 +464,10 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                                             <span className="font-medium text-slate-900">{d(pengajuan.alamat)}</span>
                                         </div>
                                         <div className="flex justify-between py-1.5 border-b border-slate-50">
+                                            <span className="text-slate-500">RT / RW</span>
+                                            <span className="font-medium text-slate-900">{d(pengajuan.rt)} / {d(pengajuan.rw)}</span>
+                                        </div>
+                                        <div className="flex justify-between py-1.5 border-b border-slate-50">
                                             <span className="text-slate-500">Kelurahan</span>
                                             <span className="font-medium text-slate-900">{d(pengajuan.kelurahan)}</span>
                                         </div>
@@ -455,15 +475,72 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                                             <span className="text-slate-500">Kecamatan</span>
                                             <span className="font-medium text-slate-900">{d(pengajuan.kecamatan)}</span>
                                         </div>
+                                        <div className="flex justify-between py-1.5 border-b border-slate-50">
+                                            <span className="text-slate-500">Kabupaten / Kota</span>
+                                            <span className="font-medium text-slate-900">{d(pengajuan.kabupaten)}</span>
+                                        </div>
+                                        <div className="flex justify-between py-1.5 border-b border-slate-50">
+                                            <span className="text-slate-500">Provinsi</span>
+                                            <span className="font-medium text-slate-900">{d(pengajuan.provinsi)}</span>
+                                        </div>
+                                        <div className="flex justify-between py-1.5 border-b border-slate-50">
+                                            <span className="text-slate-500">Kode Pos</span>
+                                            <span className="font-medium text-slate-900">{d(pengajuan.kode_pos)}</span>
+                                        </div>
                                     </div>
                                 </div>
 
-                                {/* Financial - Compact */}
+                                {/* Pension Data */}
+                                <div>
+                                    <h3 className="text-xs font-bold text-slate-900 mb-2 flex items-center gap-1.5">
+                                        <Briefcase className="h-3.5 w-3.5 text-blue-600" /> Data Pensiun
+                                    </h3>
+                                    <div className="space-y-2 text-xs">
+                                        <div className="flex justify-between py-1.5 border-b border-slate-50">
+                                            <span className="text-slate-500">Nopen</span>
+                                            <span className="font-medium text-slate-900">{d(pengajuan.nopen)}</span>
+                                        </div>
+                                        <div className="flex justify-between py-1.5 border-b border-slate-50">
+                                            <span className="text-slate-500">Jenis Pensiun</span>
+                                            <span className="font-medium text-slate-900">{d(pengajuan.jenis_pensiun)}</span>
+                                        </div>
+                                        <div className="flex justify-between py-1.5 border-b border-slate-50">
+                                            <span className="text-slate-500">Kantor Bayar</span>
+                                            <span className="font-medium text-slate-900">{d(pengajuan.kantor_bayar)}</span>
+                                        </div>
+                                        <div className="flex justify-between py-1.5 border-b border-slate-50">
+                                            <span className="text-slate-500">Nama Bank</span>
+                                            <span className="font-medium text-slate-900">{d(pengajuan.nama_bank)}</span>
+                                        </div>
+                                        <div className="flex justify-between py-1.5 border-b border-slate-50">
+                                            <span className="text-slate-500">No. Rekening</span>
+                                            <span className="font-medium text-slate-900">{d(pengajuan.no_rekening)}</span>
+                                        </div>
+                                        <div className="flex justify-between py-1.5 border-b border-slate-50">
+                                            <span className="text-slate-500">No. Giro Pos</span>
+                                            <span className="font-medium text-slate-900">{d(pengajuan.nomor_rekening_giro_pos)}</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Financial Data */}
                                 <div>
                                     <h3 className="text-xs font-bold text-slate-900 mb-2 flex items-center gap-1.5">
                                         <Wallet className="h-3.5 w-3.5 text-teal-600" /> Data Keuangan
                                     </h3>
                                     <div className="space-y-2 text-xs">
+                                        <div className="flex justify-between py-1.5 border-b border-slate-50">
+                                            <span className="text-slate-500">Jenis Dapem</span>
+                                            <span className="font-medium text-slate-900">{d(pengajuan.jenis_dapem)}</span>
+                                        </div>
+                                        <div className="flex justify-between py-1.5 border-b border-slate-50">
+                                            <span className="text-slate-500">Bulan Dapem</span>
+                                            <span className="font-medium text-slate-900">{d(pengajuan.bulan_dapem)}</span>
+                                        </div>
+                                        <div className="flex justify-between py-1.5 border-b border-slate-50">
+                                            <span className="text-slate-500">Status Dapem</span>
+                                            <span className="font-medium text-slate-900">{d(pengajuan.status_dapem)}</span>
+                                        </div>
                                         <div className="flex justify-between py-1.5 border-b border-slate-50">
                                             <span className="text-slate-500">Gaji Bersih</span>
                                             <span className="font-medium text-slate-900">{money(pengajuan.gaji_bersih)}</span>
@@ -474,6 +551,89 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                                         </div>
                                     </div>
                                 </div>
+
+                                {/* Loan Detail */}
+                                <div>
+                                    <h3 className="text-xs font-bold text-slate-900 mb-2 flex items-center gap-1.5">
+                                        <FileText className="h-3.5 w-3.5 text-violet-600" /> Detail Pengajuan
+                                    </h3>
+                                    <div className="space-y-2 text-xs">
+                                        <div className="flex justify-between py-1.5 border-b border-slate-50">
+                                            <span className="text-slate-500">Jenis Pelayanan</span>
+                                            <span className="font-medium text-slate-900">{d(pengajuan.jenis_pelayanan?.name)}</span>
+                                        </div>
+                                        <div className="flex justify-between py-1.5 border-b border-slate-50">
+                                            <span className="text-slate-500">Jenis Pembiayaan</span>
+                                            <span className="font-medium text-slate-900">{d(pengajuan.jenis_pembiayaan?.name)}</span>
+                                        </div>
+                                        <div className="flex justify-between py-1.5 border-b border-slate-50">
+                                            <span className="text-slate-500">Kategori Pembiayaan</span>
+                                            <span className="font-medium text-slate-900">{d(pengajuan.kategori_pembiayaan)}</span>
+                                        </div>
+                                        <div className="flex justify-between py-1.5 border-b border-slate-50">
+                                            <span className="text-slate-500">Maks. Jangka Waktu</span>
+                                            <span className="font-medium text-slate-900">{pengajuan.maksimal_jangka_waktu_usia ? `${pengajuan.maksimal_jangka_waktu_usia} Tahun` : '-'}</span>
+                                        </div>
+                                        <div className="flex justify-between py-1.5 border-b border-slate-50">
+                                            <span className="text-slate-500">Jangka Waktu</span>
+                                            <span className="font-medium text-slate-900">{pengajuan.jangka_waktu ? `${pengajuan.jangka_waktu} Bulan` : '-'}</span>
+                                        </div>
+                                        <div className="flex justify-between py-1.5 border-b border-slate-50">
+                                            <span className="text-slate-500">Maksimal Plafond</span>
+                                            <span className="font-medium text-slate-900">{money(pengajuan.maksimal_pembiayaan)}</span>
+                                        </div>
+                                        <div className="flex justify-between py-1.5 border-b border-slate-50">
+                                            <span className="text-slate-500">Jumlah Diajukan</span>
+                                            <span className="font-medium text-slate-900">{money(pengajuan.jumlah_pembiayaan)}</span>
+                                        </div>
+                                        <div className="flex justify-between py-1.5 border-b border-slate-50">
+                                            <span className="text-slate-500">Besar Angsuran</span>
+                                            <span className="font-medium text-slate-900">{money(pengajuan.besar_angsuran)}</span>
+                                        </div>
+                                        <div className="flex justify-between py-1.5 border-b border-slate-50">
+                                            <span className="text-slate-500">Total Potongan</span>
+                                            <span className="font-medium text-slate-900">{money(pengajuan.total_potongan)}</span>
+                                        </div>
+                                        <div className="flex justify-between py-1.5 border-b border-slate-50">
+                                            <span className="text-slate-500">Nominal Diterima</span>
+                                            <span className="font-medium text-slate-900">{money(pengajuan.nominal_terima)}</span>
+                                        </div>
+                                        <div className="flex justify-between py-1.5 border-b border-slate-50">
+                                            <span className="text-slate-500">Petugas Kantor Pos</span>
+                                            <span className="font-medium text-slate-900">{d(pengajuan.kantor_pos_petugas)}</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Potongan Detail - Compact */}
+                                {(() => {
+                                    if (!pengajuan.potongan_detail) return null;
+                                    try {
+                                        const details = JSON.parse(pengajuan.potongan_detail);
+                                        if (!Array.isArray(details) || details.length === 0) return null;
+
+                                        return (
+                                            <div>
+                                                <h3 className="text-xs font-bold text-slate-900 mb-2 flex items-center gap-1.5">
+                                                    <Calculator className="h-3.5 w-3.5 text-rose-600" /> Rincian Potongan
+                                                </h3>
+                                                <div className="space-y-2 text-xs">
+                                                    {details.map((item: any, idx: number) => {
+                                                        const label = item.kategori === 'persentase'
+                                                            ? `${item.nama} (${item.persentase_nominal}%)`
+                                                            : item.nama;
+                                                        return (
+                                                            <div key={idx} className="flex justify-between py-1.5 border-b border-slate-50">
+                                                                <span className="text-slate-500">{label}</span>
+                                                                <span className="font-medium text-slate-900">{money(item.nilai)}</span>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        );
+                                    } catch (e) { return null; }
+                                })()}
                             </div>
                         )}
 
@@ -777,21 +937,23 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                 </div >
 
                 {/* Rejection Reason Alert - Desktop */}
-                {pengajuan.status === 'Ditolak' && pengajuan.reject_reason && (
-                    <div className="bg-rose-50 border-l-4 border-rose-500 rounded-xl p-5 shadow-sm">
-                        <div className="flex items-start gap-4">
-                            <div className="flex-shrink-0">
-                                <div className="w-10 h-10 bg-rose-100 rounded-full flex items-center justify-center">
-                                    <XCircle className="w-6 h-6 text-rose-600" />
+                {
+                    pengajuan.status === 'Ditolak' && pengajuan.reject_reason && (
+                        <div className="bg-rose-50 border-l-4 border-rose-500 rounded-xl p-5 shadow-sm">
+                            <div className="flex items-start gap-4">
+                                <div className="flex-shrink-0">
+                                    <div className="w-10 h-10 bg-rose-100 rounded-full flex items-center justify-center">
+                                        <XCircle className="w-6 h-6 text-rose-600" />
+                                    </div>
+                                </div>
+                                <div className="flex-1">
+                                    <h3 className="text-base font-bold text-rose-900 mb-2">Alasan Penolakan</h3>
+                                    <p className="text-sm text-rose-800 leading-relaxed">{pengajuan.reject_reason}</p>
                                 </div>
                             </div>
-                            <div className="flex-1">
-                                <h3 className="text-base font-bold text-rose-900 mb-2">Alasan Penolakan</h3>
-                                <p className="text-sm text-rose-800 leading-relaxed">{pengajuan.reject_reason}</p>
-                            </div>
                         </div>
-                    </div>
-                )}
+                    )
+                }
 
                 {/* Financial Summary */}
                 < div className="grid grid-cols-2 lg:grid-cols-4 gap-3" >
@@ -819,6 +981,7 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                                     <Field label="Tempat Lahir" value={d(pengajuan.tempat_lahir)} />
                                     <Field label="Tanggal Lahir" value={pengajuan.tanggal_lahir ? new Date(pengajuan.tanggal_lahir).toLocaleDateString('id-ID') : '-'} />
                                     <Field label="Usia" value={pengajuan.usia ? `${pengajuan.usia} Tahun` : '-'} />
+                                    <Field label="No. Telepon" value={d(pengajuan.nomor_telephone)} />
                                     <Field label="Nama Ibu Kandung" value={d(pengajuan.nama_ibu_kandung)} />
                                     <Field label="Pendidikan Terakhir" value={d(pengajuan.pendidikan_terakhir)} />
                                 </Section>
@@ -857,6 +1020,9 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                                 <Section title="Detail Pengajuan" icon={<FileText className="h-5 w-5 text-violet-600" />}>
                                     <Field label="Jenis Pelayanan" value={d(pengajuan.jenis_pelayanan?.name)} highlight />
                                     <Field label="Jenis Pembiayaan" value={d(pengajuan.jenis_pembiayaan?.name)} highlight />
+                                    <Field label="Kategori Pembiayaan" value={d(pengajuan.kategori_pembiayaan)} />
+                                    <Field label="Maks. Jangka Waktu" value={pengajuan.maksimal_jangka_waktu_usia ? `${pengajuan.maksimal_jangka_waktu_usia} Tahun` : '-'} />
+                                    <Field label="Jangka Waktu" value={pengajuan.jangka_waktu ? `${pengajuan.jangka_waktu} Bulan` : '-'} />
                                     <Field label="Maksimal Plafond" value={money(pengajuan.maksimal_pembiayaan)} />
                                     <Field label="Jumlah Diajukan" value={money(pengajuan.jumlah_pembiayaan)} />
                                     <Field label="Besar Angsuran" value={money(pengajuan.besar_angsuran)} />
@@ -864,6 +1030,32 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                                     <Field label="Nominal Diterima" value={money(pengajuan.nominal_terima)} />
                                     <Field label="Petugas Kantor Pos" value={d(pengajuan.kantor_pos_petugas)} />
                                 </Section>
+
+                                {/* Potongan Detail - Section */}
+                                {(() => {
+                                    if (!pengajuan.potongan_detail) return null;
+                                    try {
+                                        const details = JSON.parse(pengajuan.potongan_detail);
+                                        if (!Array.isArray(details) || details.length === 0) return null;
+
+                                        return (
+                                            <Section title="Rincian Potongan" icon={<Calculator className="h-5 w-5 text-rose-600" />}>
+                                                {details.map((item: any, idx: number) => {
+                                                    const label = item.kategori === 'persentase'
+                                                        ? `${item.nama} (${item.persentase_nominal}%)`
+                                                        : item.nama;
+                                                    return (
+                                                        <Field
+                                                            key={idx}
+                                                            label={label}
+                                                            value={money(item.nilai)}
+                                                        />
+                                                    );
+                                                })}
+                                            </Section>
+                                        );
+                                    } catch (e) { return null; }
+                                })()}
 
                                 {/* Notes */}
                                 {(pengajuan.notes || pengajuan.reject_reason) && (
@@ -1321,39 +1513,41 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                 }
             </div>
             {/* Image/PDF Preview Modal */}
-            {previewDoc && (
-                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" onClick={() => setPreviewDoc(null)}>
-                    <div className="relative w-full max-w-lg bg-white rounded-2xl overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200" onClick={e => e.stopPropagation()}>
-                        <div className="flex items-center justify-between p-4 border-b">
-                            <h3 className="text-sm font-bold text-slate-900">Preview Dokumen</h3>
-                            <button onClick={() => setPreviewDoc(null)} className="p-1 hover:bg-slate-100 rounded-full">
-                                <XCircle className="w-6 h-6 text-slate-500" />
-                            </button>
-                        </div>
-                        <div className="p-4 bg-slate-100 flex items-center justify-center min-h-[300px]">
-                            {previewDoc.type === 'pdf' ? (
-                                <object
-                                    data={previewDoc.url}
-                                    type="application/pdf"
-                                    className="w-full h-[60vh] rounded-lg bg-white shadow-sm border border-slate-200"
-                                >
-                                    <div className="flex flex-col items-center justify-center h-full p-6 text-center bg-slate-50">
-                                        <FileText className="w-12 h-12 text-slate-400 mb-3" />
-                                        <p className="text-sm text-slate-600 mb-3">Gagal memuat preview.</p>
-                                        <a href={previewDoc.url} target="_blank" download className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium">
-                                            Download PDF
-                                        </a>
-                                    </div>
-                                </object>
-                            ) : (
-                                <img src={previewDoc.url} alt="Preview" className="max-w-full max-h-[60vh] object-contain rounded-lg shadow-sm" />
-                            )}
-                        </div>
+            {
+                previewDoc && (
+                    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" onClick={() => setPreviewDoc(null)}>
+                        <div className="relative w-full max-w-lg bg-white rounded-2xl overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200" onClick={e => e.stopPropagation()}>
+                            <div className="flex items-center justify-between p-4 border-b">
+                                <h3 className="text-sm font-bold text-slate-900">Preview Dokumen</h3>
+                                <button onClick={() => setPreviewDoc(null)} className="p-1 hover:bg-slate-100 rounded-full">
+                                    <XCircle className="w-6 h-6 text-slate-500" />
+                                </button>
+                            </div>
+                            <div className="p-4 bg-slate-100 flex items-center justify-center min-h-[300px]">
+                                {previewDoc.type === 'pdf' ? (
+                                    <object
+                                        data={previewDoc.url}
+                                        type="application/pdf"
+                                        className="w-full h-[60vh] rounded-lg bg-white shadow-sm border border-slate-200"
+                                    >
+                                        <div className="flex flex-col items-center justify-center h-full p-6 text-center bg-slate-50">
+                                            <FileText className="w-12 h-12 text-slate-400 mb-3" />
+                                            <p className="text-sm text-slate-600 mb-3">Gagal memuat preview.</p>
+                                            <a href={previewDoc.url} target="_blank" download className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium">
+                                                Download PDF
+                                            </a>
+                                        </div>
+                                    </object>
+                                ) : (
+                                    <img src={previewDoc.url} alt="Preview" className="max-w-full max-h-[60vh] object-contain rounded-lg shadow-sm" />
+                                )}
+                            </div>
 
+                        </div>
                     </div>
-                </div>
-            )}
-        </MobileLayoutWrapper>
+                )
+            }
+        </MobileLayoutWrapper >
     );
 };
 

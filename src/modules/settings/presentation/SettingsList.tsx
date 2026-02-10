@@ -117,77 +117,187 @@ const MobileView = ({ formData, setFormData, handleSubmit, activeSetting, isLoad
 
 // --- Desktop View ---
 const DesktopView = ({ formData, setFormData, handleSubmit, activeSetting, isLoading, router }: ViewProps) => (
-    <div className="px-4 sm:px-6 lg:px-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
         {isLoading ? (
-            <div className="flex items-center justify-center h-64">
-                <div className="text-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div><p className="mt-4 text-sm text-gray-500">Memuat pengaturan...</p></div>
+            <div className="flex flex-col items-center justify-center min-h-[400px]">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mb-4"></div>
+                <p className="text-gray-500 font-medium">Memuat pengaturan...</p>
             </div>
         ) : (
-            <>
-                <div className="mb-6">
-                    <div className="flex items-center gap-3 mb-2">
-                        <div className="bg-indigo-100 p-2 rounded-lg"><SettingsIcon className="h-6 w-6 text-indigo-600" /></div>
-                        <div><h1 className="text-2xl font-semibold text-gray-900">Pengaturan Perhitungan</h1><p className="text-sm text-gray-600">Konfigurasi parameter untuk perhitungan pembiayaan</p></div>
+            <form onSubmit={handleSubmit} className="space-y-8">
+                {/* Header */}
+                <div className="flex justify-between items-start">
+                    <div className="flex items-center gap-4">
+                        <div className="bg-gradient-to-br from-indigo-500 to-violet-600 p-3 rounded-xl shadow-lg shadow-indigo-200">
+                            <SettingsIcon className="h-8 w-8 text-white" />
+                        </div>
+                        <div>
+                            <h1 className="text-2xl font-bold text-gray-900">Pengaturan Sistem</h1>
+                            <p className="text-sm text-gray-500 mt-1">Konfigurasi parameter global dan limitasi produk</p>
+                        </div>
+                    </div>
+                    {activeSetting && (
+                        <div className="text-right">
+                            <p className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-1">Terakhir Diperbarui</p>
+                            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                                {new Date(activeSetting.updated_at).toLocaleString('id-ID', {
+                                    dateStyle: 'medium',
+                                    timeStyle: 'short'
+                                })}
+                            </span>
+                        </div>
+                    )}
+                </div>
+
+                {/* Info Card */}
+                <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 flex gap-3 items-start relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-blue-100 rounded-full blur-3xl opacity-50 -mr-16 -mt-16"></div>
+                    <Info className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5 relative z-10" />
+                    <div className="relative z-10">
+                        <h3 className="text-sm font-semibold text-blue-900">Informasi Penting</h3>
+                        <p className="mt-1 text-sm text-blue-700 leading-relaxed">
+                            Pengaturan ini bersifat global dan akan mempengaruhi seluruh perhitungan simulasi pembiayaan baru.
+                            Pastikan nilai yang diinput sudah sesuai dengan kebijakan perusahaan.
+                        </p>
                     </div>
                 </div>
 
-                <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <div className="flex gap-3"><Info className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" /><div className="flex-1"><h3 className="text-sm font-medium text-blue-900">Informasi</h3><p className="mt-1 text-sm text-blue-700">Pengaturan ini akan digunakan untuk semua perhitungan pembiayaan di sistem. Pastikan nilai yang dimasukkan sudah sesuai sebelum menyimpan.</p></div></div>
-                </div>
-
-                <div className="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-xl overflow-hidden">
-                    <div className="border-b border-gray-200 bg-gray-50 px-6 py-4"><h2 className="text-base font-semibold text-gray-900">Parameter Perhitungan</h2><p className="mt-1 text-sm text-gray-600">Atur nilai-nilai yang akan digunakan dalam perhitungan pembiayaan</p></div>
-                    <form onSubmit={handleSubmit} className="p-6">
-                        <div className="space-y-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    {/* Card 1: Pengaturan Umum */}
+                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow duration-300">
+                        <div className="border-b border-gray-100 bg-gray-50/50 px-6 py-4 flex items-center gap-3">
+                            <div className="bg-indigo-100 p-2 rounded-lg">
+                                <Calculator className="w-5 h-5 text-indigo-600" />
+                            </div>
                             <div>
-                                <label htmlFor="batas_usia" className="block text-sm font-medium text-gray-900 mb-2">Batas Usia Perhitungan Lunas <span className="text-red-500">*</span></label>
-                                <div className="relative">
-                                    <input type="number" id="batas_usia" required min="1" max="150" value={formData.batas_usia_perhitungan_lunas} onChange={(e) => setFormData({ ...formData, batas_usia_perhitungan_lunas: parseInt(e.target.value) || 0 })} className="w-full px-4 py-3 text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="Contoh: 90" />
-                                    <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none"><span className="text-gray-500 font-medium">Tahun</span></div>
+                                <h2 className="text-base font-bold text-gray-900">Parameter Umum</h2>
+                                <p className="text-xs text-gray-500">Konfigurasi dasar perhitungan</p>
+                            </div>
+                        </div>
+                        <div className="p-6 space-y-6">
+                            <div>
+                                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                    Batas Usia Pelunasan
+                                </label>
+                                <div className="relative group">
+                                    <input
+                                        type="number"
+                                        required
+                                        min="1"
+                                        max="150"
+                                        value={formData.batas_usia_perhitungan_lunas}
+                                        onChange={(e) => setFormData({ ...formData, batas_usia_perhitungan_lunas: parseInt(e.target.value) || 0 })}
+                                        className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all font-medium text-gray-900 group-hover:border-gray-300"
+                                        placeholder="Contoh: 90"
+                                    />
+                                    <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
+                                        <span className="text-sm font-bold text-gray-400 bg-gray-50 px-2 py-1 rounded">TAHUN</span>
+                                    </div>
                                 </div>
-                                <p className="mt-2 text-sm text-gray-500">Batas usia maksimal yang digunakan untuk menghitung jangka waktu pelunasan pembiayaan</p>
+                                <p className="mt-2 text-xs text-gray-500">Usia maksimal nasabah saat pembiayaan lunas</p>
                             </div>
-                            <div>
-                                <label htmlFor="jasa_perbulan" className="block text-sm font-medium text-gray-900 mb-2">Jasa Perbulan <span className="text-red-500">*</span></label>
-                                <div className="relative">
-                                    <input type="number" id="jasa_perbulan" required min="0" max="100" step="0.01" value={formData.jasa_perbulan} onChange={(e) => setFormData({ ...formData, jasa_perbulan: parseFloat(e.target.value) || 0 })} className="w-full px-4 py-3 pr-12 text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="Contoh: 2.00" />
-                                    <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none"><span className="text-gray-500 font-medium">%</span></div>
-                                </div>
-                                <p className="mt-2 text-sm text-gray-500">Persentase jasa yang dikenakan per bulan terhadap pembiayaan (0-100%)</p>
-                            </div>
-                            <div>
-                                <label htmlFor="description" className="block text-sm font-medium text-gray-900 mb-2">Catatan / Keterangan</label>
-                                <textarea id="description" rows={4} value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} className="w-full px-4 py-3 text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none" placeholder="Tambahkan catatan atau keterangan terkait pengaturan ini..." />
-                                <p className="mt-2 text-sm text-gray-500">Catatan ini bersifat opsional dan hanya untuk referensi internal</p>
-                            </div>
-                            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-                                <div className="flex gap-3"><AlertCircle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" /><div className="flex-1"><h3 className="text-sm font-medium text-amber-900">Perhatian</h3><p className="mt-1 text-sm text-amber-700">Perubahan pengaturan ini akan mempengaruhi seluruh perhitungan pembiayaan baru. Pastikan nilai yang dimasukkan sudah benar sebelum menyimpan.</p></div></div>
-                            </div>
-                        </div>
-                        <div className="mt-8 flex items-center justify-end gap-3 pt-6 border-t border-gray-200">
-                            <button type="button" onClick={() => router.push('/dashboard')} className="rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">Batal</button>
-                            <button type="submit" className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"><Save className="h-4 w-4" /> Simpan Pengaturan</button>
-                        </div>
-                    </form>
-                </div>
 
-                {activeSetting && (
-                    <div className="mt-6 bg-gray-50 rounded-lg p-5 border border-gray-200">
-                        <h3 className="text-sm font-medium text-gray-900 mb-3">Pengaturan Saat Ini</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="flex items-center gap-3 bg-white rounded-lg p-4 border border-gray-200">
-                                <div className="bg-indigo-100 p-2 rounded-lg"><SettingsIcon className="h-5 w-5 text-indigo-600" /></div>
-                                <div><p className="text-xs text-gray-500">Batas Usia</p><p className="text-lg font-semibold text-gray-900">{activeSetting.batas_usia_perhitungan_lunas} Tahun</p></div>
-                            </div>
-                            <div className="flex items-center gap-3 bg-white rounded-lg p-4 border border-gray-200">
-                                <div className="bg-indigo-100 p-2 rounded-lg"><SettingsIcon className="h-5 w-5 text-indigo-600" /></div>
-                                <div><p className="text-xs text-gray-500">Jasa Perbulan</p><p className="text-lg font-semibold text-gray-900">{activeSetting.jasa_perbulan}%</p></div>
+                            <div>
+                                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                    Jasa Perbulan
+                                </label>
+                                <div className="relative group">
+                                    <input
+                                        type="number"
+                                        required
+                                        min="0"
+                                        max="100"
+                                        step="0.01"
+                                        value={formData.jasa_perbulan}
+                                        onChange={(e) => setFormData({ ...formData, jasa_perbulan: parseFloat(e.target.value) || 0 })}
+                                        className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all font-medium text-gray-900 group-hover:border-gray-300"
+                                        placeholder="Contoh: 2.00"
+                                    />
+                                    <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
+                                        <span className="text-sm font-bold text-gray-400 bg-gray-50 px-2 py-1 rounded">%</span>
+                                    </div>
+                                </div>
+                                <p className="mt-2 text-xs text-gray-500">Persentase jasa charged per bulan</p>
                             </div>
                         </div>
-                        <p className="mt-3 text-xs text-gray-500">Terakhir diperbarui: {new Date(activeSetting.updated_at).toLocaleString('id-ID', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
                     </div>
-                )}
-            </>
+
+                    {/* Card 2: Pengaturan Mikro */}
+                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow duration-300">
+                        <div className="border-b border-gray-100 bg-gray-50/50 px-6 py-4 flex items-center gap-3">
+                            <div className="bg-emerald-100 p-2 rounded-lg">
+                                <SettingsIcon className="w-5 h-5 text-emerald-600" />
+                            </div>
+                            <div>
+                                <h2 className="text-base font-bold text-gray-900">Seting Mikro</h2>
+                                <p className="text-xs text-gray-500">Konfigurasi khusus produk Mikro</p>
+                            </div>
+                        </div>
+                        <div className="p-6 space-y-6">
+                            <div>
+                                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                    Maksimal Jangka Waktu
+                                </label>
+                                <div className="relative group">
+                                    <input
+                                        type="number"
+                                        required
+                                        min="0"
+                                        value={formData.mikro_jangka_waktu}
+                                        onChange={(e) => setFormData({ ...formData, mikro_jangka_waktu: parseInt(e.target.value) || 0 })}
+                                        className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all font-medium text-gray-900 group-hover:border-gray-300"
+                                    />
+                                    <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
+                                        <span className="text-sm font-bold text-gray-400 bg-gray-50 px-2 py-1 rounded">BULAN</span>
+                                    </div>
+                                </div>
+                                <p className="mt-2 text-xs text-gray-500">Batas maksimal tenor untuk pembiayaan Mikro</p>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                    Maksimal Pembiayaan
+                                </label>
+                                <div className="relative group">
+                                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                        <span className="text-sm font-bold text-gray-500">Rp</span>
+                                    </div>
+                                    <input
+                                        type="text" // Text type to handle formatting if needed, but simple number for now
+                                        value={new Intl.NumberFormat('id-ID').format(formData.mikro_maksimal_pembiayaan)}
+                                        onChange={(e) => {
+                                            const val = parseInt(e.target.value.replace(/\./g, '')) || 0;
+                                            setFormData({ ...formData, mikro_maksimal_pembiayaan: val });
+                                        }}
+                                        className="w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all font-medium text-gray-900 group-hover:border-gray-300"
+                                    />
+                                </div>
+                                <p className="mt-2 text-xs text-gray-500">Plafond maksimal untuk kategori Mikro</p>
+                            </div>
+                        </div>
+                    </div>
+
+
+                </div>
+
+                {/* Footer Actions */}
+                <div className="flex items-center justify-end gap-4 pt-6 mt-4 border-t border-gray-200">
+                    <button
+                        type="button"
+                        onClick={() => router.push('/dashboard')}
+                        className="px-6 py-3 rounded-xl text-sm font-bold text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors border border-transparent hover:border-gray-200"
+                    >
+                        Batal
+                    </button>
+                    <button
+                        type="submit"
+                        className="inline-flex items-center gap-2 px-8 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 text-white text-sm font-bold shadow-lg shadow-indigo-200 hover:shadow-indigo-300 transform active:scale-95 transition-all"
+                    >
+                        <Save className="h-5 w-5" />
+                        Simpan Perubahan
+                    </button>
+                </div>
+            </form>
         )}
     </div>
 );
@@ -197,7 +307,13 @@ export const SettingsList: React.FC = () => {
     const router = useRouter();
     const { user } = useAuth();
     const [activeSetting, setActiveSetting] = useState<Setting | null>(null);
-    const [formData, setFormData] = useState({ batas_usia_perhitungan_lunas: 90, jasa_perbulan: 2.00, description: '' });
+    const [formData, setFormData] = useState({
+        batas_usia_perhitungan_lunas: 90,
+        jasa_perbulan: 2.00,
+        mikro_jangka_waktu: 0,
+        mikro_maksimal_pembiayaan: 0,
+        description: ''
+    });
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
@@ -210,7 +326,13 @@ export const SettingsList: React.FC = () => {
             setIsLoading(true);
             const active = await repository.getActive();
             setActiveSetting(active);
-            setFormData({ batas_usia_perhitungan_lunas: active.batas_usia_perhitungan_lunas, jasa_perbulan: active.jasa_perbulan, description: active.description || '' });
+            setFormData({
+                batas_usia_perhitungan_lunas: active.batas_usia_perhitungan_lunas,
+                jasa_perbulan: active.jasa_perbulan,
+                mikro_jangka_waktu: active.mikro_jangka_waktu || 0,
+                mikro_maksimal_pembiayaan: active.mikro_maksimal_pembiayaan || 0,
+                description: active.description || ''
+            });
             setIsLoading(false);
         } catch (error: any) {
             console.log('No active setting found, using default values');

@@ -45,7 +45,7 @@ const UPLOAD_FIELDS = [
     { name: 'upload_ktp_pemohon', label: 'KTP Pemohon', hasTemplate: false, required: true },
     { name: 'upload_karip_buku_asabri', label: 'KARIP / Buku ASABRI', hasTemplate: false, required: true },
     { name: 'upload_slip_gaji_terakhir', label: 'Slip Gaji Terakhir', hasTemplate: false, required: true },
-    { name: 'upload_sk_pensiun', label: 'SK Pensiun', hasTemplate: false, required: true },
+    { name: 'upload_sk_pensiun', label: 'SK Pensiun', hasTemplate: false, required: false },
     { name: 'upload_surat_permohonan_anggota', label: 'Surat Permohonan Anggota & Pembiayaan', hasTemplate: true, required: true },
     { name: 'upload_borrower_photos', label: 'Foto Pemohon', hasTemplate: false, required: true, multiple: true },
 ];
@@ -366,40 +366,61 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
         }
     }, [formData.tanggal_lahir]);
 
-    // Auto-calculate Maks Jangka Waktu (Usia) when age or settings change
+    // Auto-calculate Maks Jangka Waktu (Usia) when age, settings, or category changes
     useEffect(() => {
-        if (formData.usia && settings?.batas_usia_perhitungan_lunas) {
-            // Extract age in months
-            const tahunMatch = formData.usia.match(/(\d+)\s*tahun/);
-            const bulanMatch = formData.usia.match(/(\d+)\s*bulan/);
+        if (formData.usia && settings) {
+            // Check if Micro category is selected
+            if (formData.kategori_pembiayaan === 'Micro' && settings.mikro_jangka_waktu > 0) {
+                console.log('📊 Using Micro Setting for Jangka Waktu:', settings.mikro_jangka_waktu);
+                setFormData(prev => ({ ...prev, maksimal_jangka_waktu_usia: settings.mikro_jangka_waktu.toString() }));
+                return;
+            }
 
-            const tahunNum = tahunMatch ? parseInt(tahunMatch[1]) : 0;
-            const bulanNum = bulanMatch ? parseInt(bulanMatch[1]) : 0;
-            const ageInMonths = (tahunNum * 12) + bulanNum;
+            // Normal calculation for Macro or others
+            if (settings.batas_usia_perhitungan_lunas) {
+                // Extract age in months
+                const tahunMatch = formData.usia.match(/(\d+)\s*tahun/);
+                const bulanMatch = formData.usia.match(/(\d+)\s*bulan/);
 
-            // Convert batas_usia_perhitungan_lunas to months and subtract current age
-            const batasUsiaBulan = settings.batas_usia_perhitungan_lunas * 12;
-            const maksJangkaWaktu = batasUsiaBulan - ageInMonths;
+                const tahunNum = tahunMatch ? parseInt(tahunMatch[1]) : 0;
+                const bulanNum = bulanMatch ? parseInt(bulanMatch[1]) : 0;
+                const ageInMonths = (tahunNum * 12) + bulanNum;
 
-            console.log('📊 Maks Jangka Waktu Calculation:', {
-                batasUsia: settings.batas_usia_perhitungan_lunas,
-                batasUsiaBulan,
-                ageInMonths,
-                maksJangkaWaktu
-            });
+                // Convert batas_usia_perhitungan_lunas to months and subtract current age
+                const batasUsiaBulan = settings.batas_usia_perhitungan_lunas * 12;
+                const maksJangkaWaktu = batasUsiaBulan - ageInMonths;
 
-            // Only set if positive
-            if (maksJangkaWaktu > 0) {
-                // Use months directly
-                setFormData(prev => ({ ...prev, maksimal_jangka_waktu_usia: maksJangkaWaktu.toString() }));
-            } else {
-                setFormData(prev => ({ ...prev, maksimal_jangka_waktu_usia: '0' }));
+                console.log('📊 Maks Jangka Waktu Calculation:', {
+                    batasUsia: settings.batas_usia_perhitungan_lunas,
+                    batasUsiaBulan,
+                    ageInMonths,
+                    maksJangkaWaktu
+                });
+
+                // Only set if positive
+                if (maksJangkaWaktu > 0) {
+                    // Use months directly
+                    setFormData(prev => ({ ...prev, maksimal_jangka_waktu_usia: maksJangkaWaktu.toString() }));
+                } else {
+                    setFormData(prev => ({ ...prev, maksimal_jangka_waktu_usia: '0' }));
+                }
             }
         }
-    }, [formData.usia, settings]);
+    }, [formData.usia, settings, formData.kategori_pembiayaan]);
 
-    // Auto-calculate Maks Pembiayaan when Gaji Tersedia or Maks Jangka Waktu changes
+    // Auto-calculate Maks Pembiayaan when Gaji Tersedia, Maks Jangka Waktu, category or settings changes
     useEffect(() => {
+        // Check if Micro category is selected
+        if (formData.kategori_pembiayaan === 'Micro' && settings && settings.mikro_maksimal_pembiayaan > 0) {
+            console.log('💰 Using Micro Setting for Max Pembiayaan:', settings.mikro_maksimal_pembiayaan);
+            setFormData(prev => ({
+                ...prev,
+                maksimal_pembiayaan: Math.round(settings.mikro_maksimal_pembiayaan).toString()
+            }));
+            return;
+        }
+
+        // Normal calculation for Macro or others
         const gajiTersedia = parseFloat((formData.gaji_tersedia || '').replace(/\./g, '')) || 0;
         const maksJangkaWaktu = parseInt(formData.maksimal_jangka_waktu_usia) || 0;
 
@@ -422,7 +443,7 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
             // Clear if either is zero
             setFormData(prev => ({ ...prev, maksimal_pembiayaan: '' }));
         }
-    }, [formData.gaji_tersedia, formData.maksimal_jangka_waktu_usia]);
+    }, [formData.gaji_tersedia, formData.maksimal_jangka_waktu_usia, formData.kategori_pembiayaan, settings]);
 
     // Find matching potongan jangka waktu based on jangka_waktu input
     useEffect(() => {
