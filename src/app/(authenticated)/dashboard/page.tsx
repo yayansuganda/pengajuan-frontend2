@@ -304,7 +304,7 @@ export default function DashboardPage() {
                                                         <div className="flex-1 min-w-0">
                                                             <div className="mb-1">
                                                                 <div className="flex items-center justify-between gap-2">
-                                                                    <span className="text-[10px] font-bold text-slate-800 truncate">{item.name}</span>
+                                                                    <span className="text-[10px] font-bold text-slate-800 truncate">{item.nama_lengkap}</span>
                                                                     <span className="px-1.5 py-0.5 rounded text-[8px] font-bold bg-emerald-100 text-emerald-700 whitespace-nowrap">
                                                                         Disetujui
                                                                     </span>
@@ -361,7 +361,7 @@ export default function DashboardPage() {
                                                         <div className="flex-1 min-w-0">
                                                             <div className="mb-1">
                                                                 <div className="flex items-center justify-between gap-2">
-                                                                    <span className="text-[10px] font-bold text-slate-800 truncate">{item.name}</span>
+                                                                    <span className="text-[10px] font-bold text-slate-800 truncate">{item.nama_lengkap}</span>
                                                                     <span className="px-1.5 py-0.5 rounded text-[8px] font-bold bg-teal-100 text-teal-700 whitespace-nowrap">
                                                                         Dicairkan
                                                                     </span>
@@ -418,7 +418,7 @@ export default function DashboardPage() {
                                                         <div className="flex-1 min-w-0">
                                                             <div className="mb-1">
                                                                 <div className="flex items-center justify-between gap-2">
-                                                                    <span className="text-[10px] font-bold text-slate-800 truncate">{item.name}</span>
+                                                                    <span className="text-[10px] font-bold text-slate-800 truncate">{item.nama_lengkap}</span>
                                                                     <span className="px-1.5 py-0.5 rounded text-[8px] font-bold bg-amber-100 text-amber-700 whitespace-nowrap">
                                                                         Menunggu Verifikasi
                                                                     </span>
@@ -475,7 +475,7 @@ export default function DashboardPage() {
                                                         <div className="flex-1 min-w-0">
                                                             <div className="mb-1">
                                                                 <div className="flex items-center justify-between gap-2">
-                                                                    <span className="text-[10px] font-bold text-slate-800 truncate">{item.name}</span>
+                                                                    <span className="text-[10px] font-bold text-slate-800 truncate">{item.nama_lengkap}</span>
                                                                     <span className="px-1.5 py-0.5 rounded text-[8px] font-bold bg-orange-100 text-orange-700 whitespace-nowrap">
                                                                         Menunggu Pencairan
                                                                     </span>
