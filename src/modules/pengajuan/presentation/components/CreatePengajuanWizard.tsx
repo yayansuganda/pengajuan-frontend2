@@ -111,7 +111,7 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
         // Non-POS fields
         nama_bank: '', no_rekening: '',
         // Common fields
-        gaji_bersih: '', gaji_tersedia: '',
+        gaji_bersih: '', total_potongan_pinjaman: '', gaji_tersedia: '',
         jenis_dapem: '', bulan_dapem: '', status_dapem: '',
 
         // Step 2 - Data Diri
@@ -414,6 +414,7 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
                         bulan_dapem: data.bulan_dapem || '',
                         status_dapem: data.status_dapem || '',
                         gaji_bersih: data.gaji_bersih?.toString() || '',
+                        total_potongan_pinjaman: data.total_potongan?.toString() || '',
                         gaji_tersedia: data.gaji_tersedia?.toString() || '',
 
                         // Data Pengajuan
@@ -737,6 +738,17 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
             const pengecekanRepo = new PengecekanRepositoryImpl();
             const data = await pengecekanRepo.checkPensiunan(nopen);
 
+            // Calculate Gaji Tersedia (Available Salary)
+            // Formula: Gaji Bersih - Total Potongan Pinjaman
+            const gajiBersih = data.gaji_bersih || 0;
+            const totalPotongan = data.potongan || 0; // Already calculated from potongan_pinjaman array in repository
+            const gajiTersedia = gajiBersih - totalPotongan;
+
+            console.log('💰 Auto-calculating Gaji Tersedia:');
+            console.log('  - Gaji Bersih:', gajiBersih);
+            console.log('  - Total Potongan:', totalPotongan);
+            console.log('  - Gaji Tersedia:', gajiTersedia);
+
             // Auto-fill form fields with API data
             setFormData(prev => ({
                 ...prev,
@@ -746,17 +758,23 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
                 jenis_dapem: data.jenis_dapem || prev.jenis_dapem,
                 bulan_dapem: data.bulan_dapem || prev.bulan_dapem,
                 status_dapem: data.status_dapem || prev.status_dapem,
-                gaji_bersih: data.gaji_bersih ? data.gaji_bersih.toString() : prev.gaji_bersih,
+                gaji_bersih: gajiBersih ? gajiBersih.toString() : prev.gaji_bersih,
+                total_potongan_pinjaman: totalPotongan ? totalPotongan.toString() : prev.total_potongan_pinjaman, // AUTO-FILLED
+                gaji_tersedia: gajiTersedia ? gajiTersedia.toString() : prev.gaji_tersedia, // AUTO-CALCULATED
                 nomor_rekening_giro_pos: data.no_rekening || prev.nomor_rekening_giro_pos,
                 kantor_pos_petugas: data.kantor_bayar || prev.kantor_pos_petugas,
             }));
 
-            // Show success notification
+            // Show success notification with potongan info
+            const potonganInfo = totalPotongan > 0 
+                ? `\n\nGaji Bersih: Rp ${gajiBersih.toLocaleString('id-ID')}\nPotongan: Rp ${totalPotongan.toLocaleString('id-ID')}\nGaji Tersedia: Rp ${gajiTersedia.toLocaleString('id-ID')}`
+                : '';
+
             Swal.fire({
                 icon: 'success',
                 title: 'Data Ditemukan!',
-                text: `Data pensiunan ${data.nama_lengkap} berhasil dimuat dari sistem Pos Indonesia.`,
-                timer: 3000,
+                text: `Data pensiunan ${data.nama_lengkap} berhasil dimuat dari sistem Pos Indonesia.${potonganInfo}`,
+                timer: 5000,
                 showConfirmButton: false,
                 toast: true,
                 position: 'top-end'
@@ -1522,6 +1540,7 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
                         <h3 className="text-lg font-bold text-gray-900">Data Keuangan</h3>
                     </div>
                     {renderInput("Gaji Bersih", "gaji_bersih", "number", false, "Rp", true)}
+                    {renderInput("Total Potongan Pinjaman", "total_potongan_pinjaman", "number", false, "Rp", true)}
                     {renderInput("Gaji Tersedia", "gaji_tersedia", "number", false, "Rp", true)}
                     {renderInput("Jenis Dapem", "jenis_dapem")}
                     {renderInput("Bulan Dapem", "bulan_dapem")}
@@ -1540,6 +1559,7 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
                         <h3 className="text-lg font-bold text-gray-900">Data Keuangan</h3>
                     </div>
                     {renderInput("Gaji Bersih", "gaji_bersih", "number", false, "Rp", true)}
+                    {renderInput("Total Potongan Pinjaman", "total_potongan_pinjaman", "number", false, "Rp", true)}
                     {renderInput("Gaji Tersedia", "gaji_tersedia", "number", false, "Rp", true)}
                 </>
             )}
@@ -2067,6 +2087,7 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
                         </>
                     )}
                     <PreviewItem label="Gaji Bersih" value={formatCurrency(formData.gaji_bersih)} />
+                    <PreviewItem label="Total Potongan Pinjaman" value={formatCurrency(formData.total_potongan_pinjaman)} />
                     <PreviewItem label="Gaji Tersedia" value={formatCurrency(formData.gaji_tersedia)} />
                 </PreviewSection>
 

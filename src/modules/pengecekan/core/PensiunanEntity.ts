@@ -1,3 +1,16 @@
+export interface PotonganPinjaman {
+    AMOUNT: number;
+    ANGSURAN: number;
+    BLN_TAGIHAN: string;
+    ID_MITRA: string;
+    KD_STATUS: string;
+    KETERANGAN: string;
+    NAMA_MITRA: string;
+    PERIODE: string;
+    TENOR: number;
+    TGL_BAYAR: string;
+}
+
 export interface Pensiunan {
     nopen: string;
     nama_lengkap: string;
@@ -21,6 +34,9 @@ export interface Pensiunan {
     potongan: number;
     gaji_bersih: number;
     bulan_dapem: string; // NEW: dari API (periode pembayaran)
+
+    // Potongan Pinjaman
+    potongan_pinjaman?: PotonganPinjaman[]; // Array of loan deductions
 
     // Status
     status_keaktifan: string; // Aktif, Meninggal, dll

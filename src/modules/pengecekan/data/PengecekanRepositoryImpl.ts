@@ -61,14 +61,19 @@ export class PengecekanRepositoryImpl implements PengecekanRepository {
 
             const data = responseData.data;
 
+            // Calculate total potongan from potongan_pinjaman if available
+            const totalPotongan = data.potongan_pinjaman 
+                ? data.potongan_pinjaman.reduce((sum: number, p: any) => sum + (p.AMOUNT || 0), 0)
+                : 0;
+
             return {
                 nopen: data.nomor_pensiun || nopen,
                 nama_lengkap: data.nama_lengkap || '',
-                tanggal_lahir: '', // Not provided by API
+                tanggal_lahir: data.tanggal_lahir || '', // From API if available
                 jenis_kelamin: '', // Not provided by API
                 jenis_pensiun: data.jenis_pensiun || '',
                 jenis_dapem: data.jenis_dapem || '',
-                status_keaktifan: data.status_dapem === '13' ? 'Aktif' : 'Tidak Aktif',
+                status_keaktifan: data.status_dapem === '13' || data.status_dapem === '1' ? 'Aktif' : 'Tidak Aktif',
                 status_dapem: data.status_dapem || '',
                 kantor_bayar: data.nama_kantor || data.nama_kprk || '',
                 kode_kantor: data.kode_kantor || '',
@@ -76,13 +81,14 @@ export class PengecekanRepositoryImpl implements PengecekanRepository {
                 alamat: '', // Not provided by API
                 nama_bank: data.mitra || '',
                 mitra: data.mitra || '',
-                no_rekening: data.nomor_rekening || '',
+                no_rekening: data.nomor_rekening || data.nomor_rekening_giro || '',
                 gaji_pokok: 0, // Not provided separately
                 tunjangan: 0, // Not provided separately
-                potongan: 0, // Not provided separately
+                potongan: totalPotongan, // Calculate from potongan_pinjaman array
                 gaji_bersih: parseFloat(String(data.gaji_bersih || 0)),
                 bulan_dapem: data.bulan_dapem || '',
-                last_updated: data.bulan_dapem || new Date().toISOString()
+                potongan_pinjaman: data.potongan_pinjaman || [], // Include loan deductions array
+                last_updated: data.tgl_transaksi || data.bulan_dapem || new Date().toISOString()
             };
         } catch (error: any) {
             const duration = Date.now() - startTime;

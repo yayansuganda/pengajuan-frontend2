@@ -1,9 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Search, User, CreditCard, Calendar, MapPin, Wallet, Building, AlertCircle, Info, CheckCircle } from 'lucide-react';
+import { Search, User, CreditCard, Calendar, MapPin, Wallet, Building, AlertCircle, Info, CheckCircle, Receipt, TrendingDown } from 'lucide-react';
 import { PengecekanRepositoryImpl } from '../data/PengecekanRepositoryImpl';
-import { Pensiunan } from '../core/PensiunanEntity';
+import { Pensiunan, PotonganPinjaman } from '../core/PensiunanEntity';
 import { showLoading, hideLoading, showError } from '@/shared/utils/sweetAlert';
 import { handleError } from '@/shared/utils/errorHandler';
 import { MobileLayoutWrapper } from '@/modules/pengajuan/presentation/components/MobileLayoutWrapper';
@@ -152,6 +152,38 @@ const MobileView = ({ nopen, setNopen, handleSearch, result, hasSearched, forceV
                                     </div>
                                 </div>
                             </div>
+
+                            {/* Potongan Pinjaman Section - Mobile */}
+                            {result.potongan_pinjaman && result.potongan_pinjaman.length > 0 && (
+                                <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-5">
+                                    <div className="flex items-center gap-2 mb-4">
+                                        <div className="p-1.5 bg-rose-50 rounded-lg">
+                                            <Receipt className="w-4 h-4 text-rose-600" />
+                                        </div>
+                                        <h3 className="font-bold text-slate-800 text-sm">Informasi Potongan Pinjaman</h3>
+                                    </div>
+                                    <div className="space-y-3">
+                                        {result.potongan_pinjaman.map((potongan, index) => (
+                                            <div key={index} className="bg-rose-50 rounded-xl p-4 border border-rose-100">
+                                                <div className="flex items-center gap-2 mb-3">
+                                                    <TrendingDown className="w-4 h-4 text-rose-600" />
+                                                    <h4 className="text-sm font-bold text-rose-900">{potongan.NAMA_MITRA}</h4>
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <InfoRowMobile label="ID Mitra" value={potongan.ID_MITRA} />
+                                                    <InfoRowMobile label="Jumlah Potongan" value={formatMoney(potongan.AMOUNT)} />
+                                                    <InfoRowMobile label="Angsuran Ke" value={`${potongan.ANGSURAN} dari ${potongan.TENOR}`} />
+                                                    <InfoRowMobile label="Periode" value={potongan.PERIODE} />
+                                                    <InfoRowMobile label="Bulan Tagihan" value={potongan.BLN_TAGIHAN} />
+                                                    <InfoRowMobile label="Tanggal Bayar" value={potongan.TGL_BAYAR} />
+                                                    <InfoRowMobile label="Keterangan" value={potongan.KETERANGAN} />
+                                                    <InfoRowMobile label="Status" value={potongan.KD_STATUS === '01' ? 'Aktif' : 'Tidak Aktif'} />
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                         </>
                     ) : (
                         <div className="text-center py-12 bg-white rounded-3xl border border-dashed border-slate-200">
@@ -384,6 +416,74 @@ const DesktopView = ({ nopen, setNopen, handleSearch, result, hasSearched }: Pen
                                 </p>
                             </div>
                         </div>
+
+                        {/* Potongan Pinjaman Section - Desktop */}
+                        {result.potongan_pinjaman && result.potongan_pinjaman.length > 0 && (
+                            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+                                <div className="flex items-center gap-3 mb-6">
+                                    <div className="p-2 bg-rose-50 rounded-lg">
+                                        <Receipt className="h-6 w-6 text-rose-600" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-lg font-bold text-slate-900">Informasi Potongan Pinjaman</h3>
+                                        <p className="text-sm text-slate-500">Detail potongan pinjaman yang sedang berjalan</p>
+                                    </div>
+                                </div>
+                                <div className="space-y-4">
+                                    {result.potongan_pinjaman.map((potongan, index) => (
+                                        <div key={index} className="bg-rose-50 rounded-xl p-6 border border-rose-200">
+                                            <div className="flex items-center justify-between mb-4">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="p-2 bg-rose-100 rounded-lg">
+                                                        <TrendingDown className="h-5 w-5 text-rose-600" />
+                                                    </div>
+                                                    <div>
+                                                        <h4 className="text-lg font-bold text-rose-900">{potongan.NAMA_MITRA}</h4>
+                                                        <p className="text-sm text-rose-600">ID Mitra: {potongan.ID_MITRA}</p>
+                                                    </div>
+                                                </div>
+                                                <div className="text-right">
+                                                    <p className="text-2xl font-bold text-rose-700">{formatMoney(potongan.AMOUNT)}</p>
+                                                    <p className="text-xs text-rose-600 font-medium">Potongan Bulanan</p>
+                                                </div>
+                                            </div>
+                                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                                <div>
+                                                    <p className="text-xs text-slate-500 mb-1">Angsuran</p>
+                                                    <p className="text-sm font-bold text-slate-900">{potongan.ANGSURAN} dari {potongan.TENOR}</p>
+                                                </div>
+                                                <div>
+                                                    <p className="text-xs text-slate-500 mb-1">Periode</p>
+                                                    <p className="text-sm font-bold text-slate-900">{potongan.PERIODE}</p>
+                                                </div>
+                                                <div>
+                                                    <p className="text-xs text-slate-500 mb-1">Bulan Tagihan</p>
+                                                    <p className="text-sm font-bold text-slate-900">{potongan.BLN_TAGIHAN}</p>
+                                                </div>
+                                                <div>
+                                                    <p className="text-xs text-slate-500 mb-1">Tanggal Bayar</p>
+                                                    <p className="text-sm font-bold text-slate-900">{potongan.TGL_BAYAR}</p>
+                                                </div>
+                                            </div>
+                                            <div className="mt-4 flex items-center justify-between gap-4">
+                                                <div className="flex items-center gap-2">
+                                                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                                                        potongan.KD_STATUS === '01' 
+                                                            ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' 
+                                                            : 'bg-slate-100 text-slate-700 border border-slate-200'
+                                                    }`}>
+                                                        {potongan.KD_STATUS === '01' ? '✓ Aktif' : 'Tidak Aktif'}
+                                                    </span>
+                                                    <span className="px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700 border border-amber-200">
+                                                        {potongan.KETERANGAN}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                     </div>
                 ) : (
                     <div className="text-center py-16 bg-white rounded-2xl border border-dashed border-slate-200">
