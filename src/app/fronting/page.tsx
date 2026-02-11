@@ -582,47 +582,6 @@ function FrontingPageContent() {
                                 )}
                             </div>
                         </div>
-
-                        {/* TAMPILKAN SEMUA DATA - Semua field dari hasil decrypt */}
-                        <div className="pt-3 border-t border-slate-700">
-                            <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-3">
-                                📊 All Decrypted Data
-                            </p>
-                            <div className="grid grid-cols-2 gap-2">
-                                {Object.entries(frontingUser).map(([key, value]) => {
-                                    // Skip internal fields
-                                    if (key === 'timestamp') return null;
-
-                                    // Format key untuk display
-                                    const displayKey = key
-                                        .replace(/_/g, ' ')
-                                        .split(' ')
-                                        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-                                        .join(' ');
-
-                                    // Format value
-                                    let displayValue = value;
-                                    if (value === null || value === undefined || value === '') {
-                                        displayValue = '-';
-                                    } else if (typeof value === 'object') {
-                                        displayValue = JSON.stringify(value);
-                                    } else {
-                                        displayValue = String(value);
-                                    }
-
-                                    return (
-                                        <div key={key} className={`${displayValue.length > 30 ? 'col-span-2' : ''}`}>
-                                            <p className="text-[9px] text-slate-500 mb-0.5 uppercase tracking-wider">
-                                                {displayKey}
-                                            </p>
-                                            <p className="text-xs font-semibold text-slate-300 break-all">
-                                                {displayValue}
-                                            </p>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        </div>
                     </div>
 
                     {/* Info: Data Filter by NIPPOS */}
@@ -692,21 +651,6 @@ function FrontingPageContent() {
                                 );
                             })}
                         </div>
-                    </div>
-
-                    {/* Raw JSON Card - For Technical Reference */}
-                    <div className="bg-gradient-to-br from-blue-500 to-cyan-600 rounded-2xl p-4 shadow-lg mb-4">
-                        <details className="space-y-3">
-                            <summary className="text-sm font-bold text-white cursor-pointer hover:text-blue-100 transition-colors flex items-center gap-2">
-                                <span>💻</span>
-                                <span>View Raw JSON (Developer Mode)</span>
-                            </summary>
-                            <div className="bg-slate-900 rounded-lg p-4 overflow-x-auto">
-                                <pre className="text-xs text-green-400 font-mono">
-                                    {JSON.stringify(frontingUser, null, 2)}
-                                </pre>
-                            </div>
-                        </details>
                     </div>
 
                     {/* Warning jika belum login ke backend */}

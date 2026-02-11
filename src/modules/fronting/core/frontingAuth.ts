@@ -9,10 +9,16 @@ export interface FrontingUserData {
     name: string;
     nippos: string;
     account_no: string;
+    phone?: string;
+    kcu_code?: string;
     kcu_name?: string;
+    kc_code?: string;
     kc_name?: string;
-    role: string;
+    kcp_code?: string;
+    kcp_name?: string;
+    role?: string;
     timestamp?: number;
+    [key: string]: any; // Allow any additional fields from decrypt
 }
 
 const FRONTING_USER_KEY = 'fronting_user';

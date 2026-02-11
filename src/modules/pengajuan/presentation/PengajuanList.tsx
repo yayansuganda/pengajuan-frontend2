@@ -383,13 +383,25 @@ export const PengajuanList: React.FC<PengajuanListProps> = ({ viewMode = 'respon
     }, [search]);
 
     const fetchData = async () => {
-        console.log('[PengajuanList] 📊 ========== FETCH DATA ==========');
+        console.log('[PengajuanList] 📊 ========== FETCH DATA START ==========');
         console.log('[PengajuanList] Current path:', typeof window !== 'undefined' ? window.location.pathname : 'SSR');
-        console.log('[PengajuanList] User:', user);
+        console.log('[PengajuanList] User from useAuth():', user);
+        console.log('[PengajuanList] User role:', user?.role);
+        console.log('[PengajuanList] User ID:', user?.id);
+        
+        // Check token
+        const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+        const storedUser = typeof window !== 'undefined' ? localStorage.getItem('user') : null;
+        console.log('[PengajuanList] ========== AUTH CHECK ==========');
+        console.log('[PengajuanList] Token exists?', !!token);
+        console.log('[PengajuanList] Token (first 20 chars):', token ? token.substring(0, 20) + '...' : 'NULL');
+        console.log('[PengajuanList] Stored user exists?', !!storedUser);
+        console.log('[PengajuanList] Stored user:', storedUser ? JSON.parse(storedUser) : null);
         
         // FORCE CHECK: Jika di route /fronting/pengajuan, SELALU apply filter NIPPOS
         const isFrontingRoute = typeof window !== 'undefined' && window.location.pathname.includes('/fronting');
         console.log('[PengajuanList] Is fronting route?', isFrontingRoute);
+        console.log('[PengajuanList] Full pathname:', typeof window !== 'undefined' ? window.location.pathname : 'SSR');
         
         try {
             setIsLoading(true);
@@ -417,9 +429,28 @@ export const PengajuanList: React.FC<PengajuanListProps> = ({ viewMode = 'respon
                 if (frontingUser && frontingUser.nippos) {
                     console.log('[PengajuanList] ✅ APPLYING NIPPOS FILTER:', frontingUser.nippos);
                     filter.petugas_nippos = frontingUser.nippos;
+                    
+                    // IMPORTANT: Check if user is logged in
+                    // If in fronting route but user is null (not logged in), redirect to /fronting for auto-login
+                    if (isFrontingRoute && !user && typeof window !== 'undefined') {
+                        const token = localStorage.getItem('token');
+                        if (!token) {
+                            console.warn('[PengajuanList] ⚠️ User not logged in but in fronting route. Redirecting to /fronting for auto-login...');
+                            window.location.href = '/fronting';
+                            return;
+                        }
+                    }
                 } else {
                     console.error('[PengajuanList] ❌❌❌ NO NIPPOS IN LOCALSTORAGE! ❌❌❌');
                     console.error('[PengajuanList] This is the problem! User must access /fronting/?data=... first!');
+                    
+                    // Redirect to /fronting if in fronting route
+                    if (isFrontingRoute && typeof window !== 'undefined') {
+                        console.warn('[PengajuanList] Redirecting to /fronting...');
+                        window.location.href = '/fronting';
+                        return;
+                    }
+                    
                     setData([]);
                     setIsLoading(false);
                     return;

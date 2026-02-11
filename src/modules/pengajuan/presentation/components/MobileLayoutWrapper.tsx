@@ -283,12 +283,12 @@ export const MobileLayoutWrapper: React.FC<MobileLayoutWrapperProps & { forceVis
                                 <CheckCircle className="w-5 h-5" />
                             </Link>
 
-                            {/* 5. Help */}
+                            {/* 5. Profile */}
                             <Link
-                                href="/fronting/help"
+                                href="/fronting/profile"
                                 className="w-11 h-11 rounded-full flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
                             >
-                                <HelpCircle className="w-5 h-5" />
+                                <Users className="w-5 h-5" />
                             </Link>
                         </div>
                     </div>
