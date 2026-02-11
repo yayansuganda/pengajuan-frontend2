@@ -234,7 +234,7 @@ export function isValidPOSOfficer(userData: FrontingUserData): boolean {
 
     // Validate role is POS officer
     const validRoles = ['POS', 'POS_OFFICER', 'PETUGAS_POS'];
-    return validRoles.includes(userData.role.toUpperCase());
+    return userData.role ? validRoles.includes(userData.role.toUpperCase()) : false;
 }
 
 /**
