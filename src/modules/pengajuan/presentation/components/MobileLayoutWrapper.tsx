@@ -39,10 +39,10 @@ export const MobileLayoutWrapper: React.FC<MobileLayoutWrapperProps & { forceVis
         { icon: CheckCircle, label: 'Pengecekan Status', href: '/cek-status' },
     ];
 
-    // Fronting-specific pengecekan menu items
+    // Fronting-specific menu items
     const frontingPengecekanMenuItems = [
         { icon: MapPin, label: 'Pengecekan POS', href: '/fronting/pengecekan-pos' },
-        { icon: CheckCircle, label: 'Pengecekan Status', href: '/fronting/pengecekan-status' },
+        { icon: Calculator, label: 'Simulasi', href: '/fronting/simulasi' },
     ];
 
     // Check if user is super-admin
@@ -275,12 +275,12 @@ export const MobileLayoutWrapper: React.FC<MobileLayoutWrapperProps & { forceVis
                                 </div>
                             </Link>
 
-                            {/* 4. Cek Status */}
+                            {/* 4. Simulasi */}
                             <Link
-                                href="/fronting/cek-status"
+                                href="/fronting/simulasi"
                                 className="w-11 h-11 rounded-full flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
                             >
-                                <CheckCircle className="w-5 h-5" />
+                                <Calculator className="w-5 h-5" />
                             </Link>
 
                             {/* 5. Profile */}
