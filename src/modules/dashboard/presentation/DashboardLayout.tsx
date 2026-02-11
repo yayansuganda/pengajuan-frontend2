@@ -3,6 +3,7 @@ import { useAuth } from '@/modules/auth/presentation/useAuth';
 import { showLoading, hideLoading, showConfirm } from '@/shared/utils/sweetAlert';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
+import { useRouter, usePathname } from 'next/navigation';
 
 interface DashboardLayoutProps {
     children: React.ReactNode;
@@ -11,6 +12,8 @@ interface DashboardLayoutProps {
 export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
     const { user, logout, loading } = useAuth();
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const router = useRouter();
+    const pathname = usePathname();
 
     useEffect(() => {
         if (loading) {
@@ -19,6 +22,15 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
             hideLoading();
         }
     }, [loading]);
+
+    // Redirect admin-pos to /rekonsiliasi if trying to access other pages
+    useEffect(() => {
+        if (!loading && user && user.role === 'admin-pos') {
+            if (pathname !== '/rekonsiliasi' && pathname !== '/profile') {
+                router.push('/rekonsiliasi');
+            }
+        }
+    }, [user, loading, pathname, router]);
 
     const handleLogout = async () => {
         const confirmed = await showConfirm('Apakah Anda yakin ingin keluar?', 'Ya, Keluar', 'Batal', 'Konfirmasi Logout');

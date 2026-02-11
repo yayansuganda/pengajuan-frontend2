@@ -18,7 +18,8 @@ import {
     Activity,
     Smartphone,
     MinusCircle,
-    Settings
+    Settings,
+    ClipboardCheck
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -43,6 +44,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ userRole, isOpen, onClose }) =
         { name: 'Cek Status', href: '/cek-status', icon: Activity },
         { name: 'Fronting', href: '/fronting', icon: Smartphone },
     ];
+
+    // Rekonsiliasi menu - only for super-admin and admin-pos
+    const rekonsiliasiMenu = { name: 'Rekonsiliasi', href: '/rekonsiliasi', icon: ClipboardCheck };
 
     const dataMasterMenus = [
         { name: 'Unit', href: '/unit', icon: Building2 },
@@ -98,30 +102,77 @@ export const Sidebar: React.FC<SidebarProps> = ({ userRole, isOpen, onClose }) =
 
                 {/* Navigation Section */}
                 <nav className="flex-1 space-y-1 px-3 py-6 overflow-y-auto max-h-[calc(100vh-4rem)]">
-                    <div className="px-3 mb-2">
-                        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                            Menu Utama
-                        </p>
-                    </div>
+                    {/* Admin POS - Only Rekonsiliasi Menu */}
+                    {userRole === 'admin-pos' ? (
+                        <>
+                            <div className="px-3 mb-2">
+                                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                                    Menu
+                                </p>
+                            </div>
+                            {(() => {
+                                const RekonIcon = rekonsiliasiMenu.icon;
+                                return (
+                                    <Link
+                                        href={rekonsiliasiMenu.href}
+                                        onClick={handleLinkClick}
+                                        className={`group flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 ${isActive(rekonsiliasiMenu.href)
+                                            ? 'bg-indigo-600/10 text-indigo-400 border border-indigo-600/20'
+                                            : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+                                            }`}
+                                    >
+                                        <RekonIcon className={`h-5 w-5 ${isActive(rekonsiliasiMenu.href) ? 'text-indigo-400' : 'text-slate-500 group-hover:text-slate-300'}`} />
+                                        {rekonsiliasiMenu.name}
+                                    </Link>
+                                );
+                            })()}
+                        </>
+                    ) : (
+                        <>
+                            <div className="px-3 mb-2">
+                                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                                    Menu Utama
+                                </p>
+                            </div>
 
-                    {navigation.map((item) => {
-                        const active = isActive(item.href);
-                        const Icon = item.icon;
-                        return (
-                            <Link
-                                key={item.name}
-                                href={item.href}
-                                onClick={handleLinkClick}
-                                className={`group flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 ${active
-                                    ? 'bg-indigo-600/10 text-indigo-400 border border-indigo-600/20'
-                                    : 'text-slate-400 hover:bg-slate-800 hover:text-white'
-                                    }`}
-                            >
-                                <Icon className={`h-5 w-5 ${active ? 'text-indigo-400' : 'text-slate-500 group-hover:text-slate-300'}`} />
-                                {item.name}
-                            </Link>
-                        );
-                    })}
+                            {navigation.map((item) => {
+                                const active = isActive(item.href);
+                                const Icon = item.icon;
+                                return (
+                                    <Link
+                                        key={item.name}
+                                        href={item.href}
+                                        onClick={handleLinkClick}
+                                        className={`group flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 ${active
+                                            ? 'bg-indigo-600/10 text-indigo-400 border border-indigo-600/20'
+                                            : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+                                            }`}
+                                    >
+                                        <Icon className={`h-5 w-5 ${active ? 'text-indigo-400' : 'text-slate-500 group-hover:text-slate-300'}`} />
+                                        {item.name}
+                                    </Link>
+                                );
+                            })}
+
+                            {/* Rekonsiliasi - Only for super-admin */}
+                            {userRole === 'super-admin' && (() => {
+                                const RekonIcon = rekonsiliasiMenu.icon;
+                                return (
+                                    <Link
+                                        href={rekonsiliasiMenu.href}
+                                        onClick={handleLinkClick}
+                                        className={`group flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 ${isActive(rekonsiliasiMenu.href)
+                                            ? 'bg-indigo-600/10 text-indigo-400 border border-indigo-600/20'
+                                            : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+                                            }`}
+                                    >
+                                        <RekonIcon className={`h-5 w-5 ${isActive(rekonsiliasiMenu.href) ? 'text-indigo-400' : 'text-slate-500 group-hover:text-slate-300'}`} />
+                                        {rekonsiliasiMenu.name}
+                                    </Link>
+                                );
+                            })()}
+                        </>
+                    )}
 
                     {/* Data Master Section - Super Admin Only */}
                     {userRole === 'super-admin' && (
