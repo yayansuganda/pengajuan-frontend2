@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, Search, Calendar, FileText, ChevronRight, Briefcase, History } from 'lucide-react';
+import { Plus, Search, Calendar, FileText, ChevronRight, Briefcase, History, RefreshCw, Circle, CheckCircle, XCircle, Clock, ArrowRight } from 'lucide-react';
 import { Pengajuan, PengajuanFilter } from '../core/PengajuanEntity';
 import { PengajuanRepositoryImpl } from '../data/PengajuanRepositoryImpl';
 import { useAuth } from '@/modules/auth/presentation/useAuth';
@@ -25,6 +25,7 @@ interface ViewProps {
     router: any;
     user: any;
     forceVisible?: boolean;
+    onRefresh: () => void;
 }
 
 const STATUS_OPTIONS = [
@@ -70,8 +71,48 @@ const formatDate = (dateString: string) => {
     });
 };
 
+// Timeline helpers - Sesuai dengan role yang memproses
+const getTimelineSteps = () => [
+    { status: 'Pending', icon: FileText, label: 'Officer', tooltip: 'Pengajuan dibuat' },
+    { status: 'Menunggu Approval Manager', icon: Search, label: 'Verifier', tooltip: 'Verifikasi data' },
+    { status: 'Disetujui', icon: CheckCircle, label: 'Manager', tooltip: 'Approval manager' },
+    { status: 'Menunggu Verifikasi Admin Unit', icon: Clock, label: 'Admin Unit', tooltip: 'Verifikasi admin unit' },
+    { status: 'Menunggu Pencairan', icon: Clock, label: 'Admin Pusat', tooltip: 'Proses pencairan' },
+    { status: 'Dicairkan', icon: CheckCircle, label: 'Dicairkan', tooltip: 'Dana telah dicairkan' },
+    { status: 'Selesai', icon: CheckCircle, label: 'Selesai', tooltip: 'Proses selesai' },
+];
+
+const getStatusIndex = (status: string): number => {
+    const steps = getTimelineSteps();
+    const index = steps.findIndex(s => s.status === status);
+    return index === -1 ? 0 : index;
+};
+
+const getTimelineIconColor = (currentStatus: string, stepStatus: string, isRejected: boolean): string => {
+    if (isRejected) {
+        if (stepStatus === 'Pending') return 'text-rose-500 bg-rose-50';
+        return 'text-slate-300 bg-slate-50';
+    }
+    
+    const currentIndex = getStatusIndex(currentStatus);
+    const stepIndex = getStatusIndex(stepStatus);
+    
+    if (stepIndex < currentIndex) return 'text-emerald-500 bg-emerald-50'; // Completed
+    if (stepIndex === currentIndex) return 'text-blue-500 bg-blue-50'; // Current
+    return 'text-slate-300 bg-slate-50'; // Upcoming
+};
+
+const getTimelineLineColor = (currentStatus: string, stepStatus: string, isRejected: boolean): string => {
+    if (isRejected) return 'bg-slate-200';
+    
+    const currentIndex = getStatusIndex(currentStatus);
+    const stepIndex = getStatusIndex(stepStatus);
+    
+    return stepIndex < currentIndex ? 'bg-emerald-400' : 'bg-slate-200';
+};
+
 // --- Mobile View ---
-const MobileView = ({ data, search, setSearch, statusFilter, setStatusFilter, dateFilter, setDateFilter, isLoading, router, user, forceVisible }: ViewProps) => (
+const MobileView = ({ data, search, setSearch, statusFilter, setStatusFilter, dateFilter, setDateFilter, isLoading, router, user, forceVisible, onRefresh }: ViewProps) => (
     <MobileLayoutWrapper showBackground={false} forceVisible={forceVisible} moduleName={forceVisible ? 'fronting' : 'default'}>
         {/* Layer 1: Full Page Background */}
         <div className="fixed inset-0 z-0 pointer-events-none">
@@ -90,6 +131,14 @@ const MobileView = ({ data, search, setSearch, statusFilter, setStatusFilter, da
                 <div className="flex justify-between items-center gap-2">
                     <h1 className="text-lg font-bold text-slate-800">Daftar Pengajuan</h1>
                     <div className="flex items-center gap-2">
+                        <button
+                            onClick={onRefresh}
+                            disabled={isLoading}
+                            className="flex items-center gap-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1.5 rounded-lg border border-emerald-200 hover:bg-emerald-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            title="Refresh data"
+                        >
+                            <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+                        </button>
                         <button
                             onClick={() => router.push('/pengajuan/history')}
                             className="flex items-center gap-1.5 text-xs font-semibold text-indigo-700 bg-indigo-50 px-3 py-1.5 rounded-lg border border-indigo-200 hover:bg-indigo-100 transition-colors"
@@ -113,7 +162,7 @@ const MobileView = ({ data, search, setSearch, statusFilter, setStatusFilter, da
                             type="text"
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
-                            placeholder="Cari Nama / NIK..."
+                            placeholder="Cari Nama / NIK / NOPEN..."
                             className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:bg-white focus:ring-2 focus:ring-indigo-500 transition-colors"
                         />
                     </div>
@@ -187,7 +236,7 @@ const MobileView = ({ data, search, setSearch, statusFilter, setStatusFilter, da
                                 </span>
                             </div>
 
-                            <div className="flex items-end justify-between">
+                            <div className="flex items-end justify-between mb-3">
                                 <div className="space-y-0.5">
                                     <div className="flex items-center gap-1.5 text-xs text-slate-500">
                                         <Calendar className="w-3 h-3" />
@@ -203,6 +252,30 @@ const MobileView = ({ data, search, setSearch, statusFilter, setStatusFilter, da
                                 <div className="text-right">
                                     <p className="text-[10px] text-slate-400 font-medium uppercase">Nominal</p>
                                     <p className="text-sm font-bold text-indigo-600">{formatCurrency(item.jumlah_pembiayaan)}</p>
+                                </div>
+                            </div>
+
+                            {/* Horizontal Timeline */}
+                            <div className="pt-2.5 border-t border-slate-100">
+                                <div className="flex items-center justify-between gap-1">
+                                    {getTimelineSteps().map((step, idx) => {
+                                        const isRejected = item.status === 'Ditolak';
+                                        const Icon = isRejected && idx === 0 ? XCircle : step.icon;
+                                        const isLast = idx === getTimelineSteps().length - 1;
+                                        
+                                        return (
+                                            <div key={step.status} className="flex items-center flex-1">
+                                                <div className="flex flex-col items-center">
+                                                    <div className={`w-6 h-6 rounded-full flex items-center justify-center ${getTimelineIconColor(item.status, step.status, isRejected)}`}>
+                                                        <Icon className="w-3 h-3" strokeWidth={2.5} />
+                                                    </div>
+                                                </div>
+                                                {!isLast && (
+                                                    <div className={`h-0.5 flex-1 mx-0.5 ${getTimelineLineColor(item.status, step.status, isRejected)}`}></div>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
                                 </div>
                             </div>
                         </div>
@@ -222,7 +295,7 @@ const MobileView = ({ data, search, setSearch, statusFilter, setStatusFilter, da
 );
 
 // --- Desktop View ---
-const DesktopView = ({ data, search, setSearch, statusFilter, setStatusFilter, dateFilter, setDateFilter, isLoading, router, user }: ViewProps) => (
+const DesktopView = ({ data, search, setSearch, statusFilter, setStatusFilter, dateFilter, setDateFilter, isLoading, router, user, onRefresh }: ViewProps) => (
     <div className="px-4 sm:px-6 lg:px-8">
         <div className="sm:flex sm:items-center mb-6">
             <div className="sm:flex-auto">
@@ -249,6 +322,15 @@ const DesktopView = ({ data, search, setSearch, statusFilter, setStatusFilter, d
             </div>
             <div className="mt-4 sm:ml-16 sm:mt-0 sm:flex-none flex gap-3">
                 <button
+                    onClick={onRefresh}
+                    disabled={isLoading}
+                    className="flex items-center gap-2 rounded-md bg-white px-3 py-2 text-center text-sm font-semibold text-emerald-600 shadow-sm ring-1 ring-inset ring-emerald-200 hover:bg-emerald-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Refresh data"
+                >
+                    <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+                    Refresh
+                </button>
+                <button
                     onClick={() => router.push('/pengajuan/history')}
                     className="flex items-center gap-2 rounded-md bg-white px-3 py-2 text-center text-sm font-semibold text-indigo-600 shadow-sm ring-1 ring-inset ring-indigo-200 hover:bg-indigo-50"
                 >
@@ -270,7 +352,7 @@ const DesktopView = ({ data, search, setSearch, statusFilter, setStatusFilter, d
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                     <input
                         type="text"
-                        placeholder="Cari nama atau NIK..."
+                        placeholder="Cari Nama / NIK / NOPEN..."
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         className="pl-9 w-full px-3 py-2 text-sm text-gray-900 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
@@ -408,6 +490,7 @@ export const PengajuanList: React.FC<PengajuanListProps> = ({ viewMode = 'respon
             const filter: PengajuanFilter = {};
             if (search) filter.search = search;
             if (statusFilter) filter.status = statusFilter;
+            if (dateFilter) filter.date = dateFilter;
             
             // FILTER BY NIPPOS
             // Prioritas 1: Jika di /fronting route, SELALU ambil dari localStorage
@@ -467,29 +550,22 @@ export const PengajuanList: React.FC<PengajuanListProps> = ({ viewMode = 'respon
             console.log('[PengajuanList] Total items received:', result.length);
             console.log('[PengajuanList] Raw response:', result);
 
-            let filteredResult = result;
-            if (dateFilter) {
-                // Client side date filtering as basic implementation
-                filteredResult = result.filter(item => item.created_at.startsWith(dateFilter));
-                console.log('[PengajuanList] 📅 After date filter:', filteredResult.length, 'items');
-            }
-
             // Debug: Verify filter for Petugas Pos
             if (user?.role === 'petugas-pos' || user?.role === 'admin-pos') {
                 const frontingUser = getFrontingUser();
-                if (frontingUser?.nippos && filteredResult.length > 0) {
-                    const matchingCount = filteredResult.filter(item => item.petugas_nippos === frontingUser.nippos).length;
-                    const nullCount = filteredResult.filter(item => !item.petugas_nippos).length;
+                if (frontingUser?.nippos && result.length > 0) {
+                    const matchingCount = result.filter(item => item.petugas_nippos === frontingUser.nippos).length;
+                    const nullCount = result.filter(item => !item.petugas_nippos).length;
                     console.log('[PengajuanList] 🔍 Filter Verification:');
                     console.log('  - Expected NIPPOS:', frontingUser.nippos);
-                    console.log('  - Total items:', filteredResult.length);
+                    console.log('  - Total items:', result.length);
                     console.log('  - Matching NIPPOS:', matchingCount);
                     console.log('  - NULL NIPPOS:', nullCount);
-                    console.log('  - Other NIPPOS:', filteredResult.length - matchingCount - nullCount);
+                    console.log('  - Other NIPPOS:', result.length - matchingCount - nullCount);
                 }
             }
 
-            setData(filteredResult);
+            setData(result);
             setIsLoading(false);
         } catch (error: any) {
             console.error(error);
@@ -497,7 +573,7 @@ export const PengajuanList: React.FC<PengajuanListProps> = ({ viewMode = 'respon
         }
     };
 
-    const viewProps = { data, search, setSearch, statusFilter, setStatusFilter, dateFilter, setDateFilter, isLoading, router, user, forceVisible };
+    const viewProps = { data, search, setSearch, statusFilter, setStatusFilter, dateFilter, setDateFilter, isLoading, router, user, forceVisible, onRefresh: fetchData };
 
     const isMobileMode = viewMode === 'mobile';
 

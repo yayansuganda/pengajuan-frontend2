@@ -352,13 +352,21 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
 
                     {/* Rejection Reason Alert - Mobile */}
                     {pengajuan.status === 'Ditolak' && pengajuan.reject_reason && (
-                        <div className="mb-4 px-2">
-                            <div className="bg-rose-50 border-l-4 border-rose-500 rounded-lg p-4">
+                        <div className="mb-5 px-2 animate-in fade-in slide-in-from-top-4 duration-500">
+                            <div className="bg-gradient-to-r from-rose-50 to-rose-100 border-2 border-rose-400 rounded-xl p-5 shadow-lg">
                                 <div className="flex items-start gap-3">
-                                    <XCircle className="w-5 h-5 text-rose-500 flex-shrink-0 mt-0.5" />
+                                    <div className="flex-shrink-0 mt-0.5">
+                                        <div className="w-8 h-8 bg-rose-500 rounded-full flex items-center justify-center">
+                                            <XCircle className="w-5 h-5 text-white" />
+                                        </div>
+                                    </div>
                                     <div className="flex-1">
-                                        <h3 className="text-sm font-bold text-rose-900 mb-1">Alasan Penolakan</h3>
-                                        <p className="text-xs text-rose-800 leading-relaxed">{pengajuan.reject_reason}</p>
+                                        <h3 className="text-base font-bold text-rose-900 mb-2 flex items-center gap-2">
+                                            ⚠️ Alasan Penolakan
+                                        </h3>
+                                        <div className="bg-white/60 rounded-lg p-3 border border-rose-200">
+                                            <p className="text-sm text-rose-900 leading-relaxed font-medium">{pengajuan.reject_reason}</p>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -766,12 +774,20 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                     <div className="px-4 pb-6 mt-6">
                         <div className="flex items-center gap-2 justify-center">
                             {user?.role === 'verifier' && pengajuan.status === 'Pending' && (
-                                <button
-                                    onClick={() => handleUpdateStatus('Menunggu Approval Manager', 'Kirim ke Manager?')}
-                                    className="flex-1 px-4 py-3 bg-indigo-600 text-white text-sm font-medium rounded-xl hover:bg-indigo-700 transition-colors shadow-lg"
-                                >
-                                    Verifikasi
-                                </button>
+                                <>
+                                    <button
+                                        onClick={() => handleUpdateStatus('Ditolak', 'Tolak pengajuan ini?')}
+                                        className="flex-1 px-4 py-3 bg-rose-600 text-white text-sm font-medium rounded-xl hover:bg-rose-700 transition-colors shadow-lg"
+                                    >
+                                        Tolak
+                                    </button>
+                                    <button
+                                        onClick={() => handleUpdateStatus('Menunggu Approval Manager', 'Kirim ke Manager?')}
+                                        className="flex-1 px-4 py-3 bg-indigo-600 text-white text-sm font-medium rounded-xl hover:bg-indigo-700 transition-colors shadow-lg"
+                                    >
+                                        Verifikasi
+                                    </button>
+                                </>
                             )}
                             {user?.role === 'manager' && pengajuan.status === 'Menunggu Approval Manager' && (
                                 <>
@@ -877,9 +893,14 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                                     </Link>
                                 )}
                                 {user?.role === 'verifier' && pengajuan.status === 'Pending' && (
-                                    <button onClick={() => handleUpdateStatus('Menunggu Approval Manager', 'Kirim data ke Manager?')} className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-full transition-all">
-                                        Kirim ke Manager
-                                    </button>
+                                    <>
+                                        <button onClick={() => handleUpdateStatus('Ditolak', 'Tolak pengajuan ini?')} className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-sm font-medium rounded-full transition-all">
+                                            Tolak
+                                        </button>
+                                        <button onClick={() => handleUpdateStatus('Menunggu Approval Manager', 'Kirim data ke Manager?')} className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-full transition-all">
+                                            Verifikasi
+                                        </button>
+                                    </>
                                 )}
                                 {user?.role === 'manager' && pengajuan.status === 'Menunggu Approval Manager' && (
                                     <>
@@ -927,16 +948,20 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                 {/* Rejection Reason Alert - Desktop */}
                 {
                     pengajuan.status === 'Ditolak' && pengajuan.reject_reason && (
-                        <div className="bg-rose-50 border-l-4 border-rose-500 rounded-xl p-5 shadow-sm">
-                            <div className="flex items-start gap-4">
+                        <div className="bg-gradient-to-r from-rose-50 to-rose-100 border-2 border-rose-400 rounded-2xl p-6 shadow-lg animate-in fade-in slide-in-from-top-4 duration-500">
+                            <div className="flex items-start gap-5">
                                 <div className="flex-shrink-0">
-                                    <div className="w-10 h-10 bg-rose-100 rounded-full flex items-center justify-center">
-                                        <XCircle className="w-6 h-6 text-rose-600" />
+                                    <div className="w-14 h-14 bg-rose-500 rounded-full flex items-center justify-center shadow-lg">
+                                        <XCircle className="w-8 h-8 text-white" />
                                     </div>
                                 </div>
                                 <div className="flex-1">
-                                    <h3 className="text-base font-bold text-rose-900 mb-2">Alasan Penolakan</h3>
-                                    <p className="text-sm text-rose-800 leading-relaxed">{pengajuan.reject_reason}</p>
+                                    <h3 className="text-xl font-bold text-rose-900 mb-3 flex items-center gap-2">
+                                        ⚠️ Alasan Penolakan
+                                    </h3>
+                                    <div className="bg-white/70 rounded-xl p-4 border-2 border-rose-300">
+                                        <p className="text-base text-rose-900 leading-relaxed font-medium">{pengajuan.reject_reason}</p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -1045,19 +1070,30 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                                     } catch (e) { return null; }
                                 })()}
 
-                                {/* Notes */}
+                                {/* Notes & Rejection Reason */}
                                 {(pengajuan.notes || pengajuan.reject_reason) && (
-                                    <div className="space-y-3">
-                                        {pengajuan.notes && (
-                                            <div className="p-4 bg-amber-50 rounded-xl border border-amber-200">
-                                                <p className="text-sm font-semibold text-amber-800 mb-1">Catatan</p>
-                                                <p className="text-sm text-amber-700">{pengajuan.notes}</p>
+                                    <div className="space-y-4">
+                                        {pengajuan.reject_reason && (
+                                            <div className="p-5 bg-gradient-to-r from-rose-50 to-rose-100 rounded-xl border-2 border-rose-400 shadow-md">
+                                                <div className="flex items-start gap-3">
+                                                    <div className="flex-shrink-0 mt-0.5">
+                                                        <div className="w-7 h-7 bg-rose-500 rounded-full flex items-center justify-center">
+                                                            <XCircle className="w-4 h-4 text-white" />
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex-1">
+                                                        <p className="text-sm font-bold text-rose-900 mb-2">⚠️ Alasan Penolakan</p>
+                                                        <div className="bg-white/60 rounded-lg p-3 border border-rose-200">
+                                                            <p className="text-sm text-rose-900 leading-relaxed font-medium">{pengajuan.reject_reason}</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             </div>
                                         )}
-                                        {pengajuan.reject_reason && (
-                                            <div className="p-4 bg-rose-50 rounded-xl border border-rose-200">
-                                                <p className="text-sm font-semibold text-rose-800 mb-1">Alasan Penolakan</p>
-                                                <p className="text-sm text-rose-700">{pengajuan.reject_reason}</p>
+                                        {pengajuan.notes && (
+                                            <div className="p-4 bg-amber-50 rounded-xl border border-amber-200">
+                                                <p className="text-sm font-semibold text-amber-800 mb-1">📝 Catatan</p>
+                                                <p className="text-sm text-amber-700">{pengajuan.notes}</p>
                                             </div>
                                         )}
                                     </div>

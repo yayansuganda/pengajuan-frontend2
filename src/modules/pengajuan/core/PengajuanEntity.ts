@@ -120,11 +120,26 @@ export interface Pengajuan {
     // Timestamps
     created_at: string;
     updated_at: string;
+    
+    // Status History
+    status_history?: StatusHistory[];
+}
+
+export interface StatusHistory {
+    id: string;
+    loan_id: string;
+    status: string;
+    role: string;
+    user_id?: string;
+    user_name: string;
+    notes?: string;
+    created_at: string;
 }
 
 export interface PengajuanFilter {
     status?: string;
     search?: string;
+    date?: string;
     petugas_nippos?: string;
     limit?: number;
     page?: number;

@@ -1758,7 +1758,7 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
                             type="file"
                             className="hidden"
                             accept="image/*"
-                            capture="environment"
+                            capture
                             multiple={isMultiple}
                             disabled={isUploading}
                             onChange={(e) => handleFileChange(e, field.name, isMultiple)}

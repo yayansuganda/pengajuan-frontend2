@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, History, Clock, CheckCircle, XCircle, FileText, ChevronRight } from 'lucide-react';
-import { Pengajuan } from '@/modules/pengajuan/core/PengajuanEntity';
+import { ArrowLeft, History, Clock, CheckCircle, XCircle, FileText, ChevronRight, User, Timer } from 'lucide-react';
+import { Pengajuan, StatusHistory } from '@/modules/pengajuan/core/PengajuanEntity';
 import { PengajuanRepositoryImpl } from '@/modules/pengajuan/data/PengajuanRepositoryImpl';
 import { useAuth } from '@/modules/auth/presentation/useAuth';
 import { MobileLayoutWrapper } from '@/modules/pengajuan/presentation/components/MobileLayoutWrapper';
@@ -44,6 +44,46 @@ const formatDate = (dateString: string) => {
         hour: '2-digit',
         minute: '2-digit'
     });
+};
+
+const calculateDuration = (start: string, end: string): string => {
+    const startDate = new Date(start).getTime();
+    const endDate = new Date(end).getTime();
+    const diff = endDate - startDate;
+    
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    
+    if (days > 0) return `${days} hari ${hours} jam`;
+    if (hours > 0) return `${hours} jam ${minutes} menit`;
+    return `${minutes} menit`;
+};
+
+const getRoleLabel = (role: string): string => {
+    const labels: Record<string, string> = {
+        'officer': 'Officer',
+        'verifier': 'Verifier',
+        'manager': 'Manager',
+        'admin-unit': 'Admin Unit',
+        'admin-pusat': 'Admin Pusat',
+        'super-admin': 'Super Admin',
+    };
+    return labels[role] || role;
+};
+
+const getStatusBadgeColor = (status: string): string => {
+    switch (status) {
+        case 'Pending': return 'bg-amber-50 text-amber-700 border-amber-200';
+        case 'Menunggu Approval Manager': return 'bg-blue-50 text-blue-700 border-blue-200';
+        case 'Disetujui': return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+        case 'Menunggu Verifikasi Admin Unit': return 'bg-purple-50 text-purple-700 border-purple-200';
+        case 'Menunggu Pencairan': return 'bg-orange-50 text-orange-700 border-orange-200';
+        case 'Dicairkan': return 'bg-teal-50 text-teal-700 border-teal-200';
+        case 'Selesai': return 'bg-indigo-50 text-indigo-700 border-indigo-200';
+        case 'Ditolak': return 'bg-rose-50 text-rose-700 border-rose-200';
+        default: return 'bg-slate-50 text-slate-700 border-slate-200';
+    }
 };
 
 export default function PengajuanHistoryPage() {
@@ -206,6 +246,42 @@ export default function PengajuanHistoryPage() {
                                     </div>
                                 </div>
 
+                                {/* Timeline Section */}
+                                {item.status_history && item.status_history.length > 0 && (
+                                    <div className="mb-3 pb-3 border-b border-slate-100">
+                                        <p className="text-xs font-semibold text-slate-700 mb-2 flex items-center gap-1">
+                                            <History className="w-3.5 h-3.5" />
+                                            Timeline Proses
+                                        </p>
+                                        <div className="space-y-2">
+                                            {item.status_history.map((hist, idx) => (
+                                                <div key={hist.id} className="flex items-start gap-2">
+                                                    <div className="flex flex-col items-center">
+                                                        <div className={`w-2 h-2 rounded-full ${idx === item.status_history!.length - 1 ? 'bg-indigo-500' : 'bg-slate-300'}`}></div>
+                                                        {idx < item.status_history!.length - 1 && (
+                                                            <div className="w-0.5 h-6 bg-slate-200"></div>
+                                                        )}
+                                                    </div>
+                                                    <div className="flex-1 -mt-0.5">
+                                                        <div className="flex items-center gap-1.5 flex-wrap">
+                                                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium border ${getStatusBadgeColor(hist.status)}`}>
+                                                                {hist.status}
+                                                            </span>
+                                                            <span className="text-[10px] text-slate-500">oleh {getRoleLabel(hist.role)}</span>
+                                                        </div>
+                                                        {idx > 0 && item.status_history && item.status_history[idx - 1] && (
+                                                            <div className="flex items-center gap-1 text-[10px] text-slate-500 mt-0.5">
+                                                                <Timer className="w-3 h-3" />
+                                                                {calculateDuration(item.status_history[idx - 1].created_at, hist.created_at)}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
                                 <div className="flex items-center justify-between text-xs">
                                     <div className="flex items-center gap-1.5 text-slate-500">
                                         <Clock className="w-3.5 h-3.5" />
@@ -274,36 +350,50 @@ export default function PengajuanHistoryPage() {
                         </thead>
                         <tbody className="divide-y divide-gray-200 bg-white">
                             {data.map((item) => (
-                                <tr key={item.id} className="hover:bg-gray-50">
-                                    <td className="whitespace-nowrap py-4 pl-4 pr-3">
-                                        <div>
-                                            <div className="font-medium text-gray-900">{item.nama_lengkap}</div>
-                                            <div className="text-sm text-gray-500">NIK: {item.nik}</div>
-                                        </div>
-                                    </td>
-                                    <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{item.unit}</td>
-                                    <td className="whitespace-nowrap px-3 py-4 text-sm font-semibold text-indigo-600">
-                                        {formatCurrency(item.jumlah_pembiayaan)}
-                                    </td>
-                                    <td className="whitespace-nowrap px-3 py-4 text-sm">
-                                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs font-semibold ${getStatusColor(item.status)}`}>
-                                            {getStatusIcon(item.status)}
-                                            {item.status}
-                                        </span>
-                                    </td>
-                                    <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                                        {formatDate(item.updated_at)}
-                                    </td>
-                                    <td className="whitespace-nowrap px-3 py-4 text-sm">
-                                        <button
-                                            onClick={() => handleViewDetail(item.id)}
-                                            className="text-indigo-600 hover:text-indigo-900 font-medium flex items-center gap-1"
-                                        >
-                                            <FileText className="w-4 h-4" />
-                                            Detail
-                                        </button>
-                                    </td>
-                                </tr>
+                                <React.Fragment key={item.id}>
+                                    <tr className="hover:bg-gray-50">
+                                        <td className="py-4 pl-4 pr-3">
+                                            <div>
+                                                <div className="font-medium text-gray-900">{item.nama_lengkap}</div>
+                                                <div className="text-sm text-gray-500">NIK: {item.nik}</div>
+                                                {/* Timeline Preview */}
+                                                {item.status_history && item.status_history.length > 0 && (
+                                                    <div className="mt-2 flex items-center gap-2 text-xs">
+                                                        <History className="w-3.5 h-3.5 text-slate-400" />
+                                                        <span className="text-slate-500">{item.status_history.length} proses</span>
+                                                        {item.status_history.length > 1 && (
+                                                            <span className="text-slate-400">
+                                                                • Total: {calculateDuration(item.status_history[0].created_at, item.status_history[item.status_history.length - 1].created_at)}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </td>
+                                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{item.unit}</td>
+                                        <td className="whitespace-nowrap px-3 py-4 text-sm font-semibold text-indigo-600">
+                                            {formatCurrency(item.jumlah_pembiayaan)}
+                                        </td>
+                                        <td className="whitespace-nowrap px-3 py-4 text-sm">
+                                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs font-semibold ${getStatusColor(item.status)}`}>
+                                                {getStatusIcon(item.status)}
+                                                {item.status}
+                                            </span>
+                                        </td>
+                                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                                            {formatDate(item.updated_at)}
+                                        </td>
+                                        <td className="whitespace-nowrap px-3 py-4 text-sm">
+                                            <button
+                                                onClick={() => handleViewDetail(item.id)}
+                                                className="text-indigo-600 hover:text-indigo-900 font-medium flex items-center gap-1"
+                                            >
+                                                <FileText className="w-4 h-4" />
+                                                Detail
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </React.Fragment>
                             ))}
                         </tbody>
                     </table>
