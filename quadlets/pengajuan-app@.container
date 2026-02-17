@@ -17,7 +17,8 @@ Environment=NODE_ENV=production
 # Resource Limits (Enterprise Standard)
 Memory=1024M
 CPUQuota=50%
-HealthCmd=wget -q -O /dev/null http://localhost:3000 || exit 1
+# Enterprise Reliability: Use Node.js script for healthcheck. Matches local setup.
+HealthCmd=node -e "fetch('http://localhost:3000').then(r => {if(!r.ok) process.exit(1)}).catch(() => process.exit(1))"
 HealthInterval=10s
 HealthRetries=3
 HealthTimeout=5s

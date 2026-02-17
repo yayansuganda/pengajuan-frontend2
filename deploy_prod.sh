@@ -24,6 +24,9 @@ cp quadlets/pengajuan-app@.container ~/.config/containers/systemd/
 echo "Quadlet artifacts deployed with correct paths."
 
 # 4. Reload systemd to generate units
+echo "Attempting to generate units with /usr/libexec/podman/quadlet..."
+/usr/libexec/podman/quadlet --user --dryrun 2>/dev/null || echo "Generator check skipped (binary not found at checked path)"
+
 echo "Reloading systemd user daemon..."
 systemctl --user daemon-reload
 

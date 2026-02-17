@@ -1,0 +1,12 @@
+services:
+  nginx:
+    ports:
+      - "127.0.0.1:8080:80" # Bind to localhost only for Tunnel security
+    environment:
+      - NODE_ENV=production
+
+  nextjs:
+    environment:
+      - NODE_ENV=production
+    deploy:
+      replicas: 3
