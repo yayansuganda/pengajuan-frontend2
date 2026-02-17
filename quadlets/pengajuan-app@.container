@@ -1,0 +1,26 @@
+[Unit]
+Description=Pengajuan Frontend App Instance %i
+After=network-online.target pengajuan-build.service
+Wants=pengajuan-build.service
+
+[Service]
+Restart=always
+TimeoutStartSec=300
+
+[Container]
+Image=localhost/pengajuan-frontend:latest
+ContainerName=pengajuan-app-%i
+Network=pengajuan.network
+# Use PodmanArgs to alias the network name for DNS round-robin load balancing
+PodmanArgs=--network-alias=nextjs
+Environment=NODE_ENV=production
+# Resource Limits (Enterprise Standard)
+Memory=1024M
+CPUQuota=50%
+HealthCmd=wget -q -O /dev/null http://localhost:3000 || exit 1
+HealthInterval=10s
+HealthRetries=3
+HealthTimeout=5s
+
+[Install]
+WantedBy=multi-user.target default.target

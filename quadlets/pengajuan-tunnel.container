@@ -1,0 +1,25 @@
+[Unit]
+Description=Cloudflare Tunnel for Pengajuan Frontend
+After=network-online.target pengajuan-proxy.service
+Wants=pengajuan-proxy.service
+
+[Service]
+Restart=always
+# Enterprise: Restart quickly to maintain connectivity
+RestartSec=5s
+
+[Container]
+Image=docker.io/cloudflare/cloudflared:latest
+ContainerName=pengajuan-tunnel
+Network=pengajuan.network
+# Enterprise Security: Read-only root filesystem
+ReadOnly=true
+# Pass the token securely via environment file or variable
+# User must replace this with their actual token
+Environment=TUNNEL_TOKEN=PASTE_YOUR_CLOUDFLARE_TOKEN_HERE
+# Command to run the tunnel
+Exec=tunnel run
+# Metrics typically on 0.0.0.0:2000 if needed for monitoring
+
+[Install]
+WantedBy=multi-user.target default.target

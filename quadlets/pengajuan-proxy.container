@@ -1,0 +1,19 @@
+[Unit]
+Description=Pengajuan Frontend Nginx Load Balancer
+After=network-online.target
+
+[Service]
+Restart=always
+
+[Container]
+Image=docker.io/library/nginx:alpine
+ContainerName=pengajuan-proxy
+Network=pengajuan.network
+# Enterprise Security: Exposed only to localhost for Host Tunnel access
+PublishPort=127.0.0.1:8080:80
+Volume=/Users/yayansuganda/Projects/pengajuan/pengajuan_frontend/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+# Enterprise Security: Drop capabilities if possible, but Nginx main process needs root for port 80 usually. 
+# We rely on Nginx config for internal user switching.
+
+[Install]
+WantedBy=multi-user.target default.target

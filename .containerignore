@@ -1,0 +1,12 @@
+dist
+target
+node_modules
+.next
+.git
+.DS_Store
+*.local
+.env
+nginx
+compose.yaml
+README.md
+Dockerfile

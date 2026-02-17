@@ -1,0 +1,8 @@
+[Unit]
+Description=Pengajuan Frontend Build
+After=network-online.target
+
+[Build]
+ImageTag=localhost/pengajuan-frontend:latest
+File=Containerfile
+Context=/Users/yayansuganda/Projects/pengajuan/pengajuan_frontend
