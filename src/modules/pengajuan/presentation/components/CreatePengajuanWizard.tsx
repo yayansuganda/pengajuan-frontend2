@@ -45,7 +45,7 @@ const EDUCATION_LEVELS = [
 const UPLOAD_FIELDS = [
     { name: 'upload_ktp_pemohon', label: 'KTP Pemohon', hasTemplate: false, required: true },
     { name: 'upload_karip_buku_asabri', label: 'KARIP / Buku ASABRI', hasTemplate: false, required: true },
-    { name: 'upload_slip_gaji_terakhir', label: 'Slip Gaji Terakhir', hasTemplate: false, required: true },
+    { name: 'upload_slip_gaji_terakhir', label: 'Resi Penerimaan', hasTemplate: false, required: true },
     { name: 'upload_sk_pensiun', label: 'SK Pensiun', hasTemplate: false, required: false },
     { name: 'upload_surat_permohonan_anggota', label: 'Surat Permohonan Anggota & Pembiayaan', hasTemplate: true, required: true },
     { name: 'upload_borrower_photos', label: 'Foto Pemohon', hasTemplate: false, required: true, multiple: true },
@@ -83,6 +83,47 @@ const calculateAge = (birthDate: string): string => {
 
 import { PengajuanRepositoryImpl } from '@/modules/pengajuan/data/PengajuanRepositoryImpl';
 
+// Initial Form State
+const INITIAL_FORM_STATE = {
+    // Step 1 - Data Pensiun & Pelayanan
+    jenis_pelayanan_id: '', jenis_pembiayaan_id: '', kategori_pembiayaan: '',
+    // POS fields
+    nopen: '', jenis_pensiun: '', nomor_rekening_giro_pos: '',
+    // Non-POS fields
+    nama_bank: '', no_rekening: '',
+    // Common fields
+    gaji_bersih: '', total_potongan_pinjaman: '', gaji_tersedia: '',
+    jenis_dapem: '', bulan_dapem: '', status_dapem: '',
+
+    // Step 2 - Data Diri
+    nik: '', nama_lengkap: '', jenis_kelamin: 'Laki-laki', tempat_lahir: '', tanggal_lahir: '',
+    usia: '', nomor_telephone: '', nama_ibu_kandung: '', pendidikan_terakhir: '',
+    alamat: '', rt: '', rw: '', kode_pos: '', kelurahan: '', kecamatan: '', kabupaten: '', provinsi: '',
+
+    // Step 3 - Perhitungan
+    maksimal_jangka_waktu_usia: '', jangka_waktu: '', maksimal_pembiayaan: '', jumlah_pembiayaan: '',
+    besar_angsuran: '', total_potongan: '', nominal_terima: '',
+    kantor_bayar: '', // For non-POS
+    kantor_pos_petugas: '', // For POS
+
+    // Step 4 - Upload Dokumen
+    upload_ktp_pemohon: '', upload_pengajuan_permohonan: '', upload_dokumen_akad: '',
+    upload_flagging: '', upload_surat_pernyataan_beda_penerima: '', upload_karip_buku_asabri: '',
+    upload_slip_gaji_terakhir: '', upload_sk_pensiun: '', upload_surat_permohonan_anggota: '', upload_borrower_photos: '',
+
+    // Fronting User Data (from localStorage) - for POS
+    petugas_nippos: '',
+    petugas_name: '',
+    petugas_account_no: '',
+    petugas_phone: '',
+    petugas_kcu_code: '',
+    petugas_kcu_name: '',
+    petugas_kc_code: '',
+    petugas_kc_name: '',
+    petugas_kcp_code: '',
+    petugas_kcp_name: '',
+};
+
 export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ pengajuanId }) => {
     const router = useRouter();
     const { user } = useAuth();
@@ -103,45 +144,7 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
     const [loadingMasterData, setLoadingMasterData] = useState(true);
 
     // Initial Form State
-    const [formData, setFormData] = useState({
-        // Step 1 - Data Pensiun & Pelayanan
-        jenis_pelayanan_id: '', jenis_pembiayaan_id: '', kategori_pembiayaan: '',
-        // POS fields
-        nopen: '', jenis_pensiun: '', nomor_rekening_giro_pos: '',
-        // Non-POS fields
-        nama_bank: '', no_rekening: '',
-        // Common fields
-        gaji_bersih: '', total_potongan_pinjaman: '', gaji_tersedia: '',
-        jenis_dapem: '', bulan_dapem: '', status_dapem: '',
-
-        // Step 2 - Data Diri
-        nik: '', nama_lengkap: '', jenis_kelamin: 'Laki-laki', tempat_lahir: '', tanggal_lahir: '',
-        usia: '', nomor_telephone: '', nama_ibu_kandung: '', pendidikan_terakhir: '',
-        alamat: '', rt: '', rw: '', kode_pos: '', kelurahan: '', kecamatan: '', kabupaten: '', provinsi: '',
-
-        // Step 3 - Perhitungan
-        maksimal_jangka_waktu_usia: '', jangka_waktu: '', maksimal_pembiayaan: '', jumlah_pembiayaan: '',
-        besar_angsuran: '', total_potongan: '', nominal_terima: '',
-        kantor_bayar: '', // For non-POS
-        kantor_pos_petugas: '', // For POS
-
-        // Step 4 - Upload Dokumen
-        upload_ktp_pemohon: '', upload_pengajuan_permohonan: '', upload_dokumen_akad: '',
-        upload_flagging: '', upload_surat_pernyataan_beda_penerima: '', upload_karip_buku_asabri: '',
-        upload_slip_gaji_terakhir: '', upload_sk_pensiun: '', upload_surat_permohonan_anggota: '', upload_borrower_photos: '',
-
-        // Fronting User Data (from localStorage) - for POS
-        petugas_nippos: '',
-        petugas_name: '',
-        petugas_account_no: '',
-        petugas_phone: '',
-        petugas_kcu_code: '',
-        petugas_kcu_name: '',
-        petugas_kc_code: '',
-        petugas_kc_name: '',
-        petugas_kcp_code: '',
-        petugas_kcp_name: '',
-    });
+    const [formData, setFormData] = useState(INITIAL_FORM_STATE);
 
     // Store file names for display
     const [fileNames, setFileNames] = useState<{ [key: string]: string }>({});
@@ -252,12 +255,12 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
 
         // Find POS jenis pelayanan
         const posJenisPelayanan = jenisPelayananList.find(jp => jp.name?.toUpperCase() === 'POS');
-        
+
         if (posJenisPelayanan && formData.jenis_pelayanan_id !== posJenisPelayanan.id.toString()) {
             console.log('[CreatePengajuanWizard] Auto-setting Jenis Pelayanan to POS for user:', user?.role);
-            setFormData(prev => ({ 
-                ...prev, 
-                jenis_pelayanan_id: posJenisPelayanan.id.toString() 
+            setFormData(prev => ({
+                ...prev,
+                jenis_pelayanan_id: posJenisPelayanan.id.toString()
             }));
         }
     }, [jenisPelayananList, pengajuanId, user, formData.jenis_pelayanan_id]);
@@ -266,7 +269,7 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
     useEffect(() => {
         // Only for Petugas Pos/Admin Pos and not editing
         if (pengajuanId) return;
-        
+
         const isPetugasPos = user?.role === 'petugas-pos' || user?.role === 'admin-pos';
         if (!isPetugasPos) return;
 
@@ -277,20 +280,20 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
                 console.warn('[CreatePengajuanWizard] ⚠️ No fronting_user in localStorage');
                 return;
             }
-            
+
             const frontingUser = JSON.parse(frontingUserStr);
             console.log('[CreatePengajuanWizard] 📋 Auto-filling Petugas Pos data from localStorage:');
             console.log('  - NIPPOS:', frontingUser.nippos);
             console.log('  - Name:', frontingUser.name);
             console.log('  - KCU Name (for Kantor Pos Petugas):', frontingUser.kcu_name);
-            
+
             setFormData(prev => {
                 // Only update if not already filled (prevent overwrite)
                 if (prev.petugas_nippos) {
                     console.log('[CreatePengajuanWizard] ℹ️ Data already filled, skipping...');
                     return prev;
                 }
-                
+
                 console.log('[CreatePengajuanWizard] ✅ Filling formData with localStorage data');
                 return {
                     ...prev,
@@ -612,6 +615,7 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
     }, [formData.jumlah_pembiayaan, potonganList, allPotonganList, potonganJangkaWaktu]);
 
     // Auto-calculate Angsuran/Bulan: (plafond / jangka_waktu) + (jasa_perbulan% x plafond)
+    // Auto-calculate Angsuran/Bulan: (plafond / jangka_waktu) + (jasa_perbulan% x plafond)
     useEffect(() => {
         const rawPlafond = (formData.jumlah_pembiayaan || '').replace(/\./g, '');
         const plafond = parseFloat(rawPlafond) || 0;
@@ -625,11 +629,51 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
             const totalAngsuran = angsuranPokok + jasaBulanNilai;
 
             const roundedAngsuran = Math.round(totalAngsuran);
+
+            // Check against Gaji Tersedia immediately
+            const gajiTersedia = parseFloat((formData.gaji_tersedia || '').replace(/\./g, '')) || 0;
+            const sisaGaji = gajiTersedia - roundedAngsuran;
+
+            if (roundedAngsuran > sisaGaji) {
+                console.log('⚠️ Warning: Angsuran melebihi sisa gaji (50% rule or similar)');
+                // We don't set error here directly to avoid UI flickering, but we could if needed.
+                // The main validation is in validateCurrentStep or on blur.
+                // However, the user asked for immediate notification.
+                // Let's rely on validateCurrentStep for blocking, but we can set error here if we want immediate feedback.
+                // Actually, let's update the form data first.
+            }
+
             setFormData(prev => ({ ...prev, besar_angsuran: roundedAngsuran.toString() }));
+
+            // Trigger validation immediately
+            if (gajiTersedia > 0 && roundedAngsuran > sisaGaji) {
+                setFieldErrors(prev => ({
+                    ...prev,
+                    besar_angsuran: 'Angsuran tidak boleh lebih besar dari Sisa Gaji (Gaji Tersedia - Angsuran)'
+                }));
+            } else if (gajiTersedia > 0 && roundedAngsuran > 0 && sisaGaji < 100000) {
+                setFieldErrors(prev => ({
+                    ...prev,
+                    besar_angsuran: 'Sisa Gaji (setelah angsuran) minimal Rp 100.000'
+                }));
+            } else {
+                // Clear error if valid
+                setFieldErrors(prev => {
+                    const newErrors = { ...prev };
+                    delete newErrors.besar_angsuran;
+                    return newErrors;
+                });
+            }
+
         } else {
             setFormData(prev => ({ ...prev, besar_angsuran: '' }));
+            setFieldErrors(prev => {
+                const newErrors = { ...prev };
+                delete newErrors.besar_angsuran;
+                return newErrors;
+            });
         }
-    }, [formData.jumlah_pembiayaan, formData.jangka_waktu, settings]);
+    }, [formData.jumlah_pembiayaan, formData.jangka_waktu, settings, formData.gaji_tersedia]);
 
     // Auto-calculate Terima Bersih: Plafond - Total Potongan
     useEffect(() => {
@@ -694,6 +738,15 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
+
+        // Strict Validation for NIK input - Only numbers and max 16 chars
+        if (name === 'nik') {
+            // Check if value contains non-numeric characters
+            if (!/^\d*$/.test(value)) return;
+            // Check max length
+            if (value.length > 16) return;
+        }
+
         setFormData(prev => ({ ...prev, [name]: value }));
         // Clear error when user starts typing
         if (fieldErrors[name]) {
@@ -713,14 +766,53 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
             const rawValue = parseNumberID(value);
             // Validate it's a valid number
             if (rawValue === '' || /^[0-9]+$/.test(rawValue)) {
+
+                // Specific validation for RT and RW - Max 3 digits
+                if ((name === 'rt' || name === 'rw') && rawValue.length > 3) {
+                    return; // Prevent input
+                }
+
+                // Specific validation for NIK - Max 16 digits (optional but good UX)
+                if (name === 'nik' && rawValue.length > 16) {
+                    return; // Prevent input
+                }
+
                 setFormData(prev => ({ ...prev, [name]: rawValue }));
-                // Clear error when user starts typing
-                if (fieldErrors[name]) {
-                    setFieldErrors(prev => {
-                        const newErrors = { ...prev };
-                        delete newErrors[name];
-                        return newErrors;
-                    });
+
+                // Immediate Validation for Jangka Waktu
+                if (name === 'jangka_waktu') {
+                    const currentVal = parseInt(rawValue || '0');
+                    const maxVal = parseInt(formData.maksimal_jangka_waktu_usia || '0');
+
+                    if (maxVal > 0 && currentVal > maxVal) {
+                        setFieldErrors(prev => ({
+                            ...prev,
+                            [name]: `Jangka waktu tidak boleh melebihi ${maxVal} bulan`
+                        }));
+                    } else if (currentVal > 0 && currentVal < 6) {
+                        setFieldErrors(prev => ({
+                            ...prev,
+                            [name]: `Jangka waktu minimal 6 bulan`
+                        }));
+                    } else {
+                        // Clear specific error if valid
+                        if (fieldErrors[name]) {
+                            setFieldErrors(prev => {
+                                const newErrors = { ...prev };
+                                delete newErrors[name];
+                                return newErrors;
+                            });
+                        }
+                    }
+                } else {
+                    // Default behavior: Clear error when user starts typing
+                    if (fieldErrors[name]) {
+                        setFieldErrors(prev => {
+                            const newErrors = { ...prev };
+                            delete newErrors[name];
+                            return newErrors;
+                        });
+                    }
                 }
             }
         }
@@ -739,15 +831,17 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
             const data = await pengecekanRepo.checkPensiunan(nopen);
 
             // Calculate Gaji Tersedia (Available Salary)
-            // Formula: Gaji Bersih - Total Potongan Pinjaman
+            // UPDATE: User requested that POS API potongan should NOT reduce Gaji Tersedia. 
+            // It should only be displayed.
+            // So Gaji Tersedia = Gaji Bersih.
             const gajiBersih = data.gaji_bersih || 0;
-            const totalPotongan = data.potongan || 0; // Already calculated from potongan_pinjaman array in repository
-            const gajiTersedia = gajiBersih - totalPotongan;
+            const totalPotonganAPI = data.potongan || 0; // Renamed to clarify source
+            const gajiTersedia = gajiBersih; // DO NOT SUBTRACT totalPotonganAPI
 
-            console.log('💰 Auto-calculating Gaji Tersedia:');
+            console.log('💰 Auto-calculating Gaji Tersedia (Ignored POS Potongan for calculation):');
             console.log('  - Gaji Bersih:', gajiBersih);
-            console.log('  - Total Potongan:', totalPotongan);
-            console.log('  - Gaji Tersedia:', gajiTersedia);
+            console.log('  - Total Potongan (Display Only):', totalPotonganAPI);
+            console.log('  - Gaji Tersedia (= Gaji Bersih):', gajiTersedia);
 
             // Auto-fill form fields with API data
             setFormData(prev => ({
@@ -759,15 +853,15 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
                 bulan_dapem: data.bulan_dapem || prev.bulan_dapem,
                 status_dapem: data.status_dapem || prev.status_dapem,
                 gaji_bersih: gajiBersih ? gajiBersih.toString() : prev.gaji_bersih,
-                total_potongan_pinjaman: totalPotongan ? totalPotongan.toString() : prev.total_potongan_pinjaman, // AUTO-FILLED
-                gaji_tersedia: gajiTersedia ? gajiTersedia.toString() : prev.gaji_tersedia, // AUTO-CALCULATED
+                total_potongan_pinjaman: totalPotonganAPI ? totalPotonganAPI.toString() : prev.total_potongan_pinjaman, // Display Only
+                gaji_tersedia: gajiTersedia ? gajiTersedia.toString() : prev.gaji_tersedia, // Equal to Gaji Bersih
                 nomor_rekening_giro_pos: data.no_rekening || prev.nomor_rekening_giro_pos,
                 kantor_pos_petugas: data.kantor_bayar || prev.kantor_pos_petugas,
             }));
 
             // Show success notification with potongan info
-            const potonganInfo = totalPotongan > 0 
-                ? `\n\nGaji Bersih: Rp ${gajiBersih.toLocaleString('id-ID')}\nPotongan: Rp ${totalPotongan.toLocaleString('id-ID')}\nGaji Tersedia: Rp ${gajiTersedia.toLocaleString('id-ID')}`
+            const potonganInfo = totalPotonganAPI > 0
+                ? `\n\nGaji Bersih: Rp ${gajiBersih.toLocaleString('id-ID')}\nPotongan (Display): Rp ${totalPotonganAPI.toLocaleString('id-ID')}\nGaji Tersedia: Rp ${gajiTersedia.toLocaleString('id-ID')}`
                 : '';
 
             Swal.fire({
@@ -1039,20 +1133,41 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
 
         // Step 2: Data Diri
         if (currentStep === 2) {
-            if (!formData.nik) errors.nik = 'NIK wajib diisi';
+            if (!formData.nik) {
+                errors.nik = 'NIK wajib diisi';
+            } else if (formData.nik.length !== 16) {
+                errors.nik = 'NIK harus 16 digit';
+            }
             if (!formData.nama_lengkap) errors.nama_lengkap = 'Nama Lengkap wajib diisi';
             if (!formData.jenis_kelamin) errors.jenis_kelamin = 'Jenis Kelamin wajib dipilih';
             if (!formData.tempat_lahir) errors.tempat_lahir = 'Tempat Lahir wajib diisi';
             if (!formData.tanggal_lahir) errors.tanggal_lahir = 'Tanggal Lahir wajib diisi';
             if (!formData.nomor_telephone) errors.nomor_telephone = 'Nomor Telephone wajib diisi';
             if (!formData.pendidikan_terakhir) errors.pendidikan_terakhir = 'Pendidikan Terakhir wajib dipilih';
+
+            // Optional: Add validation for RT/RW if they are filled
+            if (formData.rt && formData.rt.length > 3) errors.rt = 'RT maksimal 3 digit';
+            if (formData.rw && formData.rw.length > 3) errors.rw = 'RW maksimal 3 digit';
         }
 
         // Step 3: Perhitungan
         if (currentStep === 3) {
-            if (!formData.jangka_waktu) errors.jangka_waktu = 'Jangka Waktu wajib diisi';
+            // Validate Jangka Waktu
+            const jangkaWaktu = parseInt(formData.jangka_waktu) || 0;
+            const maksJangkaWaktu = parseInt(formData.maksimal_jangka_waktu_usia) || 0;
+
+            if (!formData.jangka_waktu) {
+                errors.jangka_waktu = 'Jangka Waktu wajib diisi';
+            } else if (jangkaWaktu > maksJangkaWaktu) {
+                errors.jangka_waktu = `Jangka Waktu tidak boleh lebih dari Maksimal (${maksJangkaWaktu} bulan)`;
+            } else if (jangkaWaktu < 6) {
+                errors.jangka_waktu = 'Jangka Waktu minimal 6 bulan';
+            }
+
             if (!formData.jumlah_pembiayaan || parseFloat((formData.jumlah_pembiayaan || '').replace(/\./g, '')) <= 0) {
                 errors.jumlah_pembiayaan = 'Jumlah Pengajuan wajib diisi dan harus lebih dari 0';
+            } else if (parseFloat((formData.jumlah_pembiayaan || '').replace(/\./g, '')) < 1000000) {
+                errors.jumlah_pembiayaan = 'Jumlah Pengajuan minimal Rp 1.000.000';
             }
 
             // Validate Sisa Gaji must be at least 100,000 more than Biaya Angsuran
@@ -1060,9 +1175,25 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
             const gajiTersedia = parseFloat((formData.gaji_tersedia || '').replace(/\./g, '')) || 0;
             const sisaGaji = gajiTersedia - besarAngsuran;
 
-            if (besarAngsuran > 0 && sisaGaji < 100000) {
-                errors.besar_angsuran = 'Sisa Gaji harus lebih besar Rp 100.000 dari Biaya Angsuran/Bulan';
-                errors.gaji_tersedia = 'Sisa Gaji tidak mencukupi (minimal Rp 100.000 lebih dari angsuran)';
+            // Check if Angsuran exceeds Sisa Gaji (User's specific request: "Angsuran/Bulan" lebih besar dari "Sisa Gaji")
+            // Interpretation: If Angsuran > Sisa Gaji (where Sisa Gaji = Gaji Tersedia - Angsuran), 
+            // effectively meaning Angsuran > (GajiTersedia / 2). 
+            // BUT, usually "Sisa Gaji" refers to the final remaining amount.
+            // If the user means "Angsuran > Gaji Tersedia", that's invalid.
+            // If the user means "Angsuran > Current Sisa Gaji displayed", that's recursive.
+            // Let's assume the standard: Sisa Gaji (Net Income after new installment) must be positive and > Angsuran?
+            // "Angsuran lebih besar dari Sisa Gaji" -> Angsuran > (Gaji Tersedia - Angsuran)
+            // Example: Gaji 5jt, Angsuran 3jt. Sisa = 2jt. Angsuran (3jt) > Sisa (2jt). ERROR.
+            // Example: Gaji 5jt, Angsuran 2jt. Sisa = 3jt. Angsuran (2jt) < Sisa (3jt). OK.
+
+            if (besarAngsuran > sisaGaji) {
+                errors.besar_angsuran = 'Angsuran/Bulan tidak boleh lebih besar dari Sisa Gaji';
+                errors.gaji_tersedia = 'Pendapatan tidak mencukupi (Ratio angsuran terlalu besar)';
+            }
+            // Also check the absolute minimum buffer
+            else if (besarAngsuran > 0 && sisaGaji < 100000) {
+                errors.besar_angsuran = 'Sisa Gaji setelah angsuran minimal Rp 100.000';
+                errors.gaji_tersedia = 'Sisa Gaji tidak mencukupi (minimal Rp 100.000 setelah angsuran)';
             }
         }
 
@@ -1286,15 +1417,33 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
                 timer: 2000
             });
 
-            // Redirect based on user role
-            if (isPetugasPos) {
-                // Petugas Pos / Admin Pos → redirect to fronting page
-                console.log('[CreatePengajuanWizard] ✅ Redirecting Petugas Pos to /fronting');
-                router.push('/fronting');
+            // Redirect based on user role 
+            // OR Reset form if creating
+            if (pengajuanId) {
+                // If editing, redirect back
+                if (isPetugasPos) {
+                    console.log('[CreatePengajuanWizard] ✅ Redirecting Petugas Pos to /fronting');
+                    router.push('/fronting');
+                } else {
+                    console.log('[CreatePengajuanWizard] ✅ Redirecting to /pengajuan');
+                    router.push('/pengajuan');
+                }
             } else {
-                // Other roles → redirect to pengajuan list
-                console.log('[CreatePengajuanWizard] ✅ Redirecting to /pengajuan');
-                router.push('/pengajuan');
+                // If creating, reset form to allow new submission
+                console.log('[CreatePengajuanWizard] 🔄 Resetting form for new submission');
+                setFormData(INITIAL_FORM_STATE);
+                setFileNames({});
+                setImagePreviews({});
+                setUploadingFiles({});
+                setFieldErrors({});
+                setCurrentStep(1);
+
+                // Reset file inputs
+                Object.values(fileInputRefs.current).forEach(input => {
+                    if (input) input.value = '';
+                });
+
+                window.scrollTo({ top: 0, behavior: 'smooth' });
             }
 
         } catch (error: any) {
@@ -1486,19 +1635,7 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
                     )}
                 </div>
             )}
-            {renderSelect(
-                "Jenis Pembiayaan",
-                "jenis_pembiayaan_id",
-                jenisPembiayaanList.map(jp => ({ value: jp.id.toString(), label: jp.name })),
-                true,
-                loadingMasterData
-            )}
-            {renderSimpleSelect(
-                "Kategori Pembiayaan",
-                "kategori_pembiayaan",
-                ["Macro", "Micro"],
-                true
-            )}
+
 
             {/* Conditional fields based on jenis_pelayanan */}
             {isPOS ? (
@@ -1562,6 +1699,23 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
                     {renderInput("Total Potongan Pinjaman", "total_potongan_pinjaman", "number", false, "Rp", true)}
                     {renderInput("Gaji Tersedia", "gaji_tersedia", "number", false, "Rp", true)}
                 </>
+            )}
+
+            <div className="col-span-full mt-4 mb-2 pt-4 border-t border-gray-100">
+                <h3 className="text-lg font-bold text-gray-900">Detail Pembiayaan</h3>
+            </div>
+            {renderSelect(
+                "Jenis Pembiayaan",
+                "jenis_pembiayaan_id",
+                jenisPembiayaanList.map(jp => ({ value: jp.id.toString(), label: jp.name })),
+                true,
+                loadingMasterData
+            )}
+            {renderSimpleSelect(
+                "Kategori Pembiayaan",
+                "kategori_pembiayaan",
+                ["Macro", "Micro"],
+                true
             )}
 
             {/* Show hint if no jenis pelayanan selected */}
@@ -1672,15 +1826,13 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
                 {renderInput("Total Potongan", "total_potongan", "number", false, "Rp", true, true)}
                 {renderInput("Terima Bersih", "nominal_terima", "number", false, "Rp", true, true)}
 
-                <div className="col-span-full mt-4 mb-2 pt-4 border-t border-gray-100">
-                    <h3 className="text-lg font-bold text-gray-900">Kantor</h3>
-                </div>
-
-                {/* Conditional: Show kantor_bayar for non-POS, show petugas_pos for POS */}
-                {isPOS ? (
-                    renderInput("Petugas Pos", "kantor_pos_petugas")
-                ) : (
-                    renderInput("Kantor Bayar", "kantor_bayar")
+                {!isPOS && (
+                    <>
+                        <div className="col-span-full mt-4 mb-2 pt-4 border-t border-gray-100">
+                            <h3 className="text-lg font-bold text-gray-900">Kantor</h3>
+                        </div>
+                        {renderInput("Kantor Bayar", "kantor_bayar")}
+                    </>
                 )}
             </div>
         );
@@ -1984,12 +2136,7 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
                         </p>
                     </div>
 
-                    {/* Debug Banner */}
-                    <div className="mt-3 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
-                        <p className="text-xs text-yellow-800 font-medium">
-                            🔍 Debug Mode: Buka Console (F12) untuk melihat logs detail saat upload
-                        </p>
-                    </div>
+
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
