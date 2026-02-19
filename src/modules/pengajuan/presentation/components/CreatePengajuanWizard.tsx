@@ -469,30 +469,40 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
                 return;
             }
 
-            // Normal calculation for Macro or others
+            // Normal calculation for Age-based Max Term
             if (settings.batas_usia_perhitungan_lunas) {
                 // Extract age in months
-                const tahunMatch = formData.usia.match(/(\d+)\s*tahun/);
-                const bulanMatch = formData.usia.match(/(\d+)\s*bulan/);
+                const tahunMatch = (formData.usia || '').match(/(\d+)\s*tahun/);
+                const bulanMatch = (formData.usia || '').match(/(\d+)\s*bulan/);
 
                 const tahunNum = tahunMatch ? parseInt(tahunMatch[1]) : 0;
                 const bulanNum = bulanMatch ? parseInt(bulanMatch[1]) : 0;
-                const ageInMonths = (tahunNum * 12) + bulanNum;
+                // Convert current age to total months
+                const currentAgeInMonths = (tahunNum * 12) + bulanNum;
 
-                // Convert batas_usia_perhitungan_lunas to months and subtract current age
+                // Batas Usia in months
                 const batasUsiaBulan = settings.batas_usia_perhitungan_lunas * 12;
-                const maksJangkaWaktu = batasUsiaBulan - ageInMonths;
+
+                // Max Term based on Age = Batas Usia - Current Age
+                let maksJangkaWaktu = batasUsiaBulan - currentAgeInMonths;
+
+                // Handle Makro specific logic
+                if (formData.kategori_pembiayaan === 'Macro' && settings.makro_jangka_waktu > 0) {
+                    // If calculated term exceeds Makro setting, cap it. Otherwise keep calculated.
+                    if (maksJangkaWaktu > settings.makro_jangka_waktu) {
+                        console.log(`🔒 Capping Makro Jangka Waktu to Setting: ${settings.makro_jangka_waktu} (Calculated: ${maksJangkaWaktu})`);
+                        maksJangkaWaktu = settings.makro_jangka_waktu;
+                    }
+                }
 
                 console.log('📊 Maks Jangka Waktu Calculation:', {
                     batasUsia: settings.batas_usia_perhitungan_lunas,
-                    batasUsiaBulan,
-                    ageInMonths,
+                    currentAgeInMonths,
                     maksJangkaWaktu
                 });
 
                 // Only set if positive
                 if (maksJangkaWaktu > 0) {
-                    // Use months directly
                     setFormData(prev => ({ ...prev, maksimal_jangka_waktu_usia: maksJangkaWaktu.toString() }));
                 } else {
                     setFormData(prev => ({ ...prev, maksimal_jangka_waktu_usia: '0' }));
@@ -513,30 +523,48 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
             return;
         }
 
-        // Normal calculation for Macro or others
         const gajiTersedia = parseFloat((formData.gaji_tersedia || '').replace(/\./g, '')) || 0;
         const maksJangkaWaktu = parseInt(formData.maksimal_jangka_waktu_usia) || 0;
 
         if (gajiTersedia > 0 && maksJangkaWaktu > 0) {
-            // Calculate: Gaji Tersedia * Maks Jangka Waktu (in months)
-            const maksPembiayaan = gajiTersedia * maksJangkaWaktu;
+            // Formula: Plafond * (1 + (Jasa% * Tenor/100)) / Tenor = GajiTersedia - Buffer? 
+            // Or simpler: Plafond = (GajiTersedia * Tenor) / (1 + (Jasa% * Tenor))
+            // Note: The logic might differ based on exact formula, assuming standard simple interest for now as reverse calculation
 
-            console.log('💰 Maks Pembiayaan Calculation:', {
-                gajiTersedia,
-                maksJangkaWaktu: `${maksJangkaWaktu} bulan`,
-                maksPembiayaan
-            });
+            // From previous implementation (deduced):
+            // Angsuran = (Plafond / Tenor) + (Jasa% * Plafond)
+            // Angsuran <= Gaji Tersedia
+            // (Plafond/Tenor + Jasa%*Plafond) <= GajiTersedia
+            // Plafond * (1/Tenor + Jasa%) <= GajiTersedia
+            // Plafond <= GajiTersedia / (1/Tenor + Jasa%)
 
-            // Store as raw number (no formatting)
+            const jasaPersen = (settings?.jasa_perbulan || 0) / 100;
+            const factor = (1 / maksJangkaWaktu) + jasaPersen;
+
+            let maxPlafond = 0;
+            if (factor > 0) {
+                maxPlafond = gajiTersedia / factor;
+            }
+
+            // Handle Makro specific logic
+            if (formData.kategori_pembiayaan === 'Macro' && settings && settings.makro_maksimal_pembiayaan > 0) {
+                // If calculated plafond exceeds Makro setting, cap it. Otherwise keep calculated.
+                if (maxPlafond > settings.makro_maksimal_pembiayaan) {
+                    console.log(`🔒 Capping Makro Max Pembiayaan to Setting: ${settings.makro_maksimal_pembiayaan}`);
+                    maxPlafond = settings.makro_maksimal_pembiayaan;
+                }
+            }
+
+            const roundedMaxPlafond = Math.floor(maxPlafond / 1000) * 1000; // Round down to nearest 1000
+
             setFormData(prev => ({
                 ...prev,
-                maksimal_pembiayaan: Math.round(maksPembiayaan).toString()
+                maksimal_pembiayaan: roundedMaxPlafond.toString()
             }));
-        } else if (gajiTersedia === 0 || maksJangkaWaktu === 0) {
-            // Clear if either is zero
-            setFormData(prev => ({ ...prev, maksimal_pembiayaan: '' }));
+        } else {
+            setFormData(prev => ({ ...prev, maksimal_pembiayaan: '0' }));
         }
-    }, [formData.gaji_tersedia, formData.maksimal_jangka_waktu_usia, formData.kategori_pembiayaan, settings]);
+    }, [formData.gaji_tersedia, formData.maksimal_jangka_waktu_usia, settings, formData.kategori_pembiayaan]);
 
     // Find matching potongan jangka waktu based on jangka_waktu input
     useEffect(() => {
@@ -876,6 +904,27 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
             setLoadingNopen(true);
             const pengecekanRepo = new PengecekanRepositoryImpl();
             const data = await pengecekanRepo.checkPensiunan(nopen);
+
+            // Check specific ID_MITRA restriction
+            // ID: P401150041
+            if (data.potongan_pinjaman && data.potongan_pinjaman.length > 0) {
+                const restrictedMitra = data.potongan_pinjaman.find((p: any) => p.ID_MITRA === "P401150041");
+
+                if (restrictedMitra) {
+                    setLoadingNopen(false);
+                    await Swal.fire({
+                        icon: 'error',
+                        title: 'Pengajuan Ditolak',
+                        text: `Pengajuan tidak dapat dilanjutkan karena terdapat potongan aktif dari mitra: ${restrictedMitra.NAMA_MITRA || 'Unknown Mitra'} (P401150041).`,
+                        confirmButtonText: 'OK',
+                        confirmButtonColor: '#d33'
+                    });
+
+                    // Clear NOPEN to prevent user from proceeding with invalid data? 
+                    // Or keep it but don't fill data. Let's start by not filling data.
+                    return;
+                }
+            }
 
             // Calculate Gaji Tersedia (Available Salary)
             // UPDATE: User requested that POS API potongan should NOT reduce Gaji Tersedia. 
