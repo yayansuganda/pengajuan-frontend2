@@ -628,6 +628,53 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                                     </div>
                                 </div>
 
+                                {/* Data Petugas POS - Mobile */}
+                                {pengajuan.petugas_nippos && (
+                                    <div>
+                                        <h3 className="text-xs font-bold text-slate-900 mb-2 flex items-center gap-1.5">
+                                            <UserCheck className="h-3.5 w-3.5 text-indigo-600" /> Data Petugas POS
+                                        </h3>
+                                        <div className="space-y-2 text-xs">
+                                            <div className="flex justify-between py-1.5 border-b border-slate-50">
+                                                <span className="text-slate-500">NIPPOS</span>
+                                                <span className="font-medium text-slate-900">{d(pengajuan.petugas_nippos)}</span>
+                                            </div>
+                                            <div className="flex justify-between py-1.5 border-b border-slate-50">
+                                                <span className="text-slate-500">Nama Petugas</span>
+                                                <span className="font-medium text-slate-900">{d(pengajuan.petugas_name)}</span>
+                                            </div>
+                                            <div className="flex justify-between py-1.5 border-b border-slate-50">
+                                                <span className="text-slate-500">No. Handphone</span>
+                                                <span className="font-medium text-slate-900">
+                                                    {pengajuan.petugas_phone ? (
+                                                        <a
+                                                            href={`https://wa.me/${pengajuan.petugas_phone.replace(/^0/, '62').replace(/\D/g, '')}`}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="text-indigo-600 hover:text-indigo-800 inline-flex items-center gap-1"
+                                                        >
+                                                            {pengajuan.petugas_phone}
+                                                            <ExternalLink className="h-3 w-3" />
+                                                        </a>
+                                                    ) : '-'}
+                                                </span>
+                                            </div>
+                                            <div className="flex justify-between py-1.5 border-b border-slate-50">
+                                                <span className="text-slate-500">Unit KCU</span>
+                                                <span className="font-medium text-slate-900">{pengajuan.petugas_kcu_code ? `${pengajuan.petugas_kcu_code} - ${pengajuan.petugas_kcu_name || ''}` : '-'}</span>
+                                            </div>
+                                            <div className="flex justify-between py-1.5 border-b border-slate-50">
+                                                <span className="text-slate-500">Unit KC</span>
+                                                <span className="font-medium text-slate-900">{pengajuan.petugas_kc_code ? `${pengajuan.petugas_kc_code} - ${pengajuan.petugas_kc_name || ''}` : '-'}</span>
+                                            </div>
+                                            <div className="flex justify-between py-1.5 border-b border-slate-50">
+                                                <span className="text-slate-500">Unit KCP</span>
+                                                <span className="font-medium text-slate-900">{pengajuan.petugas_kcp_code ? `${pengajuan.petugas_kcp_code} - ${pengajuan.petugas_kcp_name || ''}` : '-'}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
                                 {/* Potongan Detail - Compact */}
                                 {(() => {
                                     if (!pengajuan.potongan_detail) return null;
