@@ -303,11 +303,38 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
     const status = statusConfig[pengajuan.status] || { color: 'text-slate-700', bg: 'bg-slate-50 border-slate-200', icon: <Clock className="h-4 w-4 text-slate-500" /> };
 
     // Documents uploaded during initial application
-    const dokumenPengajuan = [
+    const baseDocs = [
         { title: 'KTP Pemohon', desc: 'Kartu Tanda Penduduk', url: pengajuan.ktp_url },
         { title: 'KARIP / Buku ASABRI', desc: 'Kartu Pensiun', url: pengajuan.karip_buku_asabri_url },
         { title: 'Slip Gaji Terakhir', desc: 'Bukti Pendapatan', url: pengajuan.slip_gaji_url },
+        { title: 'SK Pensiun', desc: 'Surat Keputusan Pensiun', url: pengajuan.sk_pensiun_url },
     ];
+
+    // Handle Borrower Photos (Multiple)
+    const photoDocs: typeof baseDocs = [];
+    if (pengajuan.borrower_photos) {
+        try {
+            const photos = JSON.parse(pengajuan.borrower_photos);
+            if (Array.isArray(photos)) {
+                photos.forEach((url: string, idx: number) => {
+                    photoDocs.push({
+                        title: `Foto Pemohon ${idx + 1}`,
+                        desc: 'Dokumentasi',
+                        url: url
+                    });
+                });
+            } else if (typeof pengajuan.borrower_photos === 'string' && (pengajuan.borrower_photos as string).startsWith('http')) {
+                photoDocs.push({ title: 'Foto Pemohon', desc: 'Dokumentasi', url: pengajuan.borrower_photos });
+            }
+        } catch (e) {
+            // Fallback
+            if (typeof pengajuan.borrower_photos === 'string' && (pengajuan.borrower_photos as string).length > 5) {
+                photoDocs.push({ title: 'Foto Pemohon', desc: 'Dokumentasi', url: pengajuan.borrower_photos });
+            }
+        }
+    }
+
+    const dokumenPengajuan = [...baseDocs, ...photoDocs];
 
     // Documents uploaded after approval
     const dokumenPersetujuan = [
@@ -432,7 +459,7 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                                         </div>
                                         <div className="flex justify-between py-1.5 border-b border-slate-50">
                                             <span className="text-slate-500">Usia</span>
-                                            <span className="font-medium text-slate-900">{pengajuan.usia ? `${pengajuan.usia} Tahun` : '-'}</span>
+                                            <span className="font-medium text-slate-900">{pengajuan.usia ? `${Math.floor(pengajuan.usia / 12)} Tahun${pengajuan.usia % 12 ? ` ${pengajuan.usia % 12} Bulan` : ''}` : '-'}</span>
                                         </div>
                                         <div className="flex justify-between py-1.5 border-b border-slate-50">
                                             <span className="text-slate-500">No. Telepon</span>

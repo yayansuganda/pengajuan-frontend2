@@ -1534,6 +1534,7 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
                 // Files & Metadata
                 ktp_url: formData.upload_ktp_pemohon || '',
                 slip_gaji_url: formData.upload_slip_gaji_terakhir || '',
+                sk_pensiun_url: formData.upload_sk_pensiun || '',
                 borrower_photos: formData.upload_borrower_photos || '',
                 pengajuan_permohonan_url: formData.upload_pengajuan_permohonan || '',
                 dokumen_akad_url: formData.upload_dokumen_akad || '',
