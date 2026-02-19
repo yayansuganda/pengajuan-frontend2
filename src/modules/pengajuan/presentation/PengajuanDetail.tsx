@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
-    ArrowLeft, User, MapPin, Briefcase, Calendar, FileText,
+    ArrowLeft, User, UserCheck, MapPin, Briefcase, Calendar, FileText,
     CreditCard, Upload, XCircle, CheckCircle, Clock,
     Wallet, Landmark, FolderOpen, Banknote, Camera, Receipt, Eye, ExternalLink,
     Home, Plus, LayoutGrid, Calculator
@@ -50,8 +50,8 @@ const Section: React.FC<{ title: string; icon: React.ReactNode; children: React.
     </div>
 );
 
-const Field: React.FC<{ label: string; value: string; wide?: boolean; highlight?: boolean }> = ({ label, value, wide, highlight }) => (
-    <div className={wide ? 'col-span-2 sm:col-span-3 lg:col-span-4' : ''}>
+const Field: React.FC<{ label: string; value: React.ReactNode; wide?: boolean; highlight?: boolean }> = ({ label, value, wide, highlight }) => (
+    <div className={wide ? 'col-span-2 sm:col-span-3 lg:col-span-4' : 'col-span-1'}>
         <dt className="text-xs text-slate-500 mb-0.5">{label}</dt>
         <dd className={`text-sm ${highlight ? 'font-semibold text-indigo-600' : 'text-slate-900'}`}>{value}</dd>
     </div>
@@ -1068,6 +1068,30 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                                     <Field label="Nominal Diterima" value={money(pengajuan.nominal_terima)} />
                                     <Field label="Petugas Kantor Pos" value={d(pengajuan.kantor_pos_petugas)} />
                                 </Section>
+
+                                {/* Data Petugas POS - Section */}
+                                {pengajuan.petugas_nippos && (
+                                    <Section title="Data Petugas POS" icon={<UserCheck className="h-5 w-5 text-indigo-600" />}>
+                                        <Field label="NIPPOS" value={d(pengajuan.petugas_nippos)} />
+                                        <Field label="Nama Petugas" value={d(pengajuan.petugas_name)} />
+                                        <Field label="No. Handphone" value={
+                                            pengajuan.petugas_phone ? (
+                                                <a
+                                                    href={`https://wa.me/${pengajuan.petugas_phone.replace(/^0/, '62').replace(/\D/g, '')}`}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="text-indigo-600 hover:text-indigo-800 hover:underline inline-flex items-center gap-1"
+                                                >
+                                                    {pengajuan.petugas_phone}
+                                                    <ExternalLink className="h-3 w-3" />
+                                                </a>
+                                            ) : '-'
+                                        } />
+                                        <Field label="Unit KCU" value={pengajuan.petugas_kcu_code ? `${pengajuan.petugas_kcu_code} - ${pengajuan.petugas_kcu_name || ''}` : '-'} />
+                                        <Field label="Unit KC" value={pengajuan.petugas_kc_code ? `${pengajuan.petugas_kc_code} - ${pengajuan.petugas_kc_name || ''}` : '-'} />
+                                        <Field label="Unit KCP" value={pengajuan.petugas_kcp_code ? `${pengajuan.petugas_kcp_code} - ${pengajuan.petugas_kcp_name || ''}` : '-'} />
+                                    </Section>
+                                )}
 
                                 {/* Potongan Detail - Section */}
                                 {(() => {
