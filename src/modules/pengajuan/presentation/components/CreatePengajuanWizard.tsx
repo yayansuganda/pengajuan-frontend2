@@ -1450,11 +1450,14 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
             });
 
             // Add Ta'awun if applicable
-            const hiddenPercentageSum = allPotonganList
-                .filter(p => p.kategori === 'persentase' && !p.is_view)
+            // Add Ta'awun if applicable
+            // Logic must match useEffect calculation: Potongan JW - Sum(Visible Percentage)
+            const visiblePercentageSum = potonganDetailArray
+                .filter(p => p.kategori === 'persentase')
                 .reduce((sum, p) => sum + p.persentase_nominal, 0);
+
             const potonganJWPersen = potonganJangkaWaktu?.potongan_persen || 0;
-            const taawunPersen = potonganJWPersen - hiddenPercentageSum;
+            const taawunPersen = potonganJWPersen - visiblePercentageSum;
 
             if (taawunPersen > 0) {
                 const taawunValue = (taawunPersen / 100) * plafond;

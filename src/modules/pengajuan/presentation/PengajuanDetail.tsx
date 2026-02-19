@@ -321,7 +321,7 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
 
     // Check if user is Petugas Pos or Admin Pos to use fronting navigation
     const isPetugasPos = user?.role === 'petugas-pos' || user?.role === 'admin-pos';
-    
+
     return (
         <MobileLayoutWrapper showBackground={true} moduleName={isPetugasPos ? 'fronting' : 'default'}>
             {/* Mobile Layout */}
@@ -615,9 +615,7 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                                                 </h3>
                                                 <div className="space-y-2 text-xs">
                                                     {details.map((item: any, idx: number) => {
-                                                        const label = item.kategori === 'persentase'
-                                                            ? `${item.nama} (${item.persentase_nominal}%)`
-                                                            : item.nama;
+                                                        const label = item.nama;
                                                         return (
                                                             <div key={idx} className="flex justify-between py-1.5 border-b border-slate-50">
                                                                 <span className="text-slate-500">{label}</span>
