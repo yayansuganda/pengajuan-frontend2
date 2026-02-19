@@ -618,7 +618,7 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                                         </div>
                                         <div className="flex justify-between py-1.5 border-b border-slate-50">
                                             <span className="text-slate-500">Maks. Jangka Waktu</span>
-                                            <span className="font-medium text-slate-900">{pengajuan.maksimal_jangka_waktu_usia ? `${pengajuan.maksimal_jangka_waktu_usia} Tahun` : '-'}</span>
+                                            <span className="font-medium text-slate-900">{pengajuan.maksimal_jangka_waktu_usia ? `${pengajuan.maksimal_jangka_waktu_usia} Bulan` : '-'}</span>
                                         </div>
                                         <div className="flex justify-between py-1.5 border-b border-slate-50">
                                             <span className="text-slate-500">Jangka Waktu</span>
