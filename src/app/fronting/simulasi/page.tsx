@@ -31,7 +31,7 @@ export default function FrontingSimulasiPage() {
     const [jenisPembiayaanId, setJenisPembiayaanId] = useState<string>('');
     const [kategoriPembiayaan, setKategoriPembiayaan] = useState<string>('');
     const [jangkaWaktu, setJangkaWaktu] = useState<string>('');
-    
+
     // Calculated values
     const [maksJangkaWaktuUsia, setMaksJangkaWaktuUsia] = useState<number>(0);
     const [maksimalPembiayaan, setMaksimalPembiayaan] = useState<number>(0);
@@ -293,8 +293,8 @@ export default function FrontingSimulasiPage() {
                                     className="w-full px-4 py-2.5 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                                 >
                                     <option value="">-- Pilih Kategori --</option>
-                                    <option value="Macro">Macro</option>
-                                    <option value="Micro">Micro</option>
+                                    <option value="Macro">Makro (SK Asli)</option>
+                                    <option value="Micro">Mikro (Sisa Gaji)</option>
                                 </select>
                             </div>
                         )}
