@@ -4,6 +4,8 @@ export interface Setting {
     jasa_perbulan: number;
     mikro_jangka_waktu: number; // NEW
     mikro_maksimal_pembiayaan: number; // NEW
+    makro_jangka_waktu: number; // NEW
+    makro_maksimal_pembiayaan: number; // NEW
     description?: string;
     created_at: string;
     updated_at: string;
@@ -15,6 +17,8 @@ export interface CreateSettingDTO {
     jasa_perbulan: number;
     mikro_jangka_waktu: number; // NEW
     mikro_maksimal_pembiayaan: number; // NEW
+    makro_jangka_waktu: number; // NEW
+    makro_maksimal_pembiayaan: number; // NEW
     description?: string;
 }
 
@@ -23,5 +27,7 @@ export interface UpdateSettingDTO {
     jasa_perbulan: number;
     mikro_jangka_waktu: number; // NEW
     mikro_maksimal_pembiayaan: number; // NEW
+    makro_jangka_waktu: number; // NEW
+    makro_maksimal_pembiayaan: number; // NEW
     description?: string;
 }

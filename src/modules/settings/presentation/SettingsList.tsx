@@ -92,6 +92,74 @@ const MobileView = ({ formData, setFormData, handleSubmit, activeSetting, isLoad
                         </div>
                     </div>
 
+                    {/* Mobile: Limitasi Produk Card */}
+                    <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm space-y-5">
+                        <h3 className="text-sm font-bold text-slate-800 border-b border-slate-100 pb-2">Limitasi Produk</h3>
+
+                        {/* Mikro */}
+                        <div>
+                            <h4 className="text-xs font-semibold text-emerald-600 mb-3 uppercase">Kategori Mikro</h4>
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-700 mb-1">Max Tenor</label>
+                                    <div className="relative">
+                                        <input
+                                            type="number"
+                                            value={formData.mikro_jangka_waktu}
+                                            onChange={(e) => setFormData({ ...formData, mikro_jangka_waktu: parseInt(e.target.value) || 0 })}
+                                            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm"
+                                        />
+                                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-500">BLN</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-700 mb-1">Max Plafond</label>
+                                    <div className="relative">
+                                        <input
+                                            type="text"
+                                            value={new Intl.NumberFormat('id-ID').format(formData.mikro_maksimal_pembiayaan)}
+                                            onChange={(e) => setFormData({ ...formData, mikro_maksimal_pembiayaan: parseInt(e.target.value.replace(/\./g, '')) || 0 })}
+                                            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm"
+                                        />
+                                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-500">IDR</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Makro */}
+                        <div className="pt-4 border-t border-slate-100">
+                            <h4 className="text-xs font-semibold text-blue-600 mb-3 uppercase">Kategori Makro</h4>
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-700 mb-1">Max Tenor</label>
+                                    <div className="relative">
+                                        <input
+                                            type="number"
+                                            value={formData.makro_jangka_waktu}
+                                            onChange={(e) => setFormData({ ...formData, makro_jangka_waktu: parseInt(e.target.value) || 0 })}
+                                            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm"
+                                        />
+                                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-500">BLN</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-700 mb-1">Max Plafond</label>
+                                    <div className="relative">
+                                        <input
+                                            type="text"
+                                            value={new Intl.NumberFormat('id-ID').format(formData.makro_maksimal_pembiayaan)}
+                                            onChange={(e) => setFormData({ ...formData, makro_maksimal_pembiayaan: parseInt(e.target.value.replace(/\./g, '')) || 0 })}
+                                            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm"
+                                        />
+                                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-500">IDR</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
                     <div className="bg-amber-50 p-4 rounded-xl border border-amber-100 flex gap-3 items-start">
                         <AlertCircle className="text-amber-600 w-5 h-5 shrink-0 mt-0.5" />
                         <p className="text-xs text-amber-800 leading-relaxed">Perubahan akan langsung berefek pada sistem. Pastikan data benar.</p>
@@ -222,57 +290,118 @@ const DesktopView = ({ formData, setFormData, handleSubmit, activeSetting, isLoa
                         </div>
                     </div>
 
-                    {/* Card 2: Pengaturan Mikro */}
+                    {/* Card 2: Limitasi Produk (Unified) */}
                     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow duration-300">
                         <div className="border-b border-gray-100 bg-gray-50/50 px-6 py-4 flex items-center gap-3">
                             <div className="bg-emerald-100 p-2 rounded-lg">
                                 <SettingsIcon className="w-5 h-5 text-emerald-600" />
                             </div>
                             <div>
-                                <h2 className="text-base font-bold text-gray-900">Seting Mikro</h2>
-                                <p className="text-xs text-gray-500">Konfigurasi khusus produk Mikro</p>
+                                <h2 className="text-base font-bold text-gray-900">Limitasi Produk</h2>
+                                <p className="text-xs text-gray-500">Konfigurasi batasan untuk setiap kategori produk</p>
                             </div>
                         </div>
-                        <div className="p-6 space-y-6">
-                            <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                    Maksimal Jangka Waktu
-                                </label>
-                                <div className="relative group">
-                                    <input
-                                        type="number"
-                                        required
-                                        min="0"
-                                        value={formData.mikro_jangka_waktu}
-                                        onChange={(e) => setFormData({ ...formData, mikro_jangka_waktu: parseInt(e.target.value) || 0 })}
-                                        className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all font-medium text-gray-900 group-hover:border-gray-300"
-                                    />
-                                    <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
-                                        <span className="text-sm font-bold text-gray-400 bg-gray-50 px-2 py-1 rounded">BULAN</span>
-                                    </div>
+
+                        <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-8 relative">
+                            {/* Vertical Divider for Desktop */}
+                            <div className="hidden md:block absolute top-6 bottom-6 left-1/2 w-px bg-gray-100 -ml-px"></div>
+
+                            {/* Section: Mikro */}
+                            <div className="space-y-6">
+                                <div className="flex items-center gap-2 mb-4">
+                                    <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                                    <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider">Kategori Mikro</h3>
                                 </div>
-                                <p className="mt-2 text-xs text-gray-500">Batas maksimal tenor untuk pembiayaan Mikro</p>
+
+                                <div>
+                                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                        Maksimal Jangka Waktu
+                                    </label>
+                                    <div className="relative group">
+                                        <input
+                                            type="number"
+                                            required
+                                            min="0"
+                                            value={formData.mikro_jangka_waktu}
+                                            onChange={(e) => setFormData({ ...formData, mikro_jangka_waktu: parseInt(e.target.value) || 0 })}
+                                            className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all font-medium text-gray-900 group-hover:border-gray-300"
+                                        />
+                                        <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
+                                            <span className="text-sm font-bold text-gray-400 bg-gray-50 px-2 py-1 rounded">BULAN</span>
+                                        </div>
+                                    </div>
+                                    <p className="mt-2 text-xs text-gray-500">Batas maksimal tenor untuk pembiayaan Mikro</p>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                        Maksimal Pembiayaan
+                                    </label>
+                                    <div className="relative group">
+                                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                            <span className="text-sm font-bold text-gray-500">Rp</span>
+                                        </div>
+                                        <input
+                                            type="text"
+                                            value={new Intl.NumberFormat('id-ID').format(formData.mikro_maksimal_pembiayaan)}
+                                            onChange={(e) => {
+                                                const val = parseInt(e.target.value.replace(/\./g, '')) || 0;
+                                                setFormData({ ...formData, mikro_maksimal_pembiayaan: val });
+                                            }}
+                                            className="w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all font-medium text-gray-900 group-hover:border-gray-300"
+                                        />
+                                    </div>
+                                    <p className="mt-2 text-xs text-gray-500">Plafond maksimal untuk kategori Mikro</p>
+                                </div>
                             </div>
 
-                            <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                    Maksimal Pembiayaan
-                                </label>
-                                <div className="relative group">
-                                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                        <span className="text-sm font-bold text-gray-500">Rp</span>
-                                    </div>
-                                    <input
-                                        type="text" // Text type to handle formatting if needed, but simple number for now
-                                        value={new Intl.NumberFormat('id-ID').format(formData.mikro_maksimal_pembiayaan)}
-                                        onChange={(e) => {
-                                            const val = parseInt(e.target.value.replace(/\./g, '')) || 0;
-                                            setFormData({ ...formData, mikro_maksimal_pembiayaan: val });
-                                        }}
-                                        className="w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all font-medium text-gray-900 group-hover:border-gray-300"
-                                    />
+                            {/* Section: Makro */}
+                            <div className="space-y-6">
+                                <div className="flex items-center gap-2 mb-4">
+                                    <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                                    <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider">Kategori Makro</h3>
                                 </div>
-                                <p className="mt-2 text-xs text-gray-500">Plafond maksimal untuk kategori Mikro</p>
+
+                                <div>
+                                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                        Maksimal Jangka Waktu
+                                    </label>
+                                    <div className="relative group">
+                                        <input
+                                            type="number"
+                                            required
+                                            min="0"
+                                            value={formData.makro_jangka_waktu}
+                                            onChange={(e) => setFormData({ ...formData, makro_jangka_waktu: parseInt(e.target.value) || 0 })}
+                                            className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all font-medium text-gray-900 group-hover:border-gray-300"
+                                        />
+                                        <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
+                                            <span className="text-sm font-bold text-gray-400 bg-gray-50 px-2 py-1 rounded">BULAN</span>
+                                        </div>
+                                    </div>
+                                    <p className="mt-2 text-xs text-gray-500">Batas maksimal tenor untuk pembiayaan Makro</p>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                        Maksimal Pembiayaan
+                                    </label>
+                                    <div className="relative group">
+                                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                            <span className="text-sm font-bold text-gray-500">Rp</span>
+                                        </div>
+                                        <input
+                                            type="text"
+                                            value={new Intl.NumberFormat('id-ID').format(formData.makro_maksimal_pembiayaan)}
+                                            onChange={(e) => {
+                                                const val = parseInt(e.target.value.replace(/\./g, '')) || 0;
+                                                setFormData({ ...formData, makro_maksimal_pembiayaan: val });
+                                            }}
+                                            className="w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all font-medium text-gray-900 group-hover:border-gray-300"
+                                        />
+                                    </div>
+                                    <p className="mt-2 text-xs text-gray-500">Plafond maksimal untuk kategori Makro</p>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -312,6 +441,8 @@ export const SettingsList: React.FC = () => {
         jasa_perbulan: 2.00,
         mikro_jangka_waktu: 0,
         mikro_maksimal_pembiayaan: 0,
+        makro_jangka_waktu: 0,
+        makro_maksimal_pembiayaan: 0,
         description: ''
     });
     const [isLoading, setIsLoading] = useState(true);
@@ -331,6 +462,8 @@ export const SettingsList: React.FC = () => {
                 jasa_perbulan: active.jasa_perbulan,
                 mikro_jangka_waktu: active.mikro_jangka_waktu || 0,
                 mikro_maksimal_pembiayaan: active.mikro_maksimal_pembiayaan || 0,
+                makro_jangka_waktu: active.makro_jangka_waktu || 0,
+                makro_maksimal_pembiayaan: active.makro_maksimal_pembiayaan || 0,
                 description: active.description || ''
             });
             setIsLoading(false);
