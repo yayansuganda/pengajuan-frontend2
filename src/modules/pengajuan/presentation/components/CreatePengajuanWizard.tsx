@@ -1265,8 +1265,14 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
                 errors.jangka_waktu = 'Jangka Waktu wajib diisi';
             } else if (jangkaWaktu > maksJangkaWaktu) {
                 errors.jangka_waktu = `Jangka Waktu tidak boleh lebih dari Maksimal (${maksJangkaWaktu} bulan)`;
-            } else if (jangkaWaktu < 6) {
-                errors.jangka_waktu = 'Jangka Waktu minimal 6 bulan';
+            } else {
+                // Minimum limit check based on Category
+                const isMakro = formData.kategori_pembiayaan === 'Macro';
+                const minJangkaWaktu = isMakro ? 12 : 6;
+
+                if (jangkaWaktu < minJangkaWaktu) {
+                    errors.jangka_waktu = `Jangka Waktu minimal ${minJangkaWaktu} bulan${isMakro ? ' untuk kategori Makro' : ''}`;
+                }
             }
 
             const jumlah = parseFloat((formData.jumlah_pembiayaan || '').replace(/\./g, '')) || 0;
