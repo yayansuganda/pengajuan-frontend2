@@ -170,19 +170,17 @@ export const RekonsiliasiPage: React.FC = () => {
         try {
             showLoading('Menyiapkan file Excel...');
 
-            // Prepare data for Excel - semua kolom
+            // Prepare data for Excel - semua kolom, tanpa field ID
             const excelData = filteredList.map((item, index) => ({
                 'No': index + 1,
-                'ID': item.id,
-                'User ID': item.user_id,
-                'User Name': item.user?.name || '-',
-                'User Username': item.user?.username || '-',
-                'User Role': item.user?.role || '-',
-                'User Unit': item.user?.unit || '-',
+                'User Pembuat': item.user?.name || '-',
+                'Username Pembuat': item.user?.username || '-',
+                'Role Pembuat': item.user?.role || '-',
+                'Unit Pembuat': item.user?.unit || '-',
                 'Unit': item.unit || '-',
                 'Status': item.status || '-',
-                'Notes': item.notes || '-',
-                'Reject Reason': item.reject_reason || '-',
+                'Catatan': item.notes || '-',
+                'Alasan Penolakan': item.reject_reason || '-',
 
                 // Data Diri
                 'NIK': item.nik || '-',
@@ -218,14 +216,12 @@ export const RekonsiliasiPage: React.FC = () => {
                 'Gaji Bersih': item.gaji_bersih || 0,
                 'Gaji Tersedia': item.gaji_tersedia || 0,
 
-                // Data Pengajuan
-                'Jenis Pelayanan ID': item.jenis_pelayanan_id || '-',
+                // Data Pengajuan — tampilkan nama relasi, bukan ID
                 'Jenis Pelayanan': item.jenis_pelayanan?.name || '-',
-                'Jenis Pembiayaan ID': item.jenis_pembiayaan_id || '-',
                 'Jenis Pembiayaan': item.jenis_pembiayaan?.name || '-',
                 'Kategori Pembiayaan': item.kategori_pembiayaan || '-',
-                'Maksimal Jangka Waktu Usia': item.maksimal_jangka_waktu_usia || 0,
-                'Jangka Waktu': item.jangka_waktu || 0,
+                'Maks. Jangka Waktu Usia': item.maksimal_jangka_waktu_usia || 0,
+                'Jangka Waktu (Bulan)': item.jangka_waktu || 0,
                 'Maksimal Pembiayaan': item.maksimal_pembiayaan || 0,
                 'Jumlah Pembiayaan': item.jumlah_pembiayaan || 0,
                 'Besar Angsuran': item.besar_angsuran || 0,
@@ -235,74 +231,73 @@ export const RekonsiliasiPage: React.FC = () => {
 
                 // Data Petugas POS
                 'Petugas NIPPOS': item.petugas_nippos || '-',
-                'Petugas Name': item.petugas_name || '-',
-                'Petugas Account No': item.petugas_account_no || '-',
-                'Petugas Phone': item.petugas_phone || '-',
+                'Petugas Nama': item.petugas_name || '-',
+                'Petugas No. Rekening': item.petugas_account_no || '-',
+                'Petugas Telepon': item.petugas_phone || '-',
                 'Petugas KCU Code': item.petugas_kcu_code || '-',
-                'Petugas KCU Name': item.petugas_kcu_name || '-',
+                'Petugas KCU Nama': item.petugas_kcu_name || '-',
                 'Petugas KC Code': item.petugas_kc_code || '-',
-                'Petugas KC Name': item.petugas_kc_name || '-',
+                'Petugas KC Nama': item.petugas_kc_name || '-',
                 'Petugas KCP Code': item.petugas_kcp_code || '-',
-                'Petugas KCP Name': item.petugas_kcp_name || '-',
-
-                // Status & Metadata
-                'Approval': item.approval || '-',
+                'Petugas KCP Nama': item.petugas_kcp_name || '-',
 
                 // Files
                 'KTP URL': item.ktp_url || '-',
                 'Slip Gaji URL': item.slip_gaji_url || '-',
-                'Borrower Photos': item.borrower_photos || '-',
+                'Foto Pemohon': item.borrower_photos || '-',
                 'Pengajuan Permohonan URL': item.pengajuan_permohonan_url || '-',
                 'Dokumen Akad URL': item.dokumen_akad_url || '-',
                 'Flagging URL': item.flagging_url || '-',
                 'Surat Pernyataan Beda URL': item.surat_pernyataan_beda_url || '-',
-                'Karip Buku Asabri URL': item.karip_buku_asabri_url || '-',
+                'Karip / Buku Asabri URL': item.karip_buku_asabri_url || '-',
                 'Surat Permohonan Anggota URL': item.surat_permohonan_anggota_url || '-',
                 'Potongan Detail': item.potongan_detail || '-',
                 'SK Pensiun URL': item.sk_pensiun_url || '-',
-                'Disbursement Proof URL': item.disbursement_proof_url || '-',
-                'Shipping Receipt URL': item.shipping_receipt_url || '-',
+                'Bukti Pencairan URL': item.disbursement_proof_url || '-',
+                'Resi Pengiriman URL': item.shipping_receipt_url || '-',
 
                 // Location
                 'Latitude': item.latitude || '-',
                 'Longitude': item.longitude || '-',
 
-                // Timestamps
-                'Created At': item.created_at || '-',
-                'Updated At': item.updated_at || '-',
+                // Timestamps — format tanggal Indonesia
+                'Tanggal Pengajuan': item.created_at
+                    ? new Date(item.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })
+                    : '-',
+                'Terakhir Diupdate': item.updated_at
+                    ? new Date(item.updated_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })
+                    : '-',
             }));
 
             // Create worksheet
             const worksheet = XLSX.utils.json_to_sheet(excelData);
 
-            // Set column widths
+            // Set column widths (sesuai urutan kolom di atas, tanpa field ID)
             const columnWidths = [
                 { wch: 5 },  // No
-                { wch: 38 }, // ID
-                { wch: 38 }, // User ID
-                { wch: 20 }, // User Name
-                { wch: 15 }, // User Username
-                { wch: 15 }, // User Role
-                { wch: 20 }, // User Unit
-                { wch: 20 }, // Unit
-                { wch: 20 }, // Status
-                { wch: 30 }, // Notes
-                { wch: 30 }, // Reject Reason
+                { wch: 25 }, // User Pembuat
+                { wch: 18 }, // Username Pembuat
+                { wch: 15 }, // Role Pembuat
+                { wch: 22 }, // Unit Pembuat
+                { wch: 22 }, // Unit
+                { wch: 28 }, // Status
+                { wch: 30 }, // Catatan
+                { wch: 30 }, // Alasan Penolakan
                 { wch: 20 }, // NIK
                 { wch: 30 }, // Nama Lengkap
                 { wch: 15 }, // Jenis Kelamin
                 { wch: 20 }, // Tempat Lahir
                 { wch: 15 }, // Tanggal Lahir
-                { wch: 10 }, // Usia
+                { wch: 8 },  // Usia
                 { wch: 40 }, // Alamat
-                { wch: 10 }, // RT
-                { wch: 10 }, // RW
+                { wch: 6 },  // RT
+                { wch: 6 },  // RW
                 { wch: 20 }, // Kelurahan
                 { wch: 20 }, // Kecamatan
                 { wch: 20 }, // Kabupaten
                 { wch: 20 }, // Provinsi
                 { wch: 10 }, // Kode Pos
-                { wch: 15 }, // Nomor Telephone
+                { wch: 18 }, // Nomor Telephone
                 { wch: 30 }, // Nama Ibu Kandung
                 { wch: 20 }, // Pendidikan Terakhir
                 { wch: 20 }, // NOPEN
@@ -310,53 +305,50 @@ export const RekonsiliasiPage: React.FC = () => {
                 { wch: 30 }, // Kantor Bayar
                 { wch: 20 }, // Nama Bank
                 { wch: 20 }, // No Rekening
-                { wch: 20 }, // Nomor Rekening Giro POS
+                { wch: 25 }, // Nomor Rekening Giro POS
                 { wch: 20 }, // Jenis Dapem
                 { wch: 15 }, // Bulan Dapem
                 { wch: 15 }, // Status Dapem
-                { wch: 15 }, // Gaji Bersih
-                { wch: 15 }, // Gaji Tersedia
-                { wch: 38 }, // Jenis Pelayanan ID
-                { wch: 20 }, // Jenis Pelayanan
-                { wch: 38 }, // Jenis Pembiayaan ID
-                { wch: 20 }, // Jenis Pembiayaan
+                { wch: 18 }, // Gaji Bersih
+                { wch: 18 }, // Gaji Tersedia
+                { wch: 22 }, // Jenis Pelayanan
+                { wch: 22 }, // Jenis Pembiayaan
                 { wch: 20 }, // Kategori Pembiayaan
-                { wch: 25 }, // Maksimal Jangka Waktu Usia
-                { wch: 15 }, // Jangka Waktu
-                { wch: 20 }, // Maksimal Pembiayaan
-                { wch: 20 }, // Jumlah Pembiayaan
-                { wch: 15 }, // Besar Angsuran
-                { wch: 15 }, // Total Potongan
-                { wch: 15 }, // Nominal Terima
+                { wch: 25 }, // Maks. Jangka Waktu Usia
+                { wch: 18 }, // Jangka Waktu (Bulan)
+                { wch: 22 }, // Maksimal Pembiayaan
+                { wch: 22 }, // Jumlah Pembiayaan
+                { wch: 18 }, // Besar Angsuran
+                { wch: 18 }, // Total Potongan
+                { wch: 18 }, // Nominal Terima
                 { wch: 30 }, // Kantor POS Petugas
                 { wch: 20 }, // Petugas NIPPOS
-                { wch: 30 }, // Petugas Name
-                { wch: 20 }, // Petugas Account No
-                { wch: 15 }, // Petugas Phone
-                { wch: 15 }, // Petugas KCU Code
-                { wch: 30 }, // Petugas KCU Name
-                { wch: 15 }, // Petugas KC Code
-                { wch: 30 }, // Petugas KC Name
-                { wch: 15 }, // Petugas KCP Code
-                { wch: 30 }, // Petugas KCP Name
-                { wch: 15 }, // Approval
+                { wch: 30 }, // Petugas Nama
+                { wch: 22 }, // Petugas No. Rekening
+                { wch: 18 }, // Petugas Telepon
+                { wch: 18 }, // Petugas KCU Code
+                { wch: 30 }, // Petugas KCU Nama
+                { wch: 18 }, // Petugas KC Code
+                { wch: 30 }, // Petugas KC Nama
+                { wch: 18 }, // Petugas KCP Code
+                { wch: 30 }, // Petugas KCP Nama
                 { wch: 50 }, // KTP URL
                 { wch: 50 }, // Slip Gaji URL
-                { wch: 50 }, // Borrower Photos
+                { wch: 50 }, // Foto Pemohon
                 { wch: 50 }, // Pengajuan Permohonan URL
                 { wch: 50 }, // Dokumen Akad URL
                 { wch: 50 }, // Flagging URL
                 { wch: 50 }, // Surat Pernyataan Beda URL
-                { wch: 50 }, // Karip Buku Asabri URL
+                { wch: 50 }, // Karip / Buku Asabri URL
                 { wch: 50 }, // Surat Permohonan Anggota URL
                 { wch: 50 }, // Potongan Detail
                 { wch: 50 }, // SK Pensiun URL
-                { wch: 50 }, // Disbursement Proof URL
-                { wch: 50 }, // Shipping Receipt URL
+                { wch: 50 }, // Bukti Pencairan URL
+                { wch: 50 }, // Resi Pengiriman URL
                 { wch: 15 }, // Latitude
                 { wch: 15 }, // Longitude
-                { wch: 25 }, // Created At
-                { wch: 25 }, // Updated At
+                { wch: 28 }, // Tanggal Pengajuan
+                { wch: 28 }, // Terakhir Diupdate
             ];
             worksheet['!cols'] = columnWidths;
 
