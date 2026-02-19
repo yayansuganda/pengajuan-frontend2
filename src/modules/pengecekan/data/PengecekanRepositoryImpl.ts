@@ -62,7 +62,7 @@ export class PengecekanRepositoryImpl implements PengecekanRepository {
             const data = responseData.data;
 
             // Calculate total potongan from potongan_pinjaman if available
-            const totalPotongan = data.potongan_pinjaman 
+            const totalPotongan = data.potongan_pinjaman
                 ? data.potongan_pinjaman.reduce((sum: number, p: any) => sum + (p.AMOUNT || 0), 0)
                 : 0;
 
@@ -72,9 +72,12 @@ export class PengecekanRepositoryImpl implements PengecekanRepository {
                 tanggal_lahir: data.tanggal_lahir || '', // From API if available
                 jenis_kelamin: '', // Not provided by API
                 jenis_pensiun: data.jenis_pensiun || '',
+                ket_jenis_pensiun: data.ket_jenis_pensiun || '',
                 jenis_dapem: data.jenis_dapem || '',
+                ket_jenis_dapem: data.ket_jenis_dapem || '',
                 status_keaktifan: data.status_dapem === '13' || data.status_dapem === '1' ? 'Aktif' : 'Tidak Aktif',
                 status_dapem: data.status_dapem || '',
+                ket_status_dapem: data.ket_status_dapem || '',
                 kantor_bayar: data.nama_kantor || data.nama_kprk || '',
                 kode_kantor: data.kode_kantor || '',
                 kode_kprk: data.kode_kprk || '',

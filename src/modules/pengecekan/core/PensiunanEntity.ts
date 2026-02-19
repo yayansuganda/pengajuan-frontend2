@@ -20,7 +20,9 @@ export interface Pensiunan {
 
     // Data Pensiun
     jenis_pensiun: string;
+    ket_jenis_pensiun?: string; // NEW: Keterangan jenis pensiun
     jenis_dapem: string; // NEW: dari API
+    ket_jenis_dapem?: string; // NEW: Keterangan jenis dapem
     kantor_bayar: string;
     kode_kantor: string; // NEW: dari API
     kode_kprk: string; // NEW: dari API
@@ -41,5 +43,6 @@ export interface Pensiunan {
     // Status
     status_keaktifan: string; // Aktif, Meninggal, dll
     status_dapem: string; // NEW: dari API (kode status)
+    ket_status_dapem?: string; // NEW: Keterangan status dapem
     last_updated: string;
 }

@@ -93,7 +93,7 @@ const INITIAL_FORM_STATE = {
     nama_bank: '', no_rekening: '',
     // Common fields
     gaji_bersih: '', total_potongan_pinjaman: '', gaji_tersedia: '',
-    jenis_dapem: '', bulan_dapem: '', status_dapem: '',
+    jenis_dapem: '', bulan_dapem: '', status_dapem: '', mitra: '',
 
     // Step 2 - Data Diri
     nik: '', nama_lengkap: '', jenis_kelamin: 'Laki-laki', tempat_lahir: '', tanggal_lahir: '',
@@ -880,30 +880,31 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
             // Calculate Gaji Tersedia (Available Salary)
             // UPDATE: User requested that POS API potongan should NOT reduce Gaji Tersedia. 
             // It should only be displayed.
-            // So Gaji Tersedia = Gaji Bersih.
+            // So Gaji Tersedia = Gaji Bersih - Total Potongan Pinjaman.
             const gajiBersih = data.gaji_bersih || 0;
             const totalPotonganAPI = data.potongan || 0; // Renamed to clarify source
-            const gajiTersedia = gajiBersih; // DO NOT SUBTRACT totalPotonganAPI
+            const gajiTersedia = gajiBersih - totalPotonganAPI;
 
-            console.log('💰 Auto-calculating Gaji Tersedia (Ignored POS Potongan for calculation):');
+            console.log('💰 Auto-calculating Gaji Tersedia (Gaji Bersih - Potongan):');
             console.log('  - Gaji Bersih:', gajiBersih);
             console.log('  - Total Potongan (Display Only):', totalPotonganAPI);
-            console.log('  - Gaji Tersedia (= Gaji Bersih):', gajiTersedia);
+            console.log('  - Gaji Tersedia (= Gaji Bersih - Potongan):', gajiTersedia);
 
             // Auto-fill form fields with API data
             setFormData(prev => ({
                 ...prev,
                 // Data from API
                 nama_lengkap: data.nama_lengkap || prev.nama_lengkap,
-                jenis_pensiun: data.jenis_pensiun || prev.jenis_pensiun,
-                jenis_dapem: data.jenis_dapem || prev.jenis_dapem,
+                jenis_pensiun: data.ket_jenis_pensiun || data.jenis_pensiun || prev.jenis_pensiun,
+                jenis_dapem: data.ket_jenis_dapem || data.jenis_dapem || prev.jenis_dapem,
                 bulan_dapem: data.bulan_dapem || prev.bulan_dapem,
-                status_dapem: data.status_dapem || prev.status_dapem,
+                status_dapem: data.ket_status_dapem || data.status_dapem || prev.status_dapem,
                 gaji_bersih: gajiBersih ? gajiBersih.toString() : prev.gaji_bersih,
                 total_potongan_pinjaman: totalPotonganAPI ? totalPotonganAPI.toString() : prev.total_potongan_pinjaman, // Display Only
-                gaji_tersedia: gajiTersedia ? gajiTersedia.toString() : prev.gaji_tersedia, // Equal to Gaji Bersih
+                gaji_tersedia: gajiTersedia ? gajiTersedia.toString() : prev.gaji_tersedia,
                 nomor_rekening_giro_pos: data.no_rekening || prev.nomor_rekening_giro_pos,
                 kantor_pos_petugas: data.kantor_bayar || prev.kantor_pos_petugas,
+                mitra: data.mitra || prev.mitra,
             }));
 
             // Show success notification with potongan info
@@ -1724,10 +1725,18 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
                                 </div>
                             )}
                         </div>
+                        {/* Display Nama Lengkap if available */}
+                        {formData.nama_lengkap && (
+                            <div className="mt-2 p-2 bg-green-50 border border-green-100 rounded-md">
+                                <p className="text-xs text-green-600 font-medium">Nama Pensiunan:</p>
+                                <p className="text-sm font-bold text-green-800">{formData.nama_lengkap}</p>
+                            </div>
+                        )}
                         <p className="mt-1 text-xs text-gray-500">
                             💡 Data akan otomatis terisi dari sistem Pos Indonesia setelah input NOPEN
                         </p>
                     </div>
+                    {renderInput("Mitra", "mitra", "text", false, "", false, true)}
                     {renderInput("Jenis Pensiun", "jenis_pensiun")}
                     {renderInput("No Giro Pos", "nomor_rekening_giro_pos", "text", false, "", false)}
 
