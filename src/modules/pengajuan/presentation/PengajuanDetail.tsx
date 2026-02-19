@@ -378,11 +378,11 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                         {/* Financial Summary - Compact */}
                         <div className="grid grid-cols-2 gap-2 mb-5">
                             <div className="bg-indigo-50 rounded-xl p-3">
-                                <p className="text-[9px] text-indigo-600 font-semibold uppercase mb-0.5">Plafond</p>
+                                <p className="text-[9px] text-indigo-600 font-semibold uppercase mb-0.5">Jumlah Pengajuan</p>
                                 <p className="text-sm font-bold text-indigo-700">{money(pengajuan.jumlah_pembiayaan)}</p>
                             </div>
                             <div className="bg-slate-50 rounded-xl p-3">
-                                <p className="text-[9px] text-slate-600 font-semibold uppercase mb-0.5">Tenor</p>
+                                <p className="text-[9px] text-slate-600 font-semibold uppercase mb-0.5">Jangka Waktu</p>
                                 <p className="text-sm font-bold text-slate-700">{d(pengajuan.jangka_waktu)} Bln</p>
                             </div>
                             <div className="bg-slate-50 rounded-xl p-3">

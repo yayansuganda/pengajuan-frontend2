@@ -1508,6 +1508,7 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
                 // Data Pengajuan
                 jenis_pelayanan_id: formData.jenis_pelayanan_id,
                 jenis_pembiayaan_id: formData.jenis_pembiayaan_id,
+                kategori_pembiayaan: formData.kategori_pembiayaan || '',
                 maksimal_jangka_waktu_usia: parseInt(formData.maksimal_jangka_waktu_usia) || 0,
                 jangka_waktu: parseInt(formData.jangka_waktu) || 0,
                 maksimal_pembiayaan: parseFloat((formData.maksimal_pembiayaan || '').replace(/\./g, '')) || 0,
