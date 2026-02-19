@@ -269,37 +269,37 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
         };
 
         fetchMasterData();
-        fetchMasterData();
     }, []);
 
-    // Auto-set Jenis Pelayanan to POS if user is Petugas Pos or Admin Pos
+    // Auto-set Jenis Pelayanan to POS jika user adalah Petugas Pos atau Admin Pos
+    // Berlaku untuk mode create DAN edit - selalu force POS agar konsisten
     useEffect(() => {
-        // Only auto-set if:
-        // 1. Not editing existing pengajuan (pengajuanId is not set)
-        // 2. Jenis pelayanan list is loaded
-        // 3. User role is petugas-pos or admin-pos
-        if (pengajuanId || !jenisPelayananList.length) return;
+        if (!jenisPelayananList.length) return;
 
         const isPetugasPos = user?.role === 'petugas-pos' || user?.role === 'admin-pos';
         if (!isPetugasPos) return;
 
-        // Find POS jenis pelayanan
+        // Jangan jalankan saat fetchDetail masih berjalan (hindari race condition)
+        if (fetchingDetail) return;
+
+        // Cari POS dari master data
         const posJenisPelayanan = jenisPelayananList.find(jp => jp.name?.toUpperCase() === 'POS');
 
-        if (posJenisPelayanan && formData.jenis_pelayanan_id !== posJenisPelayanan.id.toString()) {
-            console.log('[CreatePengajuanWizard] Auto-setting Jenis Pelayanan to POS for user:', user?.role);
-            setFormData(prev => ({
-                ...prev,
-                jenis_pelayanan_id: posJenisPelayanan.id.toString()
-            }));
+        if (posJenisPelayanan) {
+            const posId = posJenisPelayanan.id.toString();
+            if (formData.jenis_pelayanan_id !== posId) {
+                console.log('[CreatePengajuanWizard] 🔒 Force-setting Jenis Pelayanan to POS for:', user?.role);
+                setFormData(prev => ({
+                    ...prev,
+                    jenis_pelayanan_id: posId
+                }));
+            }
         }
-    }, [jenisPelayananList, pengajuanId, user, formData.jenis_pelayanan_id]);
+    }, [jenisPelayananList, user, formData.jenis_pelayanan_id, fetchingDetail]);
 
     // Auto-fill Petugas Pos data from localStorage (fronting_user)
+    // Runs for both create and edit mode - uses petugas_nippos as guard to prevent overwrite
     useEffect(() => {
-        // Only for Petugas Pos/Admin Pos and not editing
-        if (pengajuanId) return;
-
         const isPetugasPos = user?.role === 'petugas-pos' || user?.role === 'admin-pos';
         if (!isPetugasPos) return;
 
@@ -318,13 +318,13 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
             console.log('  - KCU Name (for Kantor Pos Petugas):', frontingUser.kcu_name);
 
             setFormData(prev => {
-                // Only update if not already filled (prevent overwrite)
+                // Only update if not already filled (prevent overwrite from DB data)
                 if (prev.petugas_nippos) {
-                    console.log('[CreatePengajuanWizard] ℹ️ Data already filled, skipping...');
+                    console.log('[CreatePengajuanWizard] ℹ️ Petugas data already filled (from DB), skipping...');
                     return prev;
                 }
 
-                console.log('[CreatePengajuanWizard] ✅ Filling formData with localStorage data');
+                console.log('[CreatePengajuanWizard] ✅ Filling formData with localStorage data (fallback)');
                 return {
                     ...prev,
                     // Auto-fill kantor_pos_petugas from kcu_name
@@ -359,6 +359,13 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
 
                 if (data) {
                     console.log('📄 Fetched Pengajuan Detail:', data);
+                    console.log('🔍 DEBUG kategori & pembiayaan:', {
+                        jenis_pembiayaan_raw: data.jenis_pembiayaan,
+                        jenis_pembiayaan_id_raw: data.jenis_pembiayaan_id,
+                        kategori_pembiayaan_raw: data.kategori_pembiayaan,
+                        jenis_pembiayaan_id_parsed: (data.jenis_pembiayaan?.id || data.jenis_pembiayaan_id || '').toString(),
+                        kategori_pembiayaan_parsed: (data.kategori_pembiayaan || '').trim(),
+                    });
 
                     // Parse borrower photos
                     let borrowerPhotosStr = '';
@@ -451,8 +458,9 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
                         gaji_tersedia: data.gaji_tersedia?.toString() || '',
 
                         // Data Pengajuan
-                        jenis_pelayanan_id: data.jenis_pelayanan?.id || data.jenis_pelayanan_id || '',
-                        jenis_pembiayaan_id: data.jenis_pembiayaan?.id || data.jenis_pembiayaan_id || '',
+                        jenis_pelayanan_id: (data.jenis_pelayanan?.id || data.jenis_pelayanan_id || '').toString(),
+                        jenis_pembiayaan_id: (data.jenis_pembiayaan?.id || data.jenis_pembiayaan_id || '').toString(),
+                        kategori_pembiayaan: (data.kategori_pembiayaan || '').trim(),
                         maksimal_jangka_waktu_usia: data.maksimal_jangka_waktu_usia?.toString() || '',
                         jangka_waktu: data.jangka_waktu?.toString() || '',
                         maksimal_pembiayaan: data.maksimal_pembiayaan?.toString() || '',
@@ -461,6 +469,18 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
                         total_potongan: data.total_potongan?.toString() || '',
                         nominal_terima: data.nominal_terima?.toString() || '',
                         kantor_pos_petugas: data.kantor_pos_petugas || '',
+
+                        // Data Petugas POS (from DB, used as primary source in edit mode)
+                        petugas_nippos: data.petugas_nippos || '',
+                        petugas_name: data.petugas_name || '',
+                        petugas_account_no: data.petugas_account_no || '',
+                        petugas_phone: data.petugas_phone || '',
+                        petugas_kcu_code: data.petugas_kcu_code || '',
+                        petugas_kcu_name: data.petugas_kcu_name || '',
+                        petugas_kc_code: data.petugas_kc_code || '',
+                        petugas_kc_name: data.petugas_kc_name || '',
+                        petugas_kcp_code: data.petugas_kcp_code || '',
+                        petugas_kcp_name: data.petugas_kcp_name || '',
 
                         // Files (need to set these so validation passes)
                         ...fileMappings,
@@ -1242,7 +1262,8 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
         }
 
         // Specific Check for Step 2 (Data Diri) - Duplicate NIK
-        if (currentStep === 2) {
+        // Hanya untuk create pengajuan baru, bukan edit
+        if (currentStep === 2 && !pengajuanId) {
             const isDuplicate = await checkDuplicateNik();
             if (isDuplicate) return;
         }
@@ -1769,8 +1790,8 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
             <div className="col-span-full mb-2">
                 <h3 className="text-lg font-bold text-gray-900">Data Pelayanan</h3>
             </div>
-            {/* Hidden field untuk Petugas Pos / Admin Pos saat create */}
-            {isPetugasPos && !pengajuanId ? (
+            {/* Info box POS untuk Petugas Pos / Admin Pos (create & edit) */}
+            {isPetugasPos ? (
                 <div className="col-span-1">
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                         <div className="flex items-center gap-2">

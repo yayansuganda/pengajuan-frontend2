@@ -40,8 +40,8 @@ export class PengajuanRepositoryImpl implements PengajuanRepository {
         return this.updatePengajuan(id, data);
     }
 
-    async updateStatus(id: string, status: string, rejectReason?: string): Promise<void> {
-        await this.httpClient.put(`/pengajuan/${id}/status`, { status, reject_reason: rejectReason });
+    async updateStatus(id: string, status: string, rejectReason?: string, revisionNote?: string): Promise<void> {
+        await this.httpClient.put(`/pengajuan/${id}/status`, { status, reject_reason: rejectReason, revision_note: revisionNote });
     }
 
     async uploadDisbursementProof(disbursementId: string, proofUrl: string, notes?: string): Promise<void> {

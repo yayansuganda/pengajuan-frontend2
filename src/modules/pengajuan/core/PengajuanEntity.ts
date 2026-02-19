@@ -12,6 +12,7 @@ export interface Pengajuan {
     status: string; // 'Pending', 'Proses Persetujuan', 'Disetujui', 'Ditolak'
     notes?: string;
     reject_reason?: string;
+    revision_note?: string;
 
     // Data Diri
     nik: string;
@@ -120,7 +121,7 @@ export interface Pengajuan {
     // Timestamps
     created_at: string;
     updated_at: string;
-    
+
     // Status History
     status_history?: StatusHistory[];
 }

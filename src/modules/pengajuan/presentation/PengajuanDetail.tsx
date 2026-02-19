@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
     ArrowLeft, User, UserCheck, MapPin, Briefcase, Calendar, FileText, MessageCircle, Phone,
-    CreditCard, Upload, XCircle, CheckCircle, Clock,
+    CreditCard, Upload, XCircle, CheckCircle, Clock, AlertCircle,
     Wallet, Landmark, FolderOpen, Banknote, Camera, Receipt, Eye, ExternalLink,
     Home, Plus, LayoutGrid, Calculator
 } from 'lucide-react';
@@ -237,6 +237,41 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
     const money = (val: number | undefined) => val ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(val) : '-';
 
     const handleUpdateStatus = async (newStatus: string, confirmationText: string) => {
+        // Handle Revision
+        if (newStatus === 'Revisi') {
+            const { value: text } = await Swal.fire({
+                title: 'Konfirmasi Revisi',
+                input: 'textarea',
+                inputLabel: 'Catatan Revisi',
+                inputPlaceholder: 'Tuliskan catatan revisi...',
+                inputAttributes: { 'aria-label': 'Tuliskan catatan revisi' },
+                showCancelButton: true,
+                confirmButtonColor: '#d97706', // Amber
+                confirmButtonText: 'Kirim Revisi',
+                cancelButtonText: 'Batal',
+                inputValidator: (value) => {
+                    if (!value) {
+                        return 'Catatan revisi wajib diisi!'
+                    }
+                }
+            });
+
+            if (text) {
+                try {
+                    showLoading('Mengirim Revisi...');
+                    // Pass undefined for rejectReason, text for revisionNote
+                    await pengajuanRepository.updateStatus(id, newStatus, undefined, text);
+                    await fetchData();
+                    hideLoading();
+                    showSuccess('Memo revisi berhasil dikirim');
+                } catch (err: any) {
+                    hideLoading();
+                    showError(handleError(err, 'Gagal mengirim revisi'));
+                }
+            }
+            return;
+        }
+
         // Handle Rejection with Reason
         if (newStatus === 'Ditolak') {
             const { value: text } = await Swal.fire({
@@ -322,6 +357,7 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
         'Dicairkan': { color: 'text-teal-700', bg: 'bg-teal-50 border-teal-200', icon: <Wallet className="h-4 w-4 text-teal-500" /> },
         'Selesai': { color: 'text-indigo-700', bg: 'bg-indigo-50 border-indigo-200', icon: <CheckCircle className="h-4 w-4 text-indigo-500" /> },
         'Pending': { color: 'text-amber-700', bg: 'bg-amber-50 border-amber-200', icon: <Clock className="h-4 w-4 text-amber-500" /> },
+        'Revisi': { color: 'text-amber-700', bg: 'bg-amber-50 border-amber-200', icon: <AlertCircle className="h-4 w-4 text-amber-500" /> },
     };
     const status = statusConfig[pengajuan.status] || { color: 'text-slate-700', bg: 'bg-slate-50 border-slate-200', icon: <Clock className="h-4 w-4 text-slate-500" /> };
 
@@ -389,8 +425,11 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                                 <button onClick={() => router.back()} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-100 text-emerald-700 text-xs font-medium rounded-full border border-emerald-200 transition-all">
                                     <ArrowLeft className="h-3.5 w-3.5" />
                                 </button>
-                                {pengajuan.status === 'Pending' && (user?.role === 'officer' || user?.role === 'super-admin') && (
-                                    <Link href={`/pengajuan/${pengajuan.id}/edit`} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-100 text-indigo-700 text-xs font-medium rounded-full border border-indigo-200 transition-all">
+                                {['Pending', 'Revisi', 'Menunggu Approval Manager'].includes(pengajuan.status) && (user?.role === 'officer' || user?.role === 'super-admin' || user?.role === 'petugas-pos') && (
+                                    <Link
+                                        href={isPetugasPos ? `/fronting/detail/${pengajuan.id}/edit` : `/pengajuan/${pengajuan.id}/edit`}
+                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-100 text-indigo-700 text-xs font-medium rounded-full border border-indigo-200 transition-all"
+                                    >
                                         Edit
                                     </Link>
                                 )}
@@ -774,8 +813,8 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                                             // Determine who can upload what
                                             let canUpload = false;
 
-                                            // Officer: Upload Approval Docs when Disetujui
-                                            if (user?.role === 'officer' && pengajuan.status === 'Disetujui') {
+                                            // Officer & Petugas POS: Upload Approval Docs when Disetujui
+                                            if ((user?.role === 'officer' || user?.role === 'petugas-pos') && pengajuan.status === 'Disetujui') {
                                                 canUpload = ['pengajuan_permohonan_url', 'dokumen_akad_url', 'flagging_url', 'surat_pernyataan_beda_url'].includes(docKey);
                                             }
 
@@ -786,8 +825,8 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                                                 canUpload = docKey === 'disbursement_proof_url';
                                             }
 
-                                            // Officer: Upload Shipping Receipt when Dicairkan
-                                            if (user?.role === 'officer' && pengajuan.status === 'Dicairkan') {
+                                            // Officer & Petugas POS: Upload Shipping Receipt when Dicairkan
+                                            if ((user?.role === 'officer' || user?.role === 'petugas-pos') && pengajuan.status === 'Dicairkan') {
                                                 canUpload = docKey === 'shipping_receipt_url';
                                             }
 
@@ -873,10 +912,10 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                             {user?.role === 'verifier' && pengajuan.status === 'Pending' && (
                                 <>
                                     <button
-                                        onClick={() => handleUpdateStatus('Ditolak', 'Tolak pengajuan ini?')}
-                                        className="flex-1 px-4 py-3 bg-rose-600 text-white text-sm font-medium rounded-xl hover:bg-rose-700 transition-colors shadow-lg"
+                                        onClick={() => handleUpdateStatus('Revisi', 'Kirim memo revisi?')}
+                                        className="flex-1 px-4 py-3 bg-amber-600 text-white text-sm font-medium rounded-xl hover:bg-amber-700 transition-colors shadow-lg"
                                     >
-                                        Tolak
+                                        Revisi
                                     </button>
                                     <button
                                         onClick={() => handleUpdateStatus('Menunggu Approval Manager', 'Kirim ke Manager?')}
@@ -984,15 +1023,18 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                                 <button onClick={() => router.back()} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white text-sm font-medium rounded-full border border-white/20 transition-all">
                                     <ArrowLeft className="h-4 w-4" /> Kembali
                                 </button>
-                                {pengajuan.status === 'Pending' && (user?.role === 'officer' || user?.role === 'super-admin') && (
-                                    <Link href={`/pengajuan/${pengajuan.id}/edit`} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white text-sm font-medium rounded-full border border-white/20 transition-all">
+                                {['Pending', 'Revisi', 'Menunggu Approval Manager'].includes(pengajuan.status) && (user?.role === 'officer' || user?.role === 'super-admin' || user?.role === 'petugas-pos') && (
+                                    <Link
+                                        href={isPetugasPos ? `/fronting/detail/${pengajuan.id}/edit` : `/pengajuan/${pengajuan.id}/edit`}
+                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white text-sm font-medium rounded-full border border-white/20 transition-all"
+                                    >
                                         Edit
                                     </Link>
                                 )}
                                 {user?.role === 'verifier' && pengajuan.status === 'Pending' && (
                                     <>
-                                        <button onClick={() => handleUpdateStatus('Ditolak', 'Tolak pengajuan ini?')} className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-sm font-medium rounded-full transition-all">
-                                            Tolak
+                                        <button onClick={() => handleUpdateStatus('Revisi', 'Kirim memo revisi?')} className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium rounded-full transition-all">
+                                            Revisi
                                         </button>
                                         <button onClick={() => handleUpdateStatus('Menunggu Approval Manager', 'Kirim data ke Manager?')} className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-full transition-all">
                                             Verifikasi
@@ -1208,6 +1250,23 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                                                         <p className="text-sm font-bold text-rose-900 mb-2">⚠️ Alasan Penolakan</p>
                                                         <div className="bg-white/60 rounded-lg p-3 border border-rose-200">
                                                             <p className="text-sm text-rose-900 leading-relaxed font-medium">{pengajuan.reject_reason}</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+                                        {pengajuan.revision_note && (
+                                            <div className="p-5 bg-gradient-to-r from-amber-50 to-amber-100 rounded-xl border-2 border-amber-400 shadow-md">
+                                                <div className="flex items-start gap-3">
+                                                    <div className="flex-shrink-0 mt-0.5">
+                                                        <div className="w-7 h-7 bg-amber-500 rounded-full flex items-center justify-center">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-white"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex-1">
+                                                        <p className="text-sm font-bold text-amber-900 mb-2">✏️ Catatan Revisi</p>
+                                                        <div className="bg-white/60 rounded-lg p-3 border border-amber-200">
+                                                            <p className="text-sm text-amber-900 leading-relaxed font-medium">{pengajuan.revision_note}</p>
                                                         </div>
                                                     </div>
                                                 </div>
