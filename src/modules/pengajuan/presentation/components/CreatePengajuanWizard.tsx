@@ -2288,7 +2288,7 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
         const formatCurrency = (value: string) => {
             const num = Number(value);
             if (isNaN(num) || num === 0) return '-';
-            return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(num);
+            return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(num);
         };
 
         // Get selected names from master data
@@ -2497,12 +2497,12 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
                     <h4 className="text-lg font-bold mb-4">Ringkasan Pengajuan</h4>
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <p className="text-indigo-200 text-xs uppercase">Plafond</p>
-                            <p className="text-2xl font-black">{formatCurrency(formData.jumlah_pembiayaan)}</p>
+                            <p className="text-indigo-200 text-xs uppercase">Pembiayaan</p>
+                            <p className="text-lg font-bold">{formatCurrency(formData.jumlah_pembiayaan)}</p>
                         </div>
                         <div>
-                            <p className="text-indigo-200 text-xs uppercase">Tenor</p>
-                            <p className="text-2xl font-black">{formData.jangka_waktu || '0'} <span className="text-base font-normal">Bulan</span></p>
+                            <p className="text-indigo-200 text-xs uppercase">Jangka Waktu</p>
+                            <p className="text-lg font-bold">{formData.jangka_waktu || '0'} <span className="text-base font-normal">Bulan</span></p>
                         </div>
                         <div>
                             <p className="text-indigo-200 text-xs uppercase">Angsuran/Bulan</p>
