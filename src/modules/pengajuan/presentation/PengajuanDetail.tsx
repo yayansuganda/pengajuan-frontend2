@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
-    ArrowLeft, User, UserCheck, MapPin, Briefcase, Calendar, FileText,
+    ArrowLeft, User, UserCheck, MapPin, Briefcase, Calendar, FileText, MessageCircle, Phone,
     CreditCard, Upload, XCircle, CheckCircle, Clock,
     Wallet, Landmark, FolderOpen, Banknote, Camera, Receipt, Eye, ExternalLink,
     Home, Plus, LayoutGrid, Calculator
@@ -285,6 +285,29 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                 showError(handleError(err, 'Gagal memperbarui status'));
             }
         }
+    };
+
+    const handleContact = (phone: string, name: string) => {
+        Swal.fire({
+            title: 'Hubungi Petugas',
+            text: `Pilih metode untuk menghubungi ${name}`,
+            icon: 'question',
+            showCancelButton: true,
+            showDenyButton: true,
+            confirmButtonText: 'WhatsApp',
+            denyButtonText: 'Telepon Seluler',
+            cancelButtonText: 'Batal',
+            confirmButtonColor: '#25D366',
+            denyButtonColor: '#3b82f6',
+            reverseButtons: true
+        }).then((result) => {
+            if (result.isConfirmed) {
+                const cleanPhone = phone.replace(/^0/, '62').replace(/\D/g, '');
+                window.open(`https://wa.me/${cleanPhone}`, '_blank');
+            } else if (result.isDenied) {
+                window.open(`tel:${phone}`, '_self');
+            }
+        });
     };
 
     if (!pengajuan) return null;
@@ -647,15 +670,17 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                                                 <span className="text-slate-500">No. Handphone</span>
                                                 <span className="font-medium text-slate-900">
                                                     {pengajuan.petugas_phone ? (
-                                                        <a
-                                                            href={`https://wa.me/${pengajuan.petugas_phone.replace(/^0/, '62').replace(/\D/g, '')}`}
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
+                                                        <button
+                                                            onClick={() => handleContact(pengajuan.petugas_phone!, d(pengajuan.petugas_name))}
                                                             className="text-indigo-600 hover:text-indigo-800 inline-flex items-center gap-1"
                                                         >
                                                             {pengajuan.petugas_phone}
-                                                            <ExternalLink className="h-3 w-3" />
-                                                        </a>
+                                                            <div className="flex items-center gap-0.5 ml-1 bg-indigo-50 rounded-full px-1.5 py-0.5 border border-indigo-100">
+                                                                <MessageCircle className="h-3 w-3 text-emerald-500" />
+                                                                <span className="text-[10px] text-slate-300">|</span>
+                                                                <Phone className="h-3 w-3 text-blue-500" />
+                                                            </div>
+                                                        </button>
                                                     ) : '-'}
                                                 </span>
                                             </div>
@@ -1123,15 +1148,17 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                                         <Field label="Nama Petugas" value={d(pengajuan.petugas_name)} />
                                         <Field label="No. Handphone" value={
                                             pengajuan.petugas_phone ? (
-                                                <a
-                                                    href={`https://wa.me/${pengajuan.petugas_phone.replace(/^0/, '62').replace(/\D/g, '')}`}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
+                                                <button
+                                                    onClick={() => handleContact(pengajuan.petugas_phone!, d(pengajuan.petugas_name))}
                                                     className="text-indigo-600 hover:text-indigo-800 hover:underline inline-flex items-center gap-1"
                                                 >
                                                     {pengajuan.petugas_phone}
-                                                    <ExternalLink className="h-3 w-3" />
-                                                </a>
+                                                    <div className="flex items-center gap-0.5 ml-1 bg-indigo-50 rounded-full px-1.5 py-0.5 border border-indigo-100">
+                                                        <MessageCircle className="h-3 w-3 text-emerald-500" />
+                                                        <span className="text-[10px] text-slate-300">|</span>
+                                                        <Phone className="h-3 w-3 text-blue-500" />
+                                                    </div>
+                                                </button>
                                             ) : '-'
                                         } />
                                         <Field label="Unit KCU" value={pengajuan.petugas_kcu_code ? `${pengajuan.petugas_kcu_code} - ${pengajuan.petugas_kcu_name || ''}` : '-'} />
