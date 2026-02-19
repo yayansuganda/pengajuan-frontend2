@@ -1175,8 +1175,7 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
         // Step 1: Data Pensiun & Pelayanan
         if (currentStep === 1) {
             if (!formData.jenis_pelayanan_id) errors.jenis_pelayanan_id = 'Jenis Pelayanan wajib dipilih';
-            if (!formData.jenis_pembiayaan_id) errors.jenis_pembiayaan_id = 'Jenis Pembiayaan wajib dipilih';
-            if (!formData.kategori_pembiayaan) errors.kategori_pembiayaan = 'Kategori Pembiayaan wajib dipilih';
+            if (!formData.jenis_pelayanan_id) errors.jenis_pelayanan_id = 'Jenis Pelayanan wajib dipilih';
         }
 
         // Step 2: Data Diri
@@ -1206,6 +1205,9 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
 
         // Step 3: Perhitungan
         if (currentStep === 3) {
+            if (!formData.jenis_pembiayaan_id) errors.jenis_pembiayaan_id = 'Jenis Pembiayaan wajib dipilih';
+            if (!formData.kategori_pembiayaan) errors.kategori_pembiayaan = 'Kategori Pembiayaan wajib dipilih';
+
             // Validate Jangka Waktu
             const jangkaWaktu = parseInt(formData.jangka_waktu) || 0;
             const maksJangkaWaktu = parseInt(formData.maksimal_jangka_waktu_usia) || 0;
@@ -1768,22 +1770,7 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
                 </>
             )}
 
-            <div className="col-span-full mt-4 mb-2 pt-4 border-t border-gray-100">
-                <h3 className="text-lg font-bold text-gray-900">Detail Pembiayaan</h3>
-            </div>
-            {renderSelect(
-                "Jenis Pembiayaan",
-                "jenis_pembiayaan_id",
-                jenisPembiayaanList.map(jp => ({ value: jp.id.toString(), label: jp.name })),
-                true,
-                loadingMasterData
-            )}
-            {renderSimpleSelect(
-                "Kategori Pembiayaan",
-                "kategori_pembiayaan",
-                ["Macro", "Micro"],
-                true
-            )}
+
 
             {/* Show hint if no jenis pelayanan selected */}
             {!formData.jenis_pelayanan_id && (
@@ -1837,6 +1824,26 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
         return (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="col-span-full mb-2">
+                    <h3 className="text-lg font-bold text-gray-900">Detail Pembiayaan</h3>
+                </div>
+                {renderSelect(
+                    "Jenis Pembiayaan",
+                    "jenis_pembiayaan_id",
+                    jenisPembiayaanList.map(jp => ({ value: jp.id.toString(), label: jp.name })),
+                    true,
+                    loadingMasterData
+                )}
+                {renderSelect(
+                    "Kategori Pembiayaan",
+                    "kategori_pembiayaan",
+                    [
+                        { value: "Macro", label: "Makro (SK Asli)" },
+                        { value: "Micro", label: "Mikro (Sisa Gaji)" }
+                    ],
+                    true
+                )}
+
+                <div className="col-span-full mb-2 mt-4 pt-4 border-t border-gray-100">
                     <h3 className="text-lg font-bold text-gray-900">Simulasi Pembiayaan</h3>
                 </div>
                 {renderInput("Maks Jangka Waktu (Bln)", "maksimal_jangka_waktu_usia", "number", false, "Bulan", true, true)}
