@@ -47,7 +47,6 @@ const UPLOAD_FIELDS = [
     { name: 'upload_karip_buku_asabri', label: 'KARIP / Buku ASABRI', hasTemplate: false, required: true },
     { name: 'upload_slip_gaji_terakhir', label: 'Resi Penerimaan', hasTemplate: false, required: true },
     { name: 'upload_sk_pensiun', label: 'SK Pensiun', hasTemplate: false, required: false },
-    { name: 'upload_surat_permohonan_anggota', label: 'Surat Permohonan Anggota & Pembiayaan', hasTemplate: true, required: true },
     { name: 'upload_borrower_photos', label: 'Foto Pemohon', hasTemplate: false, required: true, multiple: true },
 ];
 
