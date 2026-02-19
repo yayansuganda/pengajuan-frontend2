@@ -747,6 +747,18 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
             if (value.length > 16) return;
         }
 
+        // Strict validation for Phone Number - Max 12 digits
+        if (name === 'nomor_telephone') {
+            if (!/^\d*$/.test(value)) return;
+            if (value.length > 12) return;
+        }
+
+        // Strict validation for Kode Pos - Max 5 digits
+        if (name === 'kode_pos') {
+            if (!/^\d*$/.test(value)) return;
+            if (value.length > 5) return;
+        }
+
         setFormData(prev => ({ ...prev, [name]: value }));
         // Clear error when user starts typing
         if (fieldErrors[name]) {
@@ -766,6 +778,16 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
             const rawValue = parseNumberID(value);
             // Validate it's a valid number
             if (rawValue === '' || /^[0-9]+$/.test(rawValue)) {
+
+                // Specific validation for Kode Pos if it uses handleNumberChange (though it uses handleChange usually)
+                if (name === 'kode_pos' && rawValue.length > 5) {
+                    return;
+                }
+
+                // Specific validation for Phone if it uses handleNumberChange
+                if (name === 'nomor_telephone' && rawValue.length > 12) {
+                    return;
+                }
 
                 // Specific validation for RT and RW - Max 3 digits
                 if ((name === 'rt' || name === 'rw') && rawValue.length > 3) {
@@ -793,6 +815,31 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
                         setFieldErrors(prev => ({
                             ...prev,
                             [name]: `Jangka waktu minimal 6 bulan`
+                        }));
+                    } else {
+                        // Clear specific error if valid
+                        if (fieldErrors[name]) {
+                            setFieldErrors(prev => {
+                                const newErrors = { ...prev };
+                                delete newErrors[name];
+                                return newErrors;
+                            });
+                        }
+                    }
+                } else if (name === 'jumlah_pembiayaan') {
+                    // Immediate Validation for Jumlah Pembiayaan
+                    const currentVal = parseFloat(rawValue || '0');
+                    const maxVal = parseFloat((formData.maksimal_pembiayaan || '').replace(/\./g, '') || '0');
+
+                    if (maxVal > 0 && currentVal > maxVal) {
+                        setFieldErrors(prev => ({
+                            ...prev,
+                            [name]: `Maksimal pembiayaan adalah Rp ${maxVal.toLocaleString('id-ID')}`
+                        }));
+                    } else if (currentVal > 0 && currentVal < 1000000) {
+                        setFieldErrors(prev => ({
+                            ...prev,
+                            [name]: `Minimal pembiayaan Rp 1.000.000`
                         }));
                     } else {
                         // Clear specific error if valid
@@ -1145,6 +1192,12 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
             if (!formData.nomor_telephone) errors.nomor_telephone = 'Nomor Telephone wajib diisi';
             if (!formData.pendidikan_terakhir) errors.pendidikan_terakhir = 'Pendidikan Terakhir wajib dipilih';
 
+            if (!formData.pendidikan_terakhir) errors.pendidikan_terakhir = 'Pendidikan Terakhir wajib dipilih';
+
+            // Check lengths specifically
+            if (formData.nomor_telephone && formData.nomor_telephone.length > 12) errors.nomor_telephone = 'Nomor Telephone maksimal 12 digit';
+            if (formData.kode_pos && formData.kode_pos.length > 5) errors.kode_pos = 'Kode Pos maksimal 5 digit';
+
             // Optional: Add validation for RT/RW if they are filled
             if (formData.rt && formData.rt.length > 3) errors.rt = 'RT maksimal 3 digit';
             if (formData.rw && formData.rw.length > 3) errors.rw = 'RW maksimal 3 digit';
@@ -1164,10 +1217,15 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
                 errors.jangka_waktu = 'Jangka Waktu minimal 6 bulan';
             }
 
-            if (!formData.jumlah_pembiayaan || parseFloat((formData.jumlah_pembiayaan || '').replace(/\./g, '')) <= 0) {
+            const jumlah = parseFloat((formData.jumlah_pembiayaan || '').replace(/\./g, '')) || 0;
+            const maksPembiayaan = parseFloat((formData.maksimal_pembiayaan || '').replace(/\./g, '')) || 0;
+
+            if (!formData.jumlah_pembiayaan || jumlah <= 0) {
                 errors.jumlah_pembiayaan = 'Jumlah Pengajuan wajib diisi dan harus lebih dari 0';
-            } else if (parseFloat((formData.jumlah_pembiayaan || '').replace(/\./g, '')) < 1000000) {
+            } else if (jumlah < 1000000) {
                 errors.jumlah_pembiayaan = 'Jumlah Pengajuan minimal Rp 1.000.000';
+            } else if (maksPembiayaan > 0 && jumlah > maksPembiayaan) {
+                errors.jumlah_pembiayaan = `Jumlah Pengajuan tidak boleh melebihi Maksimal Pembiayaan (Rp ${maksPembiayaan.toLocaleString('id-ID')})`;
             }
 
             // Validate Sisa Gaji must be at least 100,000 more than Biaya Angsuran
