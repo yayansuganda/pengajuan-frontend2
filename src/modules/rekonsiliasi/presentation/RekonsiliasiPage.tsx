@@ -1,12 +1,12 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/modules/auth/presentation/useAuth';
 import { PengajuanRepositoryImpl } from '@/modules/pengajuan/data/PengajuanRepositoryImpl';
 import { Pengajuan } from '@/modules/pengajuan/core/PengajuanEntity';
 import { showLoading, hideLoading, showError, showSuccess } from '@/shared/utils/sweetAlert';
 import { handleError } from '@/shared/utils/errorHandler';
-import { Download, FileSpreadsheet, Search, RefreshCw } from 'lucide-react';
+import { Download, FileSpreadsheet, Search, RefreshCw, Filter, X, Calendar } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
 const pengajuanRepo = new PengajuanRepositoryImpl();
@@ -16,8 +16,40 @@ export const RekonsiliasiPage: React.FC = () => {
     const [pengajuanList, setPengajuanList] = useState<Pengajuan[]>([]);
     const [filteredList, setFilteredList] = useState<Pengajuan[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
+    const [filterStatus, setFilterStatus] = useState('');
+    const [dateFrom, setDateFrom] = useState('');
+    const [dateTo, setDateTo] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [total, setTotal] = useState(0);
+
+    // Daftar status untuk dropdown filter
+    const STATUS_OPTIONS = [
+        'Pending',
+        'Revisi',
+        'Menunggu Approval Manager',
+        'Menunggu Verifikasi Admin Unit',
+        'Menunggu Pencairan',
+        'Dicairkan',
+        'Disetujui',
+        'Ditolak',
+    ];
+
+    // Hitung jumlah filter aktif
+    const activeFilterCount = useMemo(() => {
+        let count = 0;
+        if (searchQuery.trim()) count++;
+        if (filterStatus) count++;
+        if (dateFrom) count++;
+        if (dateTo) count++;
+        return count;
+    }, [searchQuery, filterStatus, dateFrom, dateTo]);
+
+    const resetFilters = () => {
+        setSearchQuery('');
+        setFilterStatus('');
+        setDateFrom('');
+        setDateTo('');
+    };
 
     // Add custom scrollbar styles
     useEffect(() => {
@@ -62,7 +94,7 @@ export const RekonsiliasiPage: React.FC = () => {
         try {
             setIsLoading(true);
             showLoading('Memuat data rekonsiliasi POS...');
-            
+
             // Fetch all POS pengajuan
             const allData = await pengajuanRepo.getPengajuanList({
                 limit: 9999, // Get all data
@@ -90,13 +122,14 @@ export const RekonsiliasiPage: React.FC = () => {
         fetchData();
     }, []);
 
-    // Search filter
+    // Filter: search + status + range tanggal
     useEffect(() => {
-        if (searchQuery.trim() === '') {
-            setFilteredList(pengajuanList);
-        } else {
+        let filtered = pengajuanList;
+
+        // Filter by search query
+        if (searchQuery.trim()) {
             const query = searchQuery.toLowerCase();
-            const filtered = pengajuanList.filter((item) => 
+            filtered = filtered.filter((item) =>
                 item.nik?.toLowerCase().includes(query) ||
                 item.nama_lengkap?.toLowerCase().includes(query) ||
                 item.nopen?.toLowerCase().includes(query) ||
@@ -104,9 +137,33 @@ export const RekonsiliasiPage: React.FC = () => {
                 item.petugas_name?.toLowerCase().includes(query) ||
                 item.status?.toLowerCase().includes(query)
             );
-            setFilteredList(filtered);
         }
-    }, [searchQuery, pengajuanList]);
+
+        // Filter by status
+        if (filterStatus) {
+            filtered = filtered.filter((item) => item.status === filterStatus);
+        }
+
+        // Filter by date range (created_at)
+        if (dateFrom) {
+            const from = new Date(dateFrom);
+            from.setHours(0, 0, 0, 0);
+            filtered = filtered.filter((item) => {
+                if (!item.created_at) return false;
+                return new Date(item.created_at) >= from;
+            });
+        }
+        if (dateTo) {
+            const to = new Date(dateTo);
+            to.setHours(23, 59, 59, 999);
+            filtered = filtered.filter((item) => {
+                if (!item.created_at) return false;
+                return new Date(item.created_at) <= to;
+            });
+        }
+
+        setFilteredList(filtered);
+    }, [searchQuery, filterStatus, dateFrom, dateTo, pengajuanList]);
 
     // Export to Excel
     const handleExportExcel = () => {
@@ -126,7 +183,7 @@ export const RekonsiliasiPage: React.FC = () => {
                 'Status': item.status || '-',
                 'Notes': item.notes || '-',
                 'Reject Reason': item.reject_reason || '-',
-                
+
                 // Data Diri
                 'NIK': item.nik || '-',
                 'Nama Lengkap': item.nama_lengkap || '-',
@@ -372,29 +429,99 @@ export const RekonsiliasiPage: React.FC = () => {
                 </div>
 
                 {/* Stats & Search */}
-                <div className="mt-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                    <div className="flex items-center gap-4">
-                        <div className="bg-indigo-50 border border-indigo-200 rounded-lg px-4 py-2">
-                            <p className="text-xs text-indigo-600 font-medium">Total Data</p>
-                            <p className="text-2xl font-bold text-indigo-900">{filteredList.length}</p>
+                <div className="mt-6 flex flex-col gap-4">
+                    {/* Row 1: Stats + Search */}
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                        <div className="flex items-center gap-4">
+                            <div className="bg-indigo-50 border border-indigo-200 rounded-lg px-4 py-2">
+                                <p className="text-xs text-indigo-600 font-medium">Total Data</p>
+                                <p className="text-2xl font-bold text-indigo-900">{filteredList.length}</p>
+                            </div>
+                            <div className="bg-slate-50 border border-slate-200 rounded-lg px-4 py-2">
+                                <p className="text-xs text-slate-500 font-medium">Semua Data</p>
+                                <p className="text-2xl font-bold text-slate-700">{pengajuanList.length}</p>
+                            </div>
+                        </div>
+                        <div className="relative">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                            <input
+                                type="text"
+                                placeholder="Cari NIK, Nama, NOPEN, NIPPOS..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="pl-10 pr-4 py-2.5 w-full md:w-80 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
+                            />
                         </div>
                     </div>
-                    <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                        <input
-                            type="text"
-                            placeholder="Cari NIK, Nama, NOPEN, NIPPOS..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="pl-10 pr-4 py-2.5 w-full md:w-80 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
-                        />
+
+                    {/* Row 2: Filter Status + Range Tanggal */}
+                    <div className="flex flex-col sm:flex-row gap-3 p-4 bg-slate-50 rounded-xl border border-slate-200">
+                        <div className="flex items-center gap-2 text-slate-500 shrink-0">
+                            <Filter className="h-4 w-4" />
+                            <span className="text-sm font-medium text-slate-600">Filter:</span>
+                        </div>
+
+                        {/* Filter Status */}
+                        <div className="flex-1 min-w-[180px]">
+                            <select
+                                value={filterStatus}
+                                onChange={(e) => setFilterStatus(e.target.value)}
+                                className="w-full py-2 pl-3 pr-8 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white"
+                            >
+                                <option value="">Semua Status</option>
+                                {STATUS_OPTIONS.map(s => (
+                                    <option key={s} value={s}>{s}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        {/* Filter Tanggal Dari */}
+                        <div className="flex items-center gap-2 flex-1 min-w-[160px]">
+                            <Calendar className="h-4 w-4 text-slate-400 shrink-0" />
+                            <input
+                                type="date"
+                                value={dateFrom}
+                                onChange={(e) => setDateFrom(e.target.value)}
+                                className="w-full py-2 px-3 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white"
+                                title="Tanggal Dari"
+                            />
+                        </div>
+
+                        {/* Separator */}
+                        <span className="text-slate-400 self-center text-sm shrink-0">s/d</span>
+
+                        {/* Filter Tanggal Sampai */}
+                        <div className="flex items-center gap-2 flex-1 min-w-[160px]">
+                            <Calendar className="h-4 w-4 text-slate-400 shrink-0" />
+                            <input
+                                type="date"
+                                value={dateTo}
+                                onChange={(e) => setDateTo(e.target.value)}
+                                className="w-full py-2 px-3 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white"
+                                title="Tanggal Sampai"
+                            />
+                        </div>
+
+                        {/* Reset Filter */}
+                        {activeFilterCount > 0 && (
+                            <button
+                                onClick={resetFilters}
+                                className="inline-flex items-center gap-1.5 px-3 py-2 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-600 text-sm font-medium rounded-lg transition-colors shrink-0"
+                            >
+                                <X className="h-3.5 w-3.5" />
+                                Reset
+                                <span className="bg-rose-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold">
+                                    {activeFilterCount}
+                                </span>
+                            </button>
+                        )}
                     </div>
                 </div>
             </div>
 
             {/* Table */}
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                <div 
+                <div
                     className="overflow-x-auto overflow-y-auto max-h-[600px] relative custom-scrollbar"
                     style={{
                         scrollBehavior: 'smooth'
@@ -426,7 +553,7 @@ export const RekonsiliasiPage: React.FC = () => {
                                     <td colSpan={15} className="px-4 py-12 text-center">
                                         <FileSpreadsheet className="h-12 w-12 text-slate-300 mx-auto mb-3" />
                                         <p className="text-slate-500 font-medium">
-                                            {searchQuery ? 'Tidak ada data yang cocok dengan pencarian' : 'Tidak ada data rekonsiliasi'}
+                                            {activeFilterCount > 0 ? `Tidak ada data yang cocok dengan ${activeFilterCount} filter aktif` : 'Tidak ada data rekonsiliasi'}
                                         </p>
                                     </td>
                                 </tr>
@@ -436,12 +563,11 @@ export const RekonsiliasiPage: React.FC = () => {
                                         <td className="px-4 py-3 text-slate-900 whitespace-nowrap">{index + 1}</td>
                                         <td className="px-4 py-3 text-slate-900 whitespace-nowrap">{formatDate(item.created_at)}</td>
                                         <td className="px-4 py-3 whitespace-nowrap">
-                                            <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
-                                                item.status === 'Disetujui' ? 'bg-emerald-100 text-emerald-700' :
+                                            <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${item.status === 'Disetujui' ? 'bg-emerald-100 text-emerald-700' :
                                                 item.status === 'Ditolak' ? 'bg-rose-100 text-rose-700' :
-                                                item.status === 'Pending' ? 'bg-amber-100 text-amber-700' :
-                                                'bg-blue-100 text-blue-700'
-                                            }`}>
+                                                    item.status === 'Pending' ? 'bg-amber-100 text-amber-700' :
+                                                        'bg-blue-100 text-blue-700'
+                                                }`}>
                                                 {item.status}
                                             </span>
                                         </td>
@@ -472,7 +598,7 @@ export const RekonsiliasiPage: React.FC = () => {
                     <div className="flex-1">
                         <h3 className="text-sm font-semibold text-blue-900 mb-1">Informasi Export Excel</h3>
                         <p className="text-xs text-blue-800">
-                            File Excel akan berisi <strong>semua kolom</strong> dari database termasuk ID, timestamps, URLs dokumen, data petugas POS, dan informasi lengkap lainnya. 
+                            File Excel akan berisi <strong>semua kolom</strong> dari database termasuk ID, timestamps, URLs dokumen, data petugas POS, dan informasi lengkap lainnya.
                             Data yang ditampilkan di tabel hanya kolom utama untuk kemudahan melihat di layar.
                         </p>
                     </div>
