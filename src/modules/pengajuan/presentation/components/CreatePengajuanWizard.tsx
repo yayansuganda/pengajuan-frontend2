@@ -163,6 +163,31 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
     // NOPEN API loading state
     const [loadingNopen, setLoadingNopen] = useState(false);
 
+    // Duplicate NIK Check Logic (Triggered on Next Step using dedicated endpoint)
+    const checkDuplicateNik = async (): Promise<boolean> => {
+        if (!formData.nik || formData.nik.length !== 16) return false;
+
+        try {
+            const repo = new PengajuanRepositoryImpl();
+            // Call dedicated check-duplicate endpoint
+            const result = await repo.checkDuplicate(formData.nik);
+
+            if (result.exists) {
+                await Swal.fire({
+                    icon: 'warning',
+                    title: 'Pengajuan Aktif Ditemukan',
+                    text: `NIK ${formData.nik} memiliki pengajuan yang sedang diproses (Status: ${result.status}). Tidak dapat membuat pengajuan baru.`,
+                    confirmButtonText: 'OK'
+                });
+                return true; // Duplicate found, block
+            }
+            return false; // No duplicate found
+        } catch (error) {
+            console.error('Error checking duplicate NIK:', error);
+            return false; // Assume safe on error
+        }
+    };
+
     // Debug: Log imagePreviews state changes
     useEffect(() => {
         console.log('🔄 imagePreviews state changed:', imagePreviews);
@@ -1210,10 +1235,16 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
         console.log(`🗑️ Removed file for ${fieldName}`);
     };
 
-    const nextStep = () => {
+    const nextStep = async () => {
         // Validate required fields based on current step
         if (!validateCurrentStep()) {
             return;
+        }
+
+        // Specific Check for Step 2 (Data Diri) - Duplicate NIK
+        if (currentStep === 2) {
+            const isDuplicate = await checkDuplicateNik();
+            if (isDuplicate) return;
         }
 
         if (currentStep < STEPS.length) {

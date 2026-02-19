@@ -6,4 +6,5 @@ export interface PengajuanRepository {
     createPengajuan(data: any): Promise<void>;
     updatePengajuan(id: string, data: any): Promise<void>;
     updateStatus(id: string, status: string, rejectReason?: string): Promise<void>;
+    checkDuplicate(nik: string): Promise<{ exists: boolean, status?: string }>;
 }
