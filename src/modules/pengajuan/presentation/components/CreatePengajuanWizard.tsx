@@ -198,6 +198,12 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
         }
     }, []); // Only run once on mount
 
+    // Check if selected jenis pelayanan is POS
+    const isPOS = useMemo(() => {
+        const selected = jenisPelayananList.find(jp => jp.id.toString() === formData.jenis_pelayanan_id);
+        return selected?.name?.toUpperCase() === 'POS';
+    }, [formData.jenis_pelayanan_id, jenisPelayananList]);
+
     // Fetch master data on mount
     useEffect(() => {
         const fetchMasterData = async () => {
@@ -574,15 +580,19 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
         // Only search if jangka_waktu is a valid positive number
         if (!isNaN(jangkaWaktu) && jangkaWaktu > 0) {
             // Find matching range from loaded data
+            // Must match term range AND is_pos status (derived from selected Jenis Pelayanan)
             const matched = potonganJangkaWaktuList.find(
-                p => p.min_bulan <= jangkaWaktu && p.max_bulan >= jangkaWaktu
+                p => p.min_bulan <= jangkaWaktu && p.max_bulan >= jangkaWaktu && p.is_pos === isPOS
             );
+
+            console.log(`🔍 Finding Potongan Jangka Waktu for: ${jangkaWaktu} months, isPOS: ${isPOS}`, matched);
+
             setPotonganJangkaWaktu(matched || null);
         } else {
             // Clear potongan jangka waktu if input is invalid or empty
             setPotonganJangkaWaktu(null);
         }
-    }, [formData.jangka_waktu, potonganJangkaWaktuList]);
+    }, [formData.jangka_waktu, potonganJangkaWaktuList, isPOS]);
 
     // Auto-calculate total potongan when plafond changes (including Ta'awun)
     useEffect(() => {
@@ -603,16 +613,17 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
             let totalPotongan = potonganList.reduce((total, p) => total + calculatePotonganValue(p), 0);
 
             // Calculate Ta'awun
-            // 1. Sum all percentage potongan with is_view = false
-            const hiddenPercentageSum = allPotonganList
-                .filter(p => p.kategori === 'persentase' && !p.is_view)
-                .reduce((sum, p) => sum + p.persentase_nominal, 0);
+            // Calculate Ta'awun
+            // 1. Sum relevant percentage potongan from the VISIBLE LIST (potonganList)
+            const visiblePercentageSum = potonganList
+                .filter(p => p.kategori === 'persentase')
+                .reduce((sum, p) => sum + (parseFloat(p.persentase_nominal.toString()) || 0), 0);
 
             // 2. Get potongan_persen from potongan_jangka_waktu
-            const potonganJWPersen = potonganJangkaWaktu?.potongan_persen || 0;
+            const potonganJWPersen = parseFloat(potonganJangkaWaktu?.potongan_persen?.toString() || '0');
 
-            // 3. Calculate Ta'awun percentage (DIBALIK: Potongan JW - Hidden Sum)
-            const taawunPersen = potonganJWPersen - hiddenPercentageSum;
+            // 3. Calculate Ta'awun percentage: Potongan JW - Visible Sum
+            const taawunPersen = potonganJWPersen - visiblePercentageSum;
 
             // 4. Calculate Ta'awun value
             if (taawunPersen > 0) {
@@ -725,11 +736,7 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
         return user?.role === 'petugas-pos' || user?.role === 'admin-pos';
     }, [user?.role]);
 
-    // Check if selected jenis pelayanan is POS
-    const isPOS = useMemo(() => {
-        const selected = jenisPelayananList.find(jp => jp.id.toString() === formData.jenis_pelayanan_id);
-        return selected?.name?.toUpperCase() === 'POS';
-    }, [formData.jenis_pelayanan_id, jenisPelayananList]);
+
 
     // Format number to Indonesian format (12.500)
     const formatNumberID = (value: string | number): string => {
@@ -1866,11 +1873,13 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
         let totalPotongan = potonganList.reduce((total, p) => total + calculatePotonganValue(p), 0);
 
         // Add Ta'awun to total if applicable
-        const hiddenPercentageSum = allPotonganList
-            .filter(p => p.kategori === 'persentase' && !p.is_view)
-            .reduce((sum, p) => sum + p.persentase_nominal, 0);
-        const potonganJWPersen = potonganJangkaWaktu?.potongan_persen || 0;
-        const taawunPersen = potonganJWPersen - hiddenPercentageSum; // DIBALIK: Potongan JW - Hidden Sum
+        // Add Ta'awun to total if applicable
+        const visiblePercentageSum = potonganList
+            .filter(p => p.kategori === 'persentase')
+            .reduce((sum, p) => sum + (parseFloat(p.persentase_nominal.toString()) || 0), 0);
+
+        const potonganJWPersen = parseFloat(potonganJangkaWaktu?.potongan_persen?.toString() || '0');
+        const taawunPersen = potonganJWPersen - visiblePercentageSum; // Potongan JW - Visible Sum
         if (taawunPersen > 0) {
             const taawunValue = (taawunPersen / 100) * plafondPengajuan;
             totalPotongan += taawunValue;
