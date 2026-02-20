@@ -163,6 +163,12 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
     // NOPEN API loading state
     const [loadingNopen, setLoadingNopen] = useState(false);
 
+    // Whether NOPEN data has been loaded from API (controls form visibility)
+    const [nopenDataLoaded, setNopenDataLoaded] = useState(false);
+
+    // Current status of pengajuan being edited (used to reset to Pending if Revisi)
+    const [currentStatus, setCurrentStatus] = useState<string>('');
+
     // Duplicate NIK Check Logic (Triggered on Next Step using dedicated endpoint)
     const checkDuplicateNik = async (): Promise<boolean> => {
         if (!formData.nik || formData.nik.length !== 16) return false;
@@ -494,6 +500,12 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
                         ...fileMappings,
                         upload_borrower_photos: borrowerPhotosStr,
                     }));
+
+                    // Save current status for revision reset logic
+                    setCurrentStatus(data.status || '');
+
+                    // Mark NOPEN data as loaded (editing existing, so show full form)
+                    setNopenDataLoaded(true);
                 }
             } catch (err) {
                 console.error("Failed to fetch detail for edit:", err);
@@ -843,6 +855,12 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
         }
 
         setFormData(prev => ({ ...prev, [name]: value }));
+
+        // Reset NOPEN data loaded flag when user changes NOPEN
+        if (name === 'nopen') {
+            setNopenDataLoaded(false);
+        }
+
         // Clear error when user starts typing
         if (fieldErrors[name]) {
             setFieldErrors(prev => {
@@ -993,6 +1011,9 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
             console.log('  - Gaji Bersih:', gajiBersih);
             console.log('  - Total Potongan (Display Only):', totalPotonganAPI);
             console.log('  - Gaji Tersedia (= Gaji Bersih - Potongan):', gajiTersedia);
+
+            // Mark data as loaded so the form becomes visible
+            setNopenDataLoaded(true);
 
             // Auto-fill form fields with API data
             setFormData(prev => ({
@@ -1589,6 +1610,13 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
 
             if (pengajuanId) {
                 await updatePengajuan(pengajuanId, payload);
+
+                // If pengajuan was in Revisi status, reset back to Pending
+                if (currentStatus === 'Revisi') {
+                    console.log('[CreatePengajuanWizard] 🔄 Status is Revisi, resetting to Pending...');
+                    const repo = new PengajuanRepositoryImpl();
+                    await repo.updateStatus(pengajuanId, 'Pending');
+                }
             } else {
                 await createPengajuan(payload);
             }
@@ -1606,31 +1634,12 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
 
             // Redirect based on user role 
             // OR Reset form if creating
-            if (pengajuanId) {
-                // If editing, redirect back
-                if (isPetugasPos) {
-                    console.log('[CreatePengajuanWizard] ✅ Redirecting Petugas Pos to /fronting');
-                    router.push('/fronting');
-                } else {
-                    console.log('[CreatePengajuanWizard] ✅ Redirecting to /pengajuan');
-                    router.push('/pengajuan');
-                }
+            if (isPetugasPos) {
+                console.log('[CreatePengajuanWizard] ✅ Redirecting Petugas Pos to /fronting/pengajuan');
+                router.push('/fronting/pengajuan');
             } else {
-                // If creating, reset form to allow new submission
-                console.log('[CreatePengajuanWizard] 🔄 Resetting form for new submission');
-                setFormData(INITIAL_FORM_STATE);
-                setFileNames({});
-                setImagePreviews({});
-                setUploadingFiles({});
-                setFieldErrors({});
-                setCurrentStep(1);
-
-                // Reset file inputs
-                Object.values(fileInputRefs.current).forEach(input => {
-                    if (input) input.value = '';
-                });
-
-                window.scrollTo({ top: 0, behavior: 'smooth' });
+                console.log('[CreatePengajuanWizard] ✅ Redirecting to /pengajuan');
+                router.push('/pengajuan');
             }
 
         } catch (error: any) {
@@ -1836,47 +1845,72 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
                         <label htmlFor="nopen" className={labelClasses}>
                             Nopen <span className="text-sm text-gray-500">(Nomor Pensiun)</span>
                         </label>
-                        <div className="relative">
-                            <input
-                                type="text"
-                                name="nopen"
-                                id="nopen"
-                                className={`${inputClasses} ${loadingNopen ? 'pr-10' : ''}`}
-                                placeholder="Masukkan NOPEN untuk auto-fill data"
-                                value={formData.nopen}
-                                onChange={handleChange}
-                                onBlur={handleNopenBlur}
-                            />
-                            {loadingNopen && (
-                                <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                                    <Loader2 className="w-5 h-5 text-indigo-600 animate-spin" />
-                                </div>
-                            )}
+                        <div className="flex gap-2">
+                            <div className="relative flex-1">
+                                <input
+                                    type="text"
+                                    name="nopen"
+                                    id="nopen"
+                                    className={`${inputClasses} ${loadingNopen ? 'pr-10' : ''}`}
+                                    placeholder="Masukkan NOPEN"
+                                    value={formData.nopen}
+                                    onChange={handleChange}
+                                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleNopenBlur(); } }}
+                                />
+                                {loadingNopen && (
+                                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                                        <Loader2 className="w-5 h-5 text-indigo-600 animate-spin" />
+                                    </div>
+                                )}
+                            </div>
+                            <button
+                                type="button"
+                                onClick={handleNopenBlur}
+                                disabled={loadingNopen || !formData.nopen.trim()}
+                                className="shrink-0 inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            >
+                                {loadingNopen ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
+                                    </svg>
+                                )}
+                                Cek Data
+                            </button>
                         </div>
                         {/* Display Nama Lengkap if available */}
-                        {formData.nama_lengkap && (
+                        {nopenDataLoaded && formData.nama_lengkap && (
                             <div className="mt-2 p-2 bg-green-50 border border-green-100 rounded-md">
                                 <p className="text-xs text-green-600 font-medium">Nama Pensiunan:</p>
                                 <p className="text-sm font-bold text-green-800">{formData.nama_lengkap}</p>
                             </div>
                         )}
-                        <p className="mt-1 text-xs text-gray-500">
-                            💡 Data akan otomatis terisi dari sistem Pos Indonesia setelah input NOPEN
-                        </p>
+                        {!nopenDataLoaded && (
+                            <p className="mt-1 text-xs text-gray-500">
+                                💡 Klik <strong>Cek Data</strong> untuk mengambil data dari sistem Pos Indonesia
+                            </p>
+                        )}
                     </div>
-                    {renderInput("Mitra", "mitra", "text", false, "", false, true)}
-                    {renderInput("Jenis Pensiun", "jenis_pensiun")}
-                    {renderInput("No Giro Pos", "nomor_rekening_giro_pos", "text", false, "", false)}
 
-                    <div className="col-span-full mt-4 mb-2 pt-4 border-t border-gray-100">
-                        <h3 className="text-lg font-bold text-gray-900">Data Keuangan</h3>
-                    </div>
-                    {renderInput("Gaji Bersih", "gaji_bersih", "number", false, "Rp", true)}
-                    {renderInput("Total Potongan Pinjaman", "total_potongan_pinjaman", "number", false, "Rp", true)}
-                    {renderInput("Gaji Tersedia", "gaji_tersedia", "number", false, "Rp", true)}
-                    {renderInput("Jenis Dapem", "jenis_dapem")}
-                    {renderInput("Bulan Dapem", "bulan_dapem")}
-                    {renderInput("Status Dapem", "status_dapem")}
+                    {/* Form fields below NOPEN — only shown after API data is loaded */}
+                    {nopenDataLoaded && (
+                        <>
+                            {renderInput("Mitra", "mitra", "text", false, "", false, true)}
+                            {renderInput("Jenis Pensiun", "jenis_pensiun")}
+                            {renderInput("No Giro Pos", "nomor_rekening_giro_pos", "text", false, "", false)}
+
+                            <div className="col-span-full mt-4 mb-2 pt-4 border-t border-gray-100">
+                                <h3 className="text-lg font-bold text-gray-900">Data Keuangan</h3>
+                            </div>
+                            {renderInput("Gaji Bersih", "gaji_bersih", "number", false, "Rp", true)}
+                            {renderInput("Total Potongan Pinjaman", "total_potongan_pinjaman", "number", false, "Rp", true)}
+                            {renderInput("Gaji Tersedia", "gaji_tersedia", "number", false, "Rp", true)}
+                            {renderInput("Jenis Dapem", "jenis_dapem")}
+                            {renderInput("Bulan Dapem", "bulan_dapem")}
+                            {renderInput("Status Dapem", "status_dapem")}
+                        </>
+                    )}
                 </>
             ) : (
                 <>

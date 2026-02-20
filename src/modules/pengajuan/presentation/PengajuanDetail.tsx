@@ -470,6 +470,29 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                         </div>
                     )}
 
+                    {/* Revision Note Alert - Mobile */}
+                    {pengajuan.revision_note && (['Revisi', 'Pending'].includes(pengajuan.status)) && (user?.role === 'officer' || user?.role === 'petugas-pos') && (
+                        <div className="mb-5 px-2 animate-in fade-in slide-in-from-top-4 duration-500">
+                            <div className="bg-gradient-to-r from-amber-50 to-amber-100 border-2 border-amber-400 rounded-xl p-5 shadow-lg">
+                                <div className="flex items-start gap-3">
+                                    <div className="flex-shrink-0 mt-0.5">
+                                        <div className="w-8 h-8 bg-amber-500 rounded-full flex items-center justify-center">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 text-white"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                        </div>
+                                    </div>
+                                    <div className="flex-1">
+                                        <h3 className="text-base font-bold text-amber-900 mb-2 flex items-center gap-2">
+                                            ✏️ Catatan Revisi
+                                        </h3>
+                                        <div className="bg-white/60 rounded-lg p-3 border border-amber-200">
+                                            <p className="text-sm text-amber-900 leading-relaxed font-medium">{pengajuan.revision_note}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                     {/* Main Card */}
                     <div className="bg-white rounded-3xl shadow-xl shadow-slate-900/10 p-5">
                         {/* Financial Summary - Compact */}
@@ -1070,6 +1093,29 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                                     </h3>
                                     <div className="bg-white/70 rounded-xl p-4 border-2 border-rose-300">
                                         <p className="text-base text-rose-900 leading-relaxed font-medium">{pengajuan.reject_reason}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )
+                }
+
+                {/* Revision Note Alert - Desktop */}
+                {
+                    pengajuan.revision_note && (['Revisi', 'Pending'].includes(pengajuan.status)) && (user?.role === 'officer' || user?.role === 'petugas-pos') && (
+                        <div className="bg-gradient-to-r from-amber-50 to-amber-100 border-2 border-amber-400 rounded-2xl p-6 shadow-lg animate-in fade-in slide-in-from-top-4 duration-500">
+                            <div className="flex items-start gap-5">
+                                <div className="flex-shrink-0">
+                                    <div className="w-14 h-14 bg-amber-500 rounded-full flex items-center justify-center shadow-lg">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-8 h-8 text-white"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                    </div>
+                                </div>
+                                <div className="flex-1">
+                                    <h3 className="text-xl font-bold text-amber-900 mb-3 flex items-center gap-2">
+                                        ✏️ Catatan Revisi
+                                    </h3>
+                                    <div className="bg-white/70 rounded-xl p-4 border-2 border-amber-300">
+                                        <p className="text-base text-amber-900 leading-relaxed font-medium">{pengajuan.revision_note}</p>
                                     </div>
                                 </div>
                             </div>
