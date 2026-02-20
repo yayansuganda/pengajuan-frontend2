@@ -45,6 +45,7 @@ export interface Pengajuan {
     jenis_dapem?: string;
     bulan_dapem?: string;
     status_dapem?: string;
+    mitra?: string; // Nama Mitra/Rekan
     gaji_bersih?: number;
     gaji_tersedia?: number;
 
@@ -100,6 +101,8 @@ export interface Pengajuan {
     sk_pensiun_url?: string; // SK Pensiun (Optional)
     disbursement_proof_url?: string;
     shipping_receipt_url?: string;
+    surat_pernyataan_pemotongan_angsuran_url?: string; // Surat Pernyataan Pemotongan Angsuran
+    foto_penandatanganan_url?: string; // Foto Penandatanganan SK/Akad
 
     // Location
     latitude?: number;

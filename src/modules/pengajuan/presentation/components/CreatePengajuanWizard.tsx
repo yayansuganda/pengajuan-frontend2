@@ -297,6 +297,21 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
         }
     }, [jenisPelayananList, user, formData.jenis_pelayanan_id, fetchingDetail]);
 
+    const formatDateForInput = (dateStr?: string) => {
+        if (!dateStr) return '';
+        // Handle YYYY-MM-DD (standard)
+        if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
+
+        // Handle YYYY/MM/DD (legacy/display)
+        try {
+            const date = new Date(dateStr);
+            if (isNaN(date.getTime())) return '';
+            return date.toISOString().split('T')[0];
+        } catch {
+            return '';
+        }
+    };
+
     // Auto-fill Petugas Pos data from localStorage (fronting_user)
     // Runs for both create and edit mode - uses petugas_nippos as guard to prevent overwrite
     useEffect(() => {
@@ -345,7 +360,7 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
         } catch (error) {
             console.error('[CreatePengajuanWizard] ❌ Error reading fronting_user from localStorage:', error);
         }
-    }, [pengajuanId, user, currentStep]); // Tambahkan currentStep untuk re-run saat navigasi
+    }, [pengajuanId, user, currentStep]);
 
     // Fetch existing data for editing
     useEffect(() => {
@@ -359,13 +374,6 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
 
                 if (data) {
                     console.log('📄 Fetched Pengajuan Detail:', data);
-                    console.log('🔍 DEBUG kategori & pembiayaan:', {
-                        jenis_pembiayaan_raw: data.jenis_pembiayaan,
-                        jenis_pembiayaan_id_raw: data.jenis_pembiayaan_id,
-                        kategori_pembiayaan_raw: data.kategori_pembiayaan,
-                        jenis_pembiayaan_id_parsed: (data.jenis_pembiayaan?.id || data.jenis_pembiayaan_id || '').toString(),
-                        kategori_pembiayaan_parsed: (data.kategori_pembiayaan || '').trim(),
-                    });
 
                     // Parse borrower photos
                     let borrowerPhotosStr = '';
@@ -374,9 +382,6 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
                         try {
                             if (data.borrower_photos.startsWith('[')) {
                                 borrowerPhotosArr = JSON.parse(data.borrower_photos);
-                                // If it's an array, we might want to pass the JSON string to upload_borrower_photos?
-                                // Actually upload logic expects array for previews but string for payload.
-                                // For display we use imagePreviews.
                                 borrowerPhotosStr = data.borrower_photos;
                             } else {
                                 borrowerPhotosArr = [data.borrower_photos];
@@ -393,7 +398,7 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
                         upload_ktp_pemohon: data.ktp_url || '',
                         upload_slip_gaji_terakhir: data.slip_gaji_url || '',
                         upload_karip_buku_asabri: data.karip_buku_asabri_url || '',
-                        upload_surat_permohonan_anggota: (data as any).surat_permohonan_anggota_url || '', // Cast as any if missing in interface
+                        upload_surat_permohonan_anggota: (data as any).surat_permohonan_anggota_url || '',
                         upload_pengajuan_permohonan: data.pengajuan_permohonan_url || '',
                         upload_dokumen_akad: data.dokumen_akad_url || '',
                         upload_flagging: data.flagging_url || '',
@@ -420,6 +425,8 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
                     setFileNames(newFileNames);
 
                     // Populate Form Data
+                    const formattedBirthDate = formatDateForInput(data.tanggal_lahir);
+
                     setFormData(prev => ({
                         ...prev,
                         // Data Diri
@@ -427,7 +434,7 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
                         nama_lengkap: data.nama_lengkap || '',
                         jenis_kelamin: data.jenis_kelamin || 'Laki-laki',
                         tempat_lahir: data.tempat_lahir || '',
-                        tanggal_lahir: data.tanggal_lahir || '',
+                        tanggal_lahir: formattedBirthDate,
                         alamat: data.alamat || '',
                         rt: data.rt || '',
                         rw: data.rw || '',
@@ -439,7 +446,7 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
                         nomor_telephone: (data as any).nomor_telephone || '',
                         nama_ibu_kandung: data.nama_ibu_kandung || '',
                         pendidikan_terakhir: data.pendidikan_terakhir || '',
-                        usia: data.usia ? `${data.usia} tahun` : '', // Convert number to string format
+                        usia: formattedBirthDate ? calculateAge(formattedBirthDate) : '',
 
                         // Data Pensiun
                         nopen: data.nopen || '',
@@ -453,6 +460,7 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
                         jenis_dapem: data.jenis_dapem || '',
                         bulan_dapem: data.bulan_dapem || '',
                         status_dapem: data.status_dapem || '',
+                        mitra: data.mitra || '',
                         gaji_bersih: data.gaji_bersih?.toString() || '',
                         total_potongan_pinjaman: data.total_potongan?.toString() || '',
                         gaji_tersedia: data.gaji_tersedia?.toString() || '',
@@ -470,7 +478,7 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
                         nominal_terima: data.nominal_terima?.toString() || '',
                         kantor_pos_petugas: data.kantor_pos_petugas || '',
 
-                        // Data Petugas POS (from DB, used as primary source in edit mode)
+                        // Data Petugas POS
                         petugas_nippos: data.petugas_nippos || '',
                         petugas_name: data.petugas_name || '',
                         petugas_account_no: data.petugas_account_no || '',
@@ -482,15 +490,11 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
                         petugas_kcp_code: data.petugas_kcp_code || '',
                         petugas_kcp_name: data.petugas_kcp_name || '',
 
-                        // Files (need to set these so validation passes)
+                        // Files
                         ...fileMappings,
                         upload_borrower_photos: borrowerPhotosStr,
                     }));
-
-                    // We might need to manually trigger calculations or just trust the values?
-                    // Better to rely on fetched values for now.
                 }
-
             } catch (err) {
                 console.error("Failed to fetch detail for edit:", err);
             } finally {
@@ -1003,6 +1007,7 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
                 total_potongan_pinjaman: totalPotonganAPI ? totalPotonganAPI.toString() : prev.total_potongan_pinjaman, // Display Only
                 gaji_tersedia: gajiTersedia ? gajiTersedia.toString() : prev.gaji_tersedia,
                 nomor_rekening_giro_pos: data.no_rekening || prev.nomor_rekening_giro_pos,
+                kantor_bayar: data.kantor_bayar || prev.kantor_bayar,
                 kantor_pos_petugas: data.kantor_bayar || prev.kantor_pos_petugas,
                 mitra: data.mitra || prev.mitra,
             }));
@@ -1523,6 +1528,7 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
                 jenis_dapem: formData.jenis_dapem,
                 bulan_dapem: formData.bulan_dapem,
                 status_dapem: formData.status_dapem,
+                mitra: formData.mitra || '',
                 gaji_bersih: parseFloat((formData.gaji_bersih || '').replace(/\./g, '')) || 0,
                 gaji_tersedia: parseFloat((formData.gaji_tersedia || '').replace(/\./g, '')) || 0,
 
@@ -1573,7 +1579,9 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
                 nik: payload.nik,
                 nama_lengkap: payload.nama_lengkap,
                 jumlah_pembiayaan: payload.jumlah_pembiayaan,
-                potongan_detail: payload.potongan_detail
+                potongan_detail: payload.potongan_detail,
+                mitra: payload.mitra,
+                kategori_pembiayaan: payload.kategori_pembiayaan
             });
 
             // Send to Backend

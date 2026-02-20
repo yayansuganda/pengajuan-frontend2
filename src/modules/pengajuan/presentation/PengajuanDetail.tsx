@@ -111,7 +111,9 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
         flagging_url: '',
         surat_pernyataan_beda_url: '',
         disbursement_proof_url: '',
-        shipping_receipt_url: ''
+        shipping_receipt_url: '',
+        surat_pernyataan_pemotongan_angsuran_url: '',
+        foto_penandatanganan_url: '',
     });
 
     const [previewDoc, setPreviewDoc] = useState<{ url: string; type: 'image' | 'pdf' } | null>(null);
@@ -133,7 +135,9 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                 flagging_url: data.flagging_url || '',
                 surat_pernyataan_beda_url: data.surat_pernyataan_beda_url || '',
                 disbursement_proof_url: data.disbursement_proof_url || '',
-                shipping_receipt_url: data.shipping_receipt_url || ''
+                shipping_receipt_url: data.shipping_receipt_url || '',
+                surat_pernyataan_pemotongan_angsuran_url: data.surat_pernyataan_pemotongan_angsuran_url || '',
+                foto_penandatanganan_url: data.foto_penandatanganan_url || '',
             });
 
             if (data.borrower_photos) {
@@ -194,7 +198,7 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
         setPreviewDoc({ url, type });
     };
 
-    const handleApprovalDocUpload = async (docType: 'pengajuan_permohonan_url' | 'dokumen_akad_url' | 'flagging_url' | 'surat_pernyataan_beda_url' | 'disbursement_proof_url' | 'shipping_receipt_url', file: File) => {
+    const handleApprovalDocUpload = async (docType: 'pengajuan_permohonan_url' | 'dokumen_akad_url' | 'flagging_url' | 'surat_pernyataan_beda_url' | 'disbursement_proof_url' | 'shipping_receipt_url' | 'surat_pernyataan_pemotongan_angsuran_url' | 'foto_penandatanganan_url', file: File) => {
         if (!pengajuan) return;
         try {
             setUploadingDoc(docType);
@@ -230,7 +234,7 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
     };
 
     const isAllApprovalDocsUploaded = () => {
-        return approvalDocs.pengajuan_permohonan_url && approvalDocs.dokumen_akad_url && approvalDocs.flagging_url && approvalDocs.surat_pernyataan_beda_url;
+        return approvalDocs.pengajuan_permohonan_url && approvalDocs.dokumen_akad_url && approvalDocs.flagging_url && approvalDocs.surat_pernyataan_beda_url && approvalDocs.surat_pernyataan_pemotongan_angsuran_url;
     };
 
     const d = (val: any) => (val === undefined || val === null || val === '') ? '-' : String(val);
@@ -401,6 +405,8 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
         { title: 'Dokumen Akad', desc: 'Surat Perjanjian', url: pengajuan.dokumen_akad_url, key: 'dokumen_akad_url' },
         { title: 'Flagging', desc: 'Dokumen Flagging', url: pengajuan.flagging_url, key: 'flagging_url' },
         { title: 'Surat Pernyataan Beda Penerima', desc: 'Pernyataan Ahli Waris', url: pengajuan.surat_pernyataan_beda_url, key: 'surat_pernyataan_beda_url' },
+        { title: 'Surat Pernyataan Pemotongan Angsuran', desc: 'Pernyataan Pemotongan Angsuran', url: pengajuan.surat_pernyataan_pemotongan_angsuran_url, key: 'surat_pernyataan_pemotongan_angsuran_url' },
+        { title: 'Foto Penandatanganan SK/Akad', desc: 'Dokumentasi Penandatanganan', url: pengajuan.foto_penandatanganan_url, key: 'foto_penandatanganan_url' },
         { title: 'Bukti Transfer', desc: 'Bukti Pencairan Dana', url: pengajuan.disbursement_proof_url, key: 'disbursement_proof_url', uploadInfo: { type: 'disbursement', label: 'Bukti Transfer' } },
         { title: 'Resi Pengiriman Berkas', desc: 'Bukti Pengiriman Fisik', url: pengajuan.shipping_receipt_url, key: 'shipping_receipt_url', uploadInfo: { type: 'shipping', label: 'Resi Pengiriman' } },
     ];
@@ -806,7 +812,7 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                                     ) : (
                                         // Dokumen Persetujuan - with upload logic for multiple roles
                                         dokumenPersetujuan.map((doc, idx) => {
-                                            const docKey = doc.key as 'dokumen_akad_url' | 'flagging_url' | 'surat_pernyataan_beda_url' | 'pengajuan_permohonan_url' | 'disbursement_proof_url' | 'shipping_receipt_url';
+                                            const docKey = doc.key as 'dokumen_akad_url' | 'flagging_url' | 'surat_pernyataan_beda_url' | 'pengajuan_permohonan_url' | 'disbursement_proof_url' | 'shipping_receipt_url' | 'surat_pernyataan_pemotongan_angsuran_url' | 'foto_penandatanganan_url';
                                             const hasDoc = approvalDocs[docKey as keyof typeof approvalDocs] || doc.url;
                                             const isUploading = uploadingDoc === docKey;
 
@@ -815,7 +821,7 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
 
                                             // Officer & Petugas POS: Upload Approval Docs when Disetujui
                                             if ((user?.role === 'officer' || user?.role === 'petugas-pos') && pengajuan.status === 'Disetujui') {
-                                                canUpload = ['pengajuan_permohonan_url', 'dokumen_akad_url', 'flagging_url', 'surat_pernyataan_beda_url'].includes(docKey);
+                                                canUpload = ['pengajuan_permohonan_url', 'dokumen_akad_url', 'flagging_url', 'surat_pernyataan_beda_url', 'surat_pernyataan_pemotongan_angsuran_url', 'foto_penandatanganan_url'].includes(docKey);
                                             }
 
                                             // Admin Unit: Upload Logic REMOVED (Verification Only)
@@ -830,16 +836,18 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                                                 canUpload = docKey === 'shipping_receipt_url';
                                             }
 
-                                            // PDF documents: Pengajuan Permohonan, Dokumen Akad, Flagging, Surat Pernyataan Beda
-                                            const isPdfDoc = ['pengajuan_permohonan_url', 'dokumen_akad_url', 'flagging_url', 'surat_pernyataan_beda_url'].includes(docKey);
+                                            // PDF documents: Pengajuan Permohonan, Dokumen Akad, Flagging, Surat Pernyataan Beda, Surat Pemotongan Angsuran
+                                            const isPdfDoc = ['pengajuan_permohonan_url', 'dokumen_akad_url', 'flagging_url', 'surat_pernyataan_beda_url', 'surat_pernyataan_pemotongan_angsuran_url'].includes(docKey);
                                             const acceptType = isPdfDoc ? 'application/pdf' : 'image/*';
 
-                                            // Template URLs (you can replace these with actual template URLs)
+                                            // Template URLs
                                             const templateUrls: Record<string, string> = {
                                                 'pengajuan_permohonan_url': '/templates/template-pengajuan-permohonan.pdf',
                                                 'dokumen_akad_url': '/templates/template-dokumen-akad.pdf',
                                                 'flagging_url': '/templates/template-flagging.pdf',
-                                                'surat_pernyataan_beda_url': '/templates/template-surat-pernyataan-beda.pdf'
+                                                'surat_pernyataan_beda_url': '/templates/template-surat-pernyataan-beda.pdf',
+                                                'surat_pernyataan_pemotongan_angsuran_url': '/templates/template-surat-pernyataan-pemotongan-angsuran.pdf',
+                                                'foto_penandatanganan_url': '/templates/template-foto-penandatanganan.pdf',
                                             };
 
                                             return (
