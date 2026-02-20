@@ -248,6 +248,7 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                 input: 'textarea',
                 inputLabel: 'Catatan Revisi',
                 inputPlaceholder: 'Tuliskan catatan revisi...',
+                inputValue: pengajuan?.revision_note || '',
                 inputAttributes: { 'aria-label': 'Tuliskan catatan revisi' },
                 showCancelButton: true,
                 confirmButtonColor: '#d97706', // Amber
@@ -283,6 +284,7 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                 input: 'textarea',
                 inputLabel: 'Alasan Penolakan',
                 inputPlaceholder: 'Tuliskan alasan penolakan...',
+                inputValue: pengajuan?.reject_reason || '',
                 inputAttributes: { 'aria-label': 'Tuliskan alasan penolakan' },
                 showCancelButton: true,
                 confirmButtonColor: '#e11d48',
@@ -917,7 +919,7 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                     {/* Action Buttons Section - Inside Card */}
                     <div className="px-4 pb-6 mt-6">
                         <div className="flex items-center gap-2 justify-center">
-                            {user?.role === 'verifier' && pengajuan.status === 'Pending' && (
+                            {user?.role === 'verifier' && ['Pending', 'Revisi'].includes(pengajuan.status) && (
                                 <>
                                     <button
                                         onClick={() => handleUpdateStatus('Revisi', 'Kirim memo revisi?')}
@@ -1038,46 +1040,6 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                                     >
                                         Edit
                                     </Link>
-                                )}
-                                {user?.role === 'verifier' && pengajuan.status === 'Pending' && (
-                                    <>
-                                        <button onClick={() => handleUpdateStatus('Revisi', 'Kirim memo revisi?')} className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium rounded-full transition-all">
-                                            Revisi
-                                        </button>
-                                        <button onClick={() => handleUpdateStatus('Menunggu Approval Manager', 'Kirim data ke Manager?')} className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-full transition-all">
-                                            Verifikasi
-                                        </button>
-                                    </>
-                                )}
-                                {user?.role === 'manager' && pengajuan.status === 'Menunggu Approval Manager' && (
-                                    <>
-                                        <button onClick={() => handleUpdateStatus('Ditolak', 'Tolak Pengajuan?')} className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-sm font-medium rounded-full transition-all">
-                                            Tolak
-                                        </button>
-                                        <button onClick={() => handleUpdateStatus('Disetujui', 'Setujui Pengajuan?')} className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-full transition-all">
-                                            Setujui
-                                        </button>
-                                    </>
-                                )}
-                                {user?.role === 'officer' && pengajuan.status === 'Disetujui' && (
-                                    <button onClick={() => handleUpdateStatus('Menunggu Verifikasi Admin Unit', 'Pastikan semua dokumen persetujuan sudah diupload. Kirim ke Admin Unit?')} className="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-full transition-all">
-                                        Kirim ke Admin Unit
-                                    </button>
-                                )}
-                                {user?.role === 'admin-unit' && pengajuan.status === 'Menunggu Verifikasi Admin Unit' && (
-                                    <button onClick={() => handleUpdateStatus('Menunggu Pencairan', 'Verifikasi selesai? Kirim ke Admin Pusat?')} className="px-3 py-1.5 bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium rounded-full transition-all">
-                                        Verifikasi & Kirim
-                                    </button>
-                                )}
-                                {user?.role === 'admin-pusat' && pengajuan.status === 'Menunggu Pencairan' && (
-                                    <button onClick={() => handleUpdateStatus('Dicairkan', 'Konfirmasi pencairan?')} className="px-3 py-1.5 bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium rounded-full transition-all">
-                                        Konfirmasi Pencairan
-                                    </button>
-                                )}
-                                {user?.role === 'officer' && pengajuan.status === 'Dicairkan' && (
-                                    <button onClick={() => handleUpdateStatus('Selesai', 'Pastikan resi pengiriman berkas sudah diupload. Selesaikan pengajuan?')} className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-full transition-all">
-                                        Selesai
-                                    </button>
                                 )}
                             </div>
                         </div>
@@ -1407,6 +1369,74 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                         )}
                     </div>
                 </div >
+
+                {/* Desktop Action Buttons (Bottom) */}
+                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex items-center justify-end gap-3">
+                    {user?.role === 'verifier' && ['Pending', 'Revisi'].includes(pengajuan.status) && (
+                        <>
+                            <button
+                                onClick={() => handleUpdateStatus('Revisi', 'Kirim memo revisi?')}
+                                className="px-6 py-2.5 bg-amber-600 text-white text-sm font-medium rounded-xl hover:bg-amber-700 transition-colors shadow-sm"
+                            >
+                                Revisi
+                            </button>
+                            <button
+                                onClick={() => handleUpdateStatus('Menunggu Approval Manager', 'Kirim ke Manager?')}
+                                className="px-6 py-2.5 bg-indigo-600 text-white text-sm font-medium rounded-xl hover:bg-indigo-700 transition-colors shadow-sm"
+                            >
+                                Verifikasi
+                            </button>
+                        </>
+                    )}
+                    {user?.role === 'manager' && pengajuan.status === 'Menunggu Approval Manager' && (
+                        <>
+                            <button
+                                onClick={() => handleUpdateStatus('Ditolak', 'Tolak?')}
+                                className="px-6 py-2.5 bg-rose-600 text-white text-sm font-medium rounded-xl hover:bg-rose-700 transition-colors shadow-sm"
+                            >
+                                Tolak
+                            </button>
+                            <button
+                                onClick={() => handleUpdateStatus('Disetujui', 'Setujui?')}
+                                className="px-6 py-2.5 bg-emerald-600 text-white text-sm font-medium rounded-xl hover:bg-emerald-700 transition-colors shadow-sm"
+                            >
+                                Setujui
+                            </button>
+                        </>
+                    )}
+                    {user?.role === 'officer' && pengajuan.status === 'Disetujui' && isAllApprovalDocsUploaded() && (
+                        <button
+                            onClick={() => handleUpdateStatus('Menunggu Verifikasi Admin Unit', 'Kirim Admin Unit?')}
+                            className="px-6 py-2.5 bg-purple-600 text-white text-sm font-medium rounded-xl hover:bg-purple-700 transition-colors shadow-sm"
+                        >
+                            Kirim ke Admin Unit
+                        </button>
+                    )}
+                    {user?.role === 'admin-unit' && pengajuan.status === 'Menunggu Verifikasi Admin Unit' && (
+                        <button
+                            onClick={() => handleUpdateStatus('Menunggu Pencairan', 'Kirim Pusat?')}
+                            className="px-6 py-2.5 bg-orange-600 text-white text-sm font-medium rounded-xl hover:bg-orange-700 transition-colors shadow-sm"
+                        >
+                            Verifikasi
+                        </button>
+                    )}
+                    {user?.role === 'admin-pusat' && pengajuan.status === 'Menunggu Pencairan' && approvalDocs.disbursement_proof_url && (
+                        <button
+                            onClick={() => handleUpdateStatus('Dicairkan', 'Cairkan?')}
+                            className="px-6 py-2.5 bg-teal-600 text-white text-sm font-medium rounded-xl hover:bg-teal-700 transition-colors shadow-sm"
+                        >
+                            Cairkan
+                        </button>
+                    )}
+                    {user?.role === 'officer' && pengajuan.status === 'Dicairkan' && approvalDocs.shipping_receipt_url && (
+                        <button
+                            onClick={() => handleUpdateStatus('Selesai', 'Selesaikan?')}
+                            className="px-6 py-2.5 bg-indigo-600 text-white text-sm font-medium rounded-xl hover:bg-indigo-700 transition-colors shadow-sm"
+                        >
+                            Selesaikan
+                        </button>
+                    )}
+                </div>
 
                 {/* Upload Modal */}
                 {
