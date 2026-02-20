@@ -1,7 +1,7 @@
 'use client';
 
 import { MobileLayoutWrapper } from '@/modules/pengajuan/presentation/components/MobileLayoutWrapper';
-import { Book } from 'lucide-react';
+import { Book, Phone, Download } from 'lucide-react';
 
 export default function HelpPage() {
     return (
@@ -64,6 +64,46 @@ export default function HelpPage() {
                                 </div>
                             </details>
                         </div>
+                    </div>
+
+                    {/* Additional Help Section */}
+                    <div className="mt-6 flex flex-col gap-4">
+                        {/* Guide Book Download */}
+                        <a
+                            href="/templates/pedoman-siapimm.pdf"
+                            download
+                            className="bg-white rounded-xl p-4 shadow-sm border border-slate-200 flex items-center justify-between hover:bg-slate-50 transition-colors"
+                        >
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-indigo-50 rounded-lg flex items-center justify-center">
+                                    <Download className="w-5 h-5 text-indigo-600" />
+                                </div>
+                                <div className="flex flex-col">
+                                    <span className="font-semibold text-slate-900">Buku Panduan</span>
+                                    <span className="text-xs text-slate-500">Unduh PDF panduan lengkap</span>
+                                </div>
+                            </div>
+                            <span className="text-indigo-600 font-medium text-sm">Unduh</span>
+                        </a>
+
+                        {/* WhatsApp Call Center */}
+                        <a
+                            href="https://wa.me/6282322168666"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="bg-white rounded-xl p-4 shadow-sm border border-slate-200 flex items-center justify-between hover:bg-slate-50 transition-colors"
+                        >
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-emerald-50 rounded-lg flex items-center justify-center">
+                                    <Phone className="w-5 h-5 text-emerald-600" />
+                                </div>
+                                <div className="flex flex-col">
+                                    <span className="font-semibold text-slate-900">Call Center</span>
+                                    <span className="text-xs text-slate-500">+62 823-2216-8666</span>
+                                </div>
+                            </div>
+                            <span className="text-emerald-600 font-medium text-sm">Hubungi</span>
+                        </a>
                     </div>
                 </div>
             </div>
