@@ -93,10 +93,10 @@ const getTimelineIconColor = (currentStatus: string, stepStatus: string, isRejec
         if (stepStatus === 'Pending') return 'text-rose-500 bg-rose-50';
         return 'text-slate-300 bg-slate-50';
     }
-    
+
     const currentIndex = getStatusIndex(currentStatus);
     const stepIndex = getStatusIndex(stepStatus);
-    
+
     if (stepIndex < currentIndex) return 'text-emerald-500 bg-emerald-50'; // Completed
     if (stepIndex === currentIndex) return 'text-blue-500 bg-blue-50'; // Current
     return 'text-slate-300 bg-slate-50'; // Upcoming
@@ -104,10 +104,10 @@ const getTimelineIconColor = (currentStatus: string, stepStatus: string, isRejec
 
 const getTimelineLineColor = (currentStatus: string, stepStatus: string, isRejected: boolean): string => {
     if (isRejected) return 'bg-slate-200';
-    
+
     const currentIndex = getStatusIndex(currentStatus);
     const stepIndex = getStatusIndex(stepStatus);
-    
+
     return stepIndex < currentIndex ? 'bg-emerald-400' : 'bg-slate-200';
 };
 
@@ -151,8 +151,8 @@ const MobileView = ({ data, search, setSearch, statusFilter, setStatusFilter, da
                         </div>
                     </div>
                 </div>
-                
-                
+
+
 
                 <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 space-y-3">
                     {/* Search Bar */}
@@ -210,17 +210,19 @@ const MobileView = ({ data, search, setSearch, statusFilter, setStatusFilter, da
                         </div>
                         <p className="text-slate-700 text-sm font-semibold mb-1">Belum ada pengajuan</p>
                         <p className="text-slate-500 text-xs mb-4">
-                            {(user?.role === 'petugas-pos' || user?.role === 'admin-pos') 
+                            {(user?.role === 'petugas-pos' || user?.role === 'admin-pos')
                                 ? 'Buat pengajuan baru untuk melihat data di sini'
                                 : 'Data tidak ditemukan'}
                         </p>
-                        <button
-                            onClick={() => router.push('/pengajuan/create')}
-                            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors"
-                        >
-                            <Plus className="w-4 h-4" />
-                            Buat Pengajuan
-                        </button>
+                        {(user?.role === 'officer' || user?.role === 'petugas-pos') && (
+                            <button
+                                onClick={() => router.push('/pengajuan/create')}
+                                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors"
+                            >
+                                <Plus className="w-4 h-4" />
+                                Buat Pengajuan
+                            </button>
+                        )}
                     </div>
                 ) : (
                     data.map((item) => (
@@ -262,7 +264,7 @@ const MobileView = ({ data, search, setSearch, statusFilter, setStatusFilter, da
                                         const isRejected = item.status === 'Ditolak';
                                         const Icon = isRejected && idx === 0 ? XCircle : step.icon;
                                         const isLast = idx === getTimelineSteps().length - 1;
-                                        
+
                                         return (
                                             <div key={step.status} className="flex items-center flex-1">
                                                 <div className="flex flex-col items-center">
@@ -283,13 +285,15 @@ const MobileView = ({ data, search, setSearch, statusFilter, setStatusFilter, da
                 )}
             </div>
 
-            {/* FAB */}
-            <button
-                onClick={() => router.push('/pengajuan/create')}
-                className="fixed bottom-24 right-5 h-12 w-12 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full shadow-lg shadow-emerald-600/30 flex items-center justify-center text-white z-40 hover:scale-105 active:scale-95 transition-all"
-            >
-                <Plus className="w-6 h-6" />
-            </button>
+            {/* FAB - Only for Officer & Petugas Pos */}
+            {(user?.role === 'officer' || user?.role === 'petugas-pos') && (
+                <button
+                    onClick={() => router.push('/pengajuan/create')}
+                    className="fixed bottom-24 right-5 h-12 w-12 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full shadow-lg shadow-emerald-600/30 flex items-center justify-center text-white z-40 hover:scale-105 active:scale-95 transition-all"
+                >
+                    <Plus className="w-6 h-6" />
+                </button>
+            )}
         </div>
     </MobileLayoutWrapper>
 );
@@ -301,7 +305,7 @@ const DesktopView = ({ data, search, setSearch, statusFilter, setStatusFilter, d
             <div className="sm:flex-auto">
                 <h1 className="text-2xl font-semibold text-gray-900">Daftar Pengajuan</h1>
                 <p className="mt-2 text-sm text-gray-700">Kelola data pengajuan pembiayaan</p>
-                
+
                 {/* NIPPOS Filter Badge untuk Petugas Pos */}
                 {(user?.role === 'petugas-pos' || user?.role === 'admin-pos') && (() => {
                     const frontingUser = getFrontingUser();
@@ -337,12 +341,14 @@ const DesktopView = ({ data, search, setSearch, statusFilter, setStatusFilter, d
                     <History className="w-4 h-4" />
                     History
                 </button>
-                <button
-                    onClick={() => router.push('/pengajuan/create')}
-                    className="block rounded-md bg-indigo-600 px-3 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-                >
-                    Buat Pengajuan
-                </button>
+                {(user?.role === 'officer' || user?.role === 'petugas-pos') && (
+                    <button
+                        onClick={() => router.push('/pengajuan/create')}
+                        className="block rounded-md bg-indigo-600 px-3 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                    >
+                        Buat Pengajuan
+                    </button>
+                )}
             </div>
         </div>
 
@@ -452,7 +458,7 @@ export const PengajuanList: React.FC<PengajuanListProps> = ({ viewMode = 'respon
         console.log('[PengajuanList] useEffect triggered');
         console.log('[PengajuanList] Current path:', typeof window !== 'undefined' ? window.location.pathname : 'SSR');
         console.log('[PengajuanList] User:', user);
-        
+
         fetchData();
     }, [statusFilter, dateFilter, user]); // Fetch immediately on select change or user change
 
@@ -470,7 +476,7 @@ export const PengajuanList: React.FC<PengajuanListProps> = ({ viewMode = 'respon
         console.log('[PengajuanList] User from useAuth():', user);
         console.log('[PengajuanList] User role:', user?.role);
         console.log('[PengajuanList] User ID:', user?.id);
-        
+
         // Check token
         const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
         const storedUser = typeof window !== 'undefined' ? localStorage.getItem('user') : null;
@@ -479,28 +485,28 @@ export const PengajuanList: React.FC<PengajuanListProps> = ({ viewMode = 'respon
         console.log('[PengajuanList] Token (first 20 chars):', token ? token.substring(0, 20) + '...' : 'NULL');
         console.log('[PengajuanList] Stored user exists?', !!storedUser);
         console.log('[PengajuanList] Stored user:', storedUser ? JSON.parse(storedUser) : null);
-        
+
         // FORCE CHECK: Jika di route /fronting/pengajuan, SELALU apply filter NIPPOS
         const isFrontingRoute = typeof window !== 'undefined' && window.location.pathname.includes('/fronting');
         console.log('[PengajuanList] Is fronting route?', isFrontingRoute);
         console.log('[PengajuanList] Full pathname:', typeof window !== 'undefined' ? window.location.pathname : 'SSR');
-        
+
         try {
             setIsLoading(true);
             const filter: PengajuanFilter = {};
             if (search) filter.search = search;
             if (statusFilter) filter.status = statusFilter;
             if (dateFilter) filter.date = dateFilter;
-            
+
             // FILTER BY NIPPOS
             // Prioritas 1: Jika di /fronting route, SELALU ambil dari localStorage
             // Prioritas 2: Jika role petugas-pos/admin-pos, SELALU ambil dari localStorage
             const isPetugasPos = user?.role === 'petugas-pos' || user?.role === 'admin-pos';
             const shouldFilterByNIPPOS = isFrontingRoute || isPetugasPos;
-            
+
             console.log('[PengajuanList] Should filter by NIPPOS?', shouldFilterByNIPPOS);
             console.log('[PengajuanList] Is Petugas Pos role?', isPetugasPos);
-            
+
             if (shouldFilterByNIPPOS) {
                 // Ambil NIPPOS dari localStorage
                 const frontingUser = getFrontingUser();
@@ -508,11 +514,11 @@ export const PengajuanList: React.FC<PengajuanListProps> = ({ viewMode = 'respon
                 console.log('[PengajuanList] fronting_user:', frontingUser);
                 console.log('[PengajuanList] NIPPOS:', frontingUser?.nippos);
                 console.log('[PengajuanList] Name:', frontingUser?.name);
-                
+
                 if (frontingUser && frontingUser.nippos) {
                     console.log('[PengajuanList] ✅ APPLYING NIPPOS FILTER:', frontingUser.nippos);
                     filter.petugas_nippos = frontingUser.nippos;
-                    
+
                     // IMPORTANT: Check if user is logged in
                     // If in fronting route but user is null (not logged in), redirect to /fronting for auto-login
                     if (isFrontingRoute && !user && typeof window !== 'undefined') {
@@ -526,14 +532,14 @@ export const PengajuanList: React.FC<PengajuanListProps> = ({ viewMode = 'respon
                 } else {
                     console.error('[PengajuanList] ❌❌❌ NO NIPPOS IN LOCALSTORAGE! ❌❌❌');
                     console.error('[PengajuanList] This is the problem! User must access /fronting/?data=... first!');
-                    
+
                     // Redirect to /fronting if in fronting route
                     if (isFrontingRoute && typeof window !== 'undefined') {
                         console.warn('[PengajuanList] Redirecting to /fronting...');
                         window.location.href = '/fronting';
                         return;
                     }
-                    
+
                     setData([]);
                     setIsLoading(false);
                     return;
@@ -543,9 +549,9 @@ export const PengajuanList: React.FC<PengajuanListProps> = ({ viewMode = 'respon
             console.log('[PengajuanList] 📊 ========== MAKING API REQUEST ==========');
             console.log('[PengajuanList] Filter object:', JSON.stringify(filter, null, 2));
             console.log('[PengajuanList] API URL will be: /pengajuan with params:', filter);
-            
+
             const result = await repository.getPengajuanList(filter);
-            
+
             console.log('[PengajuanList] ✅ ========== API RESPONSE ==========');
             console.log('[PengajuanList] Total items received:', result.length);
             console.log('[PengajuanList] Raw response:', result);
