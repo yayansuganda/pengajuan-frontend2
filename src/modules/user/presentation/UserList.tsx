@@ -281,7 +281,7 @@ export const UserList: React.FC = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingUser, setEditingUser] = useState<User | null>(null);
     const [showPassword, setShowPassword] = useState(false);
-    const [formData, setFormData] = useState({ username: '', password: '', name: '', role: '', unit: '' });
+    const [formData, setFormData] = useState({ username: '', password: '', name: '', role: '', unit: '', unit_id: '' });
 
     useEffect(() => {
         if (user && user.role !== 'super-admin') { router.push('/dashboard'); return; }
@@ -332,9 +332,9 @@ export const UserList: React.FC = () => {
         } catch (error: any) { hideLoading(); showError(handleError(error, 'Gagal menghapus user')); }
     };
 
-    const openCreateModal = () => { setEditingUser(null); setFormData({ username: '', password: '', name: '', role: '', unit: '' }); setShowPassword(false); setIsModalOpen(true); };
-    const openEditModal = async (user: User) => { setEditingUser(user); setFormData({ username: user.username, password: '', name: user.name, role: user.role, unit: user.unit }); setShowPassword(false); setIsModalOpen(true); };
-    const closeModal = () => { setIsModalOpen(false); setEditingUser(null); setFormData({ username: '', password: '', name: '', role: '', unit: '' }); setShowPassword(false); };
+    const openCreateModal = () => { setEditingUser(null); setFormData({ username: '', password: '', name: '', role: '', unit: '', unit_id: '' }); setShowPassword(false); setIsModalOpen(true); };
+    const openEditModal = async (user: User) => { setEditingUser(user); setFormData({ username: user.username, password: '', name: user.name, role: user.role, unit: user.unit, unit_id: user.unit_id || '' }); setShowPassword(false); setIsModalOpen(true); };
+    const closeModal = () => { setIsModalOpen(false); setEditingUser(null); setFormData({ username: '', password: '', name: '', role: '', unit: '', unit_id: '' }); setShowPassword(false); };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -346,7 +346,7 @@ export const UserList: React.FC = () => {
         try {
             showLoading(editingUser ? 'Mengupdate user...' : 'Menambahkan user...');
             if (editingUser) {
-                const updateData: UpdateUserDTO = { username: formData.username, name: formData.name, role: formData.role, unit: formData.unit };
+                const updateData: UpdateUserDTO = { username: formData.username, name: formData.name, role: formData.role, unit: formData.unit, unit_id: formData.unit_id };
                 if (formData.password) { updateData.password = formData.password; }
                 await userRepository.update(editingUser.id, updateData);
                 hideLoading(); await showSuccess('User berhasil diupdate');
@@ -395,9 +395,12 @@ export const UserList: React.FC = () => {
                                     </div>
                                     <div>
                                         <label className="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wide">Unit</label>
-                                        <select value={formData.unit} onChange={(e) => setFormData({ ...formData, unit: e.target.value })} className="w-full px-4 py-2.5 text-sm text-gray-900 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                        <select value={formData.unit_id} onChange={(e) => {
+                                            const selectedUnit = units.find(u => u.id.toString() === e.target.value);
+                                            setFormData({ ...formData, unit_id: e.target.value, unit: selectedUnit ? selectedUnit.name : '' });
+                                        }} className="w-full px-4 py-2.5 text-sm text-gray-900 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500">
                                             <option value="">Pilih unit...</option>
-                                            {units.map((unit) => <option key={unit.id} value={unit.name}>{unit.code} - {unit.name}</option>)}
+                                            {units.map((unit) => <option key={unit.id} value={unit.id}>{unit.code} - {unit.name}</option>)}
                                         </select>
                                     </div>
                                     <div className="relative">

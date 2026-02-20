@@ -3,6 +3,7 @@ export interface User {
     username: string;
     role: string;
     unit: string;
+    unit_id?: string;
     name: string;
     created_at: string;
     updated_at: string;
@@ -13,6 +14,7 @@ export interface CreateUserDTO {
     password: string;
     role: string;
     unit: string;
+    unit_id?: string;
     name: string;
 }
 
@@ -21,5 +23,6 @@ export interface UpdateUserDTO {
     password?: string; // Optional - only if changing password
     role?: string;
     unit?: string;
+    unit_id?: string;
     name?: string;
 }
