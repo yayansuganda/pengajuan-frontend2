@@ -55,17 +55,22 @@ export default function DashboardPage() {
         return pengajuanList.filter(item => item.status === 'Revisi');
     }, [pengajuanList, user]);
 
-    // Officer specific: Loans needing approval documents
+    // Officer/PetugasPos specific: Loans needing approval documents
     const approvalNeededLoans = useMemo(() => {
-        if (user?.role !== 'officer') return [];
+        if (user?.role !== 'officer' && user?.role !== 'petugas-pos') return [];
         return pengajuanList.filter(item => item.status === 'Disetujui');
     }, [pengajuanList, user]);
 
-    // Officer specific: Loans needing shipping receipt (Status: Dicairkan)
+    // Officer/PetugasPos specific: Loans needing shipping receipt (Status: Dicairkan)
     const shippingReceiptNeededLoans = useMemo(() => {
-        if (user?.role !== 'officer') return [];
+        if (user?.role !== 'officer' && user?.role !== 'petugas-pos') return [];
         return pengajuanList.filter(item => item.status === 'Dicairkan');
     }, [pengajuanList, user]);
+
+    // Helper: get detail path based on role
+    const getDetailPath = (id: string) => {
+        return user?.role === 'petugas-pos' ? `/fronting/detail/${id}` : `/pengajuan/${id}`;
+    };
 
     // Admin Unit specific: Loans needing verification
     const verificationNeededLoans = useMemo(() => {
@@ -358,21 +363,24 @@ export default function DashboardPage() {
                                 </div>
                             )}
 
-                            {/* Alert/Action Section for Officer - Mobile */}
-                            {user?.role === 'officer' && approvalNeededLoans.length > 0 && (
+                            {/* Alert/Action Section for Officer/PetugasPos - Disetujui (Perlu Upload Dokumen) - Mobile */}
+                            {(user?.role === 'officer' || user?.role === 'petugas-pos') && approvalNeededLoans.length > 0 && (
                                 <div className="mb-4">
                                     <div className="bg-amber-50 rounded-2xl p-4 border border-amber-100 shadow-sm">
                                         <div className="flex items-center gap-2 mb-3">
                                             <div className="p-1.5 bg-amber-100 rounded-full animate-pulse">
                                                 <AlertCircle className="w-4 h-4 text-amber-600" />
                                             </div>
-                                            <h3 className="text-xs font-bold text-amber-900">Perlu Upload Dokumen ({approvalNeededLoans.length})</h3>
+                                            <h3 className="text-xs font-bold text-amber-900">✅ Disetujui Manager — Perlu Upload Dokumen ({approvalNeededLoans.length})</h3>
                                         </div>
+                                        <p className="text-[10px] text-amber-700 mb-3 bg-amber-100 rounded-lg px-3 py-2">
+                                            Pengajuan berikut telah <strong>disetujui oleh Manager</strong>. Segera lengkapi upload dokumen persetujuan untuk melanjutkan ke proses selanjutnya.
+                                        </p>
                                         <div className="space-y-2">
-                                            {approvalNeededLoans.slice(0, 3).map((item, idx) => (
+                                            {approvalNeededLoans.slice(0, 3).map((item) => (
                                                 <div
                                                     key={item.id}
-                                                    onClick={() => router.push(`/pengajuan/${item.id}`)}
+                                                    onClick={() => router.push(getDetailPath(item.id))}
                                                     className="bg-white rounded-xl p-3 border border-amber-200 shadow-sm active:scale-[0.98] transition-all cursor-pointer"
                                                 >
                                                     <div className="flex items-center justify-between gap-3">
@@ -381,7 +389,7 @@ export default function DashboardPage() {
                                                                 <div className="flex items-center justify-between gap-2">
                                                                     <span className="text-[10px] font-bold text-slate-800 truncate">{item.nama_lengkap}</span>
                                                                     <span className="px-1.5 py-0.5 rounded text-[8px] font-bold bg-emerald-100 text-emerald-700 whitespace-nowrap">
-                                                                        Disetujui
+                                                                        ✅ Disetujui
                                                                     </span>
                                                                 </div>
                                                                 <p className="text-[9px] text-slate-500 font-medium">{item.unit}</p>
@@ -394,7 +402,7 @@ export default function DashboardPage() {
                                                                 <span>•</span>
                                                                 <div className="flex items-center gap-1">
                                                                     <FileUp className="w-3 h-3 text-amber-500" />
-                                                                    <span className="text-amber-600 font-medium">Upload PDF</span>
+                                                                    <span className="text-amber-600 font-medium">Upload Dokumen</span>
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -404,7 +412,7 @@ export default function DashboardPage() {
                                             ))}
                                             {approvalNeededLoans.length > 3 && (
                                                 <button
-                                                    onClick={() => router.push('/pengajuan')}
+                                                    onClick={() => router.push(user?.role === 'petugas-pos' ? '/fronting' : '/pengajuan')}
                                                     className="w-full py-2 text-[10px] font-bold text-amber-700 text-center hover:bg-amber-100 rounded-lg transition-colors"
                                                 >
                                                     Lihat {approvalNeededLoans.length - 3} lainnya...
@@ -415,8 +423,8 @@ export default function DashboardPage() {
                                 </div>
                             )}
 
-                            {/* Alert/Action Section for Officer - Shipping Receipt Needed */}
-                            {user?.role === 'officer' && shippingReceiptNeededLoans.length > 0 && (
+                            {/* Alert/Action Section for Officer/PetugasPos - Shipping Receipt Needed - Mobile */}
+                            {(user?.role === 'officer' || user?.role === 'petugas-pos') && shippingReceiptNeededLoans.length > 0 && (
                                 <div className="mb-4">
                                     <div className="bg-indigo-50 rounded-2xl p-4 border border-indigo-100 shadow-sm">
                                         <div className="flex items-center gap-2 mb-3">
@@ -426,10 +434,10 @@ export default function DashboardPage() {
                                             <h3 className="text-xs font-bold text-indigo-900">Perlu Upload Resi ({shippingReceiptNeededLoans.length})</h3>
                                         </div>
                                         <div className="space-y-2">
-                                            {shippingReceiptNeededLoans.slice(0, 3).map((item, idx) => (
+                                            {shippingReceiptNeededLoans.slice(0, 3).map((item) => (
                                                 <div
                                                     key={item.id}
-                                                    onClick={() => router.push(`/pengajuan/${item.id}`)}
+                                                    onClick={() => router.push(getDetailPath(item.id))}
                                                     className="bg-white rounded-xl p-3 border border-indigo-200 shadow-sm active:scale-[0.98] transition-all cursor-pointer"
                                                 >
                                                     <div className="flex items-center justify-between gap-3">
@@ -461,7 +469,7 @@ export default function DashboardPage() {
                                             ))}
                                             {shippingReceiptNeededLoans.length > 3 && (
                                                 <button
-                                                    onClick={() => router.push('/pengajuan')}
+                                                    onClick={() => router.push(user?.role === 'petugas-pos' ? '/fronting' : '/pengajuan')}
                                                     className="w-full py-2 text-[10px] font-bold text-indigo-700 text-center hover:bg-indigo-100 rounded-lg transition-colors"
                                                 >
                                                     Lihat {shippingReceiptNeededLoans.length - 3} lainnya...
@@ -879,6 +887,84 @@ export default function DashboardPage() {
                                     })}
                                 </div>
                             </div>
+
+                            {/* Alert/Action Section for Officer/PetugasPos - Disetujui (Perlu Upload Dokumen) - Desktop */}
+                            {(user?.role === 'officer' || user?.role === 'petugas-pos') && approvalNeededLoans.length > 0 && (
+                                <div>
+                                    <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                                        <FileUp className="h-5 w-5 text-amber-500" />
+                                        ✅ Disetujui Manager — Perlu Upload Dokumen Persetujuan
+                                    </h3>
+                                    <div className="bg-amber-50 rounded-2xl border border-amber-200 shadow-sm overflow-hidden">
+                                        <div className="px-6 py-3 bg-amber-100/60 border-b border-amber-200">
+                                            <p className="text-sm text-amber-800">
+                                                Pengajuan berikut telah <strong>disetujui oleh Manager</strong>. Segera lengkapi upload dokumen persetujuan untuk melanjutkan ke proses selanjutnya.
+                                            </p>
+                                        </div>
+                                        <div className="overflow-x-auto">
+                                            <table className="min-w-full divide-y divide-amber-100">
+                                                <thead className="bg-amber-100/60">
+                                                    <tr>
+                                                        <th className="px-6 py-3 text-left text-xs font-semibold text-amber-700 uppercase tracking-wider">Nama Pemohon</th>
+                                                        <th className="px-6 py-3 text-left text-xs font-semibold text-amber-700 uppercase tracking-wider">Unit</th>
+                                                        <th className="px-6 py-3 text-left text-xs font-semibold text-amber-700 uppercase tracking-wider">Jumlah Pembiayaan</th>
+                                                        <th className="px-6 py-3 text-left text-xs font-semibold text-amber-700 uppercase tracking-wider">Tanggal</th>
+                                                        <th className="px-6 py-3 text-left text-xs font-semibold text-amber-700 uppercase tracking-wider">Status</th>
+                                                        <th className="px-6 py-3 text-left text-xs font-semibold text-amber-700 uppercase tracking-wider">Aksi</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="bg-white divide-y divide-amber-100">
+                                                    {approvalNeededLoans.slice(0, 5).map((item) => (
+                                                        <tr
+                                                            key={item.id}
+                                                            className="hover:bg-amber-50 transition-colors cursor-pointer"
+                                                            onClick={() => router.push(getDetailPath(item.id))}
+                                                        >
+                                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                                <span className="text-sm font-semibold text-slate-900">{item.nama_lengkap}</span>
+                                                            </td>
+                                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                                <span className="text-sm text-slate-600">{item.unit}</span>
+                                                            </td>
+                                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                                <span className="text-sm font-bold text-amber-700">{formatCurrency(Number(item.jumlah_pembiayaan) || 0)}</span>
+                                                            </td>
+                                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                                <span className="text-sm text-slate-500">{new Date(item.created_at).toLocaleDateString('id-ID')}</span>
+                                                            </td>
+                                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
+                                                                    ✅ Disetujui
+                                                                </span>
+                                                            </td>
+                                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                                <button
+                                                                    onClick={(e) => { e.stopPropagation(); router.push(getDetailPath(item.id)); }}
+                                                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-600 text-white text-xs font-medium rounded-lg hover:bg-amber-700 transition-colors"
+                                                                >
+                                                                    <FileUp className="w-3.5 h-3.5" />
+                                                                    Upload Dokumen
+                                                                </button>
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        {approvalNeededLoans.length > 5 && (
+                                            <div className="px-6 py-3 bg-amber-50 border-t border-amber-100">
+                                                <button
+                                                    onClick={() => router.push(user?.role === 'petugas-pos' ? '/fronting' : '/pengajuan')}
+                                                    className="text-sm font-semibold text-amber-700 hover:text-amber-900 flex items-center gap-1"
+                                                >
+                                                    Lihat semua {approvalNeededLoans.length} pengajuan
+                                                    <ChevronRight className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
 
                             {/* Alert/Action Section for Officer - Revisi - Desktop */}
                             {user?.role === 'officer' && revisionNeededLoans.length > 0 && (

@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useMemo, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { FileText, Activity, CheckCircle, XCircle, Wallet, Truck, Flag, AlertCircle, ChevronRight, Edit2 } from 'lucide-react';
+import { FileText, Activity, CheckCircle, XCircle, Wallet, Truck, Flag, AlertCircle, ChevronRight, Edit2, FileUp } from 'lucide-react';
 import { MobileLayoutWrapper } from '@/modules/pengajuan/presentation/components/MobileLayoutWrapper';
 import { usePengajuan } from '@/modules/pengajuan/presentation/usePengajuan';
 import {
@@ -695,6 +695,52 @@ function FrontingPageContent() {
                         </div>
                     )}
 
+                    {/* Disetujui Manager - Perlu Upload Dokumen */}
+                    {!loadingPengajuan && pengajuanList.filter(item => item.status === 'Disetujui').length > 0 && (
+                        <div className="mb-4">
+                            <div className="bg-amber-50 rounded-2xl p-4 border border-amber-200 shadow-sm">
+                                <div className="flex items-center gap-2 mb-2">
+                                    <div className="p-1.5 bg-amber-100 rounded-full animate-pulse">
+                                        <FileUp className="w-4 h-4 text-amber-600" />
+                                    </div>
+                                    <h2 className="text-sm font-bold text-amber-900">
+                                        ✅ Disetujui Manager — Perlu Upload Dokumen ({pengajuanList.filter(item => item.status === 'Disetujui').length})
+                                    </h2>
+                                </div>
+                                <p className="text-[10px] text-amber-700 bg-amber-100 rounded-lg px-3 py-2 mb-3">
+                                    Pengajuan berikut telah <strong>disetujui oleh Manager</strong>. Segera lengkapi upload dokumen persetujuan untuk melanjutkan ke proses selanjutnya.
+                                </p>
+                                <div className="space-y-2">
+                                    {pengajuanList.filter(item => item.status === 'Disetujui').map((item: any) => (
+                                        <div
+                                            key={item.id}
+                                            onClick={() => router.push(`/fronting/detail/${item.id}`)}
+                                            className="bg-white rounded-xl p-3 border border-amber-200 shadow-sm active:scale-[0.98] transition-transform cursor-pointer"
+                                        >
+                                            <div className="flex items-center justify-between gap-3">
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex items-center justify-between gap-2 mb-1">
+                                                        <span className="text-xs font-bold text-slate-800 truncate">{item.nama_lengkap}</span>
+                                                        <span className="px-1.5 py-0.5 rounded text-[8px] font-bold bg-emerald-100 text-emerald-700 whitespace-nowrap border border-emerald-200">✅ Disetujui</span>
+                                                    </div>
+                                                    <p className="text-[9px] text-slate-500 font-medium mb-1">{item.unit}</p>
+                                                    <div className="flex items-center gap-2 text-[10px] text-slate-500">
+                                                        <Activity className="w-3 h-3" />
+                                                        <span>{new Date(item.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                                                        <span>•</span>
+                                                        <FileUp className="w-3 h-3 text-amber-500" />
+                                                        <span className="text-amber-600 font-semibold">Upload Dokumen</span>
+                                                    </div>
+                                                </div>
+                                                <ChevronRight className="w-4 h-4 text-amber-400 shrink-0" />
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                     {/* Dicairkan Items - Show disbursement info */}
                     {!loadingPengajuan && pengajuanList.filter(item => item.status === 'Dicairkan').length > 0 && (
                         <div className="mb-4">
@@ -706,7 +752,7 @@ function FrontingPageContent() {
                                 {pengajuanList.filter(item => item.status === 'Dicairkan').map((item: any) => (
                                     <div
                                         key={item.id}
-                                        onClick={() => router.push(`/pengajuan/${item.id}`)}
+                                        onClick={() => router.push(`/fronting/detail/${item.id}`)}
                                         className="bg-gradient-to-r from-teal-50 to-emerald-50 border border-teal-200 rounded-xl p-3 cursor-pointer active:scale-[0.98] transition-transform shadow-sm"
                                     >
                                         <div className="flex items-center justify-between mb-1.5">
