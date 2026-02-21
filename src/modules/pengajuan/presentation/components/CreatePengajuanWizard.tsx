@@ -100,7 +100,7 @@ const INITIAL_FORM_STATE = {
     jenis_dapem: '', bulan_dapem: '', status_dapem: '', mitra: '',
 
     // Step 2 - Data Diri
-    nik: '', nama_lengkap: '', jenis_kelamin: 'Laki-laki', tempat_lahir: '', tanggal_lahir: '',
+    nik: '', nama_lengkap: '', jenis_kelamin: '', tempat_lahir: '', tanggal_lahir: '',
     usia: '', nomor_telephone: '', nama_ibu_kandung: '', pendidikan_terakhir: '',
     alamat: '', rt: '', rw: '', kode_pos: '', kelurahan: '', kecamatan: '', kabupaten: '', provinsi: '',
 
@@ -615,7 +615,7 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
                         // Data Diri
                         nik: data.nik || '',
                         nama_lengkap: data.nama_lengkap || '',
-                        jenis_kelamin: data.jenis_kelamin || 'Laki-laki',
+                        jenis_kelamin: data.jenis_kelamin || '',
                         tempat_lahir: data.tempat_lahir || '',
                         tanggal_lahir: formattedBirthDate,
                         alamat: data.alamat || '',
