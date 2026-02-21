@@ -7,7 +7,7 @@ import {
     ArrowLeft, User, UserCheck, MapPin, Briefcase, Calendar, FileText, MessageCircle, Phone,
     CreditCard, Upload, XCircle, CheckCircle, Clock, AlertCircle,
     Wallet, Landmark, FolderOpen, Banknote, Camera, Receipt, Eye, ExternalLink,
-    Home, Plus, LayoutGrid, Calculator
+    Home, Plus, LayoutGrid, Calculator, BookOpen
 } from 'lucide-react';
 import { Pengajuan } from '../core/PengajuanEntity';
 import { PengajuanRepositoryImpl } from '../data/PengajuanRepositoryImpl';
@@ -445,6 +445,7 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                         </div>
                         <h1 className="text-emerald-900 text-xl font-bold mb-1">{pengajuan.nama_lengkap}</h1>
                         <p className="text-emerald-700 text-xs">{pengajuan.nik}</p>
+                        {pengajuan.nopen && <p className="text-emerald-600 text-xs">Nopen: {pengajuan.nopen}</p>}
                     </div>
 
                     {/* Rejection Reason Alert - Mobile */}
@@ -766,6 +767,10 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                                         <div className="flex justify-between py-1.5 border-b border-slate-50">
                                             <span className="text-slate-500">NIK</span>
                                             <span className="font-medium text-slate-900">{pengajuan.nik}</span>
+                                        </div>
+                                        <div className="flex justify-between py-1.5 border-b border-slate-50">
+                                            <span className="text-slate-500">Nopen</span>
+                                            <span className="font-medium text-slate-900">{d(pengajuan.nopen)}</span>
                                         </div>
                                         <div className="flex justify-between py-1.5 border-b border-slate-50">
                                             <span className="text-slate-500">Jenis Kelamin</span>
@@ -1303,6 +1308,7 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                             <h1 className="text-2xl sm:text-3xl font-bold">{pengajuan.nama_lengkap}</h1>
                             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-white/70 text-sm">
                                 <span className="flex items-center gap-1.5"><CreditCard className="h-3.5 w-3.5" /> {pengajuan.nik}</span>
+                                {pengajuan.nopen && <span className="flex items-center gap-1.5"><BookOpen className="h-3.5 w-3.5" /> Nopen: {pengajuan.nopen}</span>}
                                 <span className="flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5" /> {new Date(pengajuan.created_at).toLocaleDateString('id-ID', { dateStyle: 'long' })}</span>
                             </div>
                         </div>
@@ -1602,6 +1608,7 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                                 <Section title="Informasi Pribadi" icon={<User className="h-5 w-5 text-indigo-600" />}>
                                     <Field label="Nama Lengkap" value={pengajuan.nama_lengkap} />
                                     <Field label="NIK" value={pengajuan.nik} />
+                                    <Field label="Nopen" value={d(pengajuan.nopen)} />
                                     <Field label="Jenis Kelamin" value={d(pengajuan.jenis_kelamin)} />
                                     <Field label="Tempat Lahir" value={d(pengajuan.tempat_lahir)} />
                                     <Field label="Tanggal Lahir" value={pengajuan.tanggal_lahir ? new Date(pengajuan.tanggal_lahir).toLocaleDateString('id-ID') : '-'} />

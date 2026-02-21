@@ -104,6 +104,12 @@ export interface Pengajuan {
     surat_pernyataan_pemotongan_angsuran_url?: string; // Surat Pernyataan Pemotongan Angsuran
     foto_penandatanganan_url?: string; // Foto Penandatanganan SK/Akad
 
+    // Wilayah kodes (numeric codes for cascade dropdowns)
+    kode_provinsi?: number;
+    kode_kabupaten?: number;
+    kode_kecamatan?: number;
+    kode_kelurahan?: string;
+
     // Location
     latitude?: number;
     longitude?: number;

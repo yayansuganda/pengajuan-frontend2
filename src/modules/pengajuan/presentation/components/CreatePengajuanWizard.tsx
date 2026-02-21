@@ -39,6 +39,9 @@ const EDUCATION_LEVELS = [
     'Profesor'
 ];
 
+// ─── Wilayah types ────────────────────────────────────────────────────────────
+interface WilayahItem { kode: number | string; nama: string; }
+
 // Document upload config - Required documents for pengajuan
 // Other documents (Pengajuan Permohonan, Dokumen Akad, Flagging, Surat Pernyataan Beda Penerima)
 // will be uploaded after approval
@@ -168,6 +171,118 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
 
     // Current status of pengajuan being edited (used to reset to Pending if Revisi)
     const [currentStatus, setCurrentStatus] = useState<string>('');
+
+    // ─── Wilayah dropdown state ────────────────────────────────────────────────
+    const [provinsiList, setProvinsiList]     = useState<WilayahItem[]>([]);
+    const [kabupatenList, setKabupatenList]   = useState<WilayahItem[]>([]);
+    const [kecamatanList, setKecamatanList]   = useState<WilayahItem[]>([]);
+    const [kelurahanList, setKelurahanList]   = useState<WilayahItem[]>([]);
+    const [loadingWilayah, setLoadingWilayah] = useState<{ [k: string]: boolean }>({});
+    // kode values (numbers) selected in each level — drive cascade
+    const [selectedProvinsiKode, setSelectedProvinsiKode]   = useState<number | null>(null);
+    const [selectedKabupatenKode, setSelectedKabupatenKode] = useState<number | null>(null);
+    const [selectedKecamatanKode, setSelectedKecamatanKode] = useState<number | null>(null);
+    const [selectedKelurahanKode, setSelectedKelurahanKode] = useState<string>('');
+
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8081';
+
+    // Fetch provinsi once on mount
+    useEffect(() => {
+        const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+        if (!token) return;
+        setLoadingWilayah(prev => ({ ...prev, provinsi: true }));
+        fetch(`${API_URL}/wilayah/provinsi`, {
+            headers: { Authorization: `Bearer ${token}` },
+        })
+            .then(r => r.json())
+            .then(json => setProvinsiList(json.data ?? []))
+            .catch(err => console.error('fetch provinsi error', err))
+            .finally(() => setLoadingWilayah(prev => ({ ...prev, provinsi: false })));
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+    // Fetch kabupaten when provinsi changes
+    useEffect(() => {
+        if (selectedProvinsiKode === null) { setKabupatenList([]); return; }
+        const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+        if (!token) return;
+        setLoadingWilayah(prev => ({ ...prev, kabupaten: true }));
+        fetch(`${API_URL}/wilayah/kabupaten?provinsi_kode=${selectedProvinsiKode}`, {
+            headers: { Authorization: `Bearer ${token}` },
+        })
+            .then(r => r.json())
+            .then(json => setKabupatenList(json.data ?? []))
+            .catch(err => console.error('fetch kabupaten error', err))
+            .finally(() => setLoadingWilayah(prev => ({ ...prev, kabupaten: false })));
+    }, [selectedProvinsiKode]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    // Fetch kecamatan when kabupaten changes
+    useEffect(() => {
+        if (selectedKabupatenKode === null) { setKecamatanList([]); return; }
+        const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+        if (!token) return;
+        setLoadingWilayah(prev => ({ ...prev, kecamatan: true }));
+        fetch(`${API_URL}/wilayah/kecamatan?kabupaten_kode=${selectedKabupatenKode}`, {
+            headers: { Authorization: `Bearer ${token}` },
+        })
+            .then(r => r.json())
+            .then(json => setKecamatanList(json.data ?? []))
+            .catch(err => console.error('fetch kecamatan error', err))
+            .finally(() => setLoadingWilayah(prev => ({ ...prev, kecamatan: false })));
+    }, [selectedKabupatenKode]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    // Fetch kelurahan when kecamatan changes
+    useEffect(() => {
+        if (selectedKecamatanKode === null) { setKelurahanList([]); return; }
+        const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+        if (!token) return;
+        setLoadingWilayah(prev => ({ ...prev, kelurahan: true }));
+        fetch(`${API_URL}/wilayah/kelurahan?kecamatan_kode=${selectedKecamatanKode}`, {
+            headers: { Authorization: `Bearer ${token}` },
+        })
+            .then(r => r.json())
+            .then(json => setKelurahanList(json.data ?? []))
+            .catch(err => console.error('fetch kelurahan error', err))
+            .finally(() => setLoadingWilayah(prev => ({ ...prev, kelurahan: false })));
+    }, [selectedKecamatanKode]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    // ── Auto-resolve kodes from names (edit mode fallback) ────────────────────
+    // When editing an existing record, formData already has the nama values.
+    // These effects wait until each list is loaded, then look up the matching
+    // kode by name and set it — which in turn triggers the next level's fetch.
+    // This handles both: (a) old records without saved kodes, and
+    // (b) timing races where fetchDetail resolves before the list is ready.
+
+    useEffect(() => {
+        if (!pengajuanId) return;
+        if (selectedProvinsiKode !== null) return; // already set
+        if (!formData.provinsi || !provinsiList.length) return;
+        const found = provinsiList.find(p => p.nama === formData.provinsi);
+        if (found) setSelectedProvinsiKode(found.kode as number);
+    }, [pengajuanId, formData.provinsi, provinsiList]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    useEffect(() => {
+        if (!pengajuanId) return;
+        if (selectedKabupatenKode !== null) return; // already set
+        if (!formData.kabupaten || !kabupatenList.length) return;
+        const found = kabupatenList.find(k => k.nama === formData.kabupaten);
+        if (found) setSelectedKabupatenKode(found.kode as number);
+    }, [pengajuanId, formData.kabupaten, kabupatenList]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    useEffect(() => {
+        if (!pengajuanId) return;
+        if (selectedKecamatanKode !== null) return; // already set
+        if (!formData.kecamatan || !kecamatanList.length) return;
+        const found = kecamatanList.find(k => k.nama === formData.kecamatan);
+        if (found) setSelectedKecamatanKode(found.kode as number);
+    }, [pengajuanId, formData.kecamatan, kecamatanList]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    useEffect(() => {
+        if (!pengajuanId) return;
+        if (selectedKelurahanKode) return; // already set
+        if (!formData.kelurahan || !kelurahanList.length) return;
+        const found = kelurahanList.find(k => k.nama === formData.kelurahan);
+        if (found) setSelectedKelurahanKode(String(found.kode));
+    }, [pengajuanId, formData.kelurahan, kelurahanList]); // eslint-disable-line react-hooks/exhaustive-deps
 
     // Duplicate NIK Check Logic (Triggered on Next Step using dedicated endpoint)
     const checkDuplicateNik = async (): Promise<boolean> => {
@@ -403,6 +518,7 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
                     const fileMappings: Record<string, string> = {
                         upload_ktp_pemohon: data.ktp_url || '',
                         upload_slip_gaji_terakhir: data.slip_gaji_url || '',
+                        upload_sk_pensiun: data.sk_pensiun_url || '',
                         upload_karip_buku_asabri: data.karip_buku_asabri_url || '',
                         upload_surat_permohonan_anggota: (data as any).surat_permohonan_anggota_url || '',
                         upload_pengajuan_permohonan: data.pengajuan_permohonan_url || '',
@@ -506,6 +622,14 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
 
                     // Mark NOPEN data as loaded (editing existing, so show full form)
                     setNopenDataLoaded(true);
+
+                    // ── Eagerly set wilayah kodes from saved data (fast path) ──
+                    // This triggers the cascade fetch effects immediately.
+                    // If kodes are 0/null (old data), the name-based fallback effects below handle it.
+                    if (data.kode_provinsi)  setSelectedProvinsiKode(data.kode_provinsi);
+                    if (data.kode_kabupaten) setSelectedKabupatenKode(data.kode_kabupaten);
+                    if (data.kode_kecamatan) setSelectedKecamatanKode(data.kode_kecamatan);
+                    if (data.kode_kelurahan) setSelectedKelurahanKode(data.kode_kelurahan);
                 }
             } catch (err) {
                 console.error("Failed to fetch detail for edit:", err);
@@ -1532,6 +1656,10 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
                 kabupaten: formData.kabupaten,
                 provinsi: formData.provinsi,
                 kode_pos: formData.kode_pos,
+                kode_provinsi: selectedProvinsiKode ?? 0,
+                kode_kabupaten: selectedKabupatenKode ?? 0,
+                kode_kecamatan: selectedKecamatanKode ?? 0,
+                kode_kelurahan: selectedKelurahanKode,
                 nomor_telephone: formData.nomor_telephone,
                 nama_ibu_kandung: formData.nama_ibu_kandung,
                 pendidikan_terakhir: formData.pendidikan_terakhir,
@@ -1793,11 +1921,147 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
                 {renderInput("RT", "rt", "text", false, "000", true)}
                 {renderInput("RW", "rw", "text", false, "000", true)}
             </div>
-            {renderInput("Kode Pos", "kode_pos", "text", false, "", false)}
-            {renderInput("Desa / Kelurahan", "kelurahan")}
-            {renderInput("Kecamatan", "kecamatan")}
-            {renderInput("Kabupaten / Kota", "kabupaten")}
-            {renderInput("Provinsi", "provinsi")}
+            {/* ─── Wilayah Dependent Dropdowns ──────────────────────────── */}
+            {/* Provinsi */}
+            <div>
+                <label className={labelClasses}>Provinsi <span className="text-red-500">*</span></label>
+                <div className="relative">
+                    <select
+                        name="provinsi"
+                        value={formData.provinsi}
+                        onChange={e => {
+                            const nama = e.target.value;
+                            const item = provinsiList.find(p => p.nama === nama);
+                            setFormData(prev => ({
+                                ...prev,
+                                provinsi: nama,
+                                kabupaten: '',
+                                kecamatan: '',
+                                kelurahan: '',
+                            }));
+                            setSelectedProvinsiKode(item ? (item.kode as number) : null);
+                            setSelectedKabupatenKode(null);
+                            setSelectedKecamatanKode(null);
+                            setSelectedKelurahanKode('');
+                            setKabupatenList([]);
+                            setKecamatanList([]);
+                            setKelurahanList([]);
+                        }}
+                        className={`${inputClasses} ${fieldErrors.provinsi ? 'border-red-500' : ''}`}
+                        disabled={loadingWilayah.provinsi}
+                    >
+                        <option value="">{loadingWilayah.provinsi ? 'Memuat...' : '-- Pilih Provinsi --'}</option>
+                        {provinsiList.map(p => (
+                            <option key={p.kode} value={p.nama}>{p.nama}</option>
+                        ))}
+                    </select>
+                </div>
+                {fieldErrors.provinsi && <p className="mt-1 text-xs text-red-500">{fieldErrors.provinsi}</p>}
+            </div>
+
+            {/* Kabupaten */}
+            <div>
+                <label className={labelClasses}>Kabupaten / Kota <span className="text-red-500">*</span></label>
+                <select
+                    name="kabupaten"
+                    value={formData.kabupaten}
+                    onChange={e => {
+                        const nama = e.target.value;
+                        const item = kabupatenList.find(k => k.nama === nama);
+                        setFormData(prev => ({
+                            ...prev,
+                            kabupaten: nama,
+                            kecamatan: '',
+                            kelurahan: '',
+                        }));
+                        setSelectedKabupatenKode(item ? (item.kode as number) : null);
+                        setSelectedKecamatanKode(null);
+                        setSelectedKelurahanKode('');
+                        setKecamatanList([]);
+                        setKelurahanList([]);
+                    }}
+                    className={`${inputClasses} ${fieldErrors.kabupaten ? 'border-red-500' : ''} ${!selectedProvinsiKode ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                    disabled={!selectedProvinsiKode || loadingWilayah.kabupaten}
+                >
+                    <option value="">
+                        {!selectedProvinsiKode
+                            ? '-- Pilih Provinsi dahulu --'
+                            : loadingWilayah.kabupaten
+                            ? 'Memuat...'
+                            : '-- Pilih Kabupaten/Kota --'}
+                    </option>
+                    {kabupatenList.map(k => (
+                        <option key={k.kode} value={k.nama}>{k.nama}</option>
+                    ))}
+                </select>
+                {fieldErrors.kabupaten && <p className="mt-1 text-xs text-red-500">{fieldErrors.kabupaten}</p>}
+            </div>
+
+            {/* Kecamatan */}
+            <div>
+                <label className={labelClasses}>Kecamatan <span className="text-red-500">*</span></label>
+                <select
+                    name="kecamatan"
+                    value={formData.kecamatan}
+                    onChange={e => {
+                        const nama = e.target.value;
+                        const item = kecamatanList.find(k => k.nama === nama);
+                        setFormData(prev => ({
+                            ...prev,
+                            kecamatan: nama,
+                            kelurahan: '',
+                        }));
+                        setSelectedKecamatanKode(item ? (item.kode as number) : null);
+                        setSelectedKelurahanKode('');
+                        setKelurahanList([]);
+                    }}
+                    className={`${inputClasses} ${fieldErrors.kecamatan ? 'border-red-500' : ''} ${!selectedKabupatenKode ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                    disabled={!selectedKabupatenKode || loadingWilayah.kecamatan}
+                >
+                    <option value="">
+                        {!selectedKabupatenKode
+                            ? '-- Pilih Kabupaten/Kota dahulu --'
+                            : loadingWilayah.kecamatan
+                            ? 'Memuat...'
+                            : '-- Pilih Kecamatan --'}
+                    </option>
+                    {kecamatanList.map(k => (
+                        <option key={k.kode} value={k.nama}>{k.nama}</option>
+                    ))}
+                </select>
+                {fieldErrors.kecamatan && <p className="mt-1 text-xs text-red-500">{fieldErrors.kecamatan}</p>}
+            </div>
+
+            {/* Kelurahan */}
+            <div>
+                <label className={labelClasses}>Desa / Kelurahan <span className="text-red-500">*</span></label>
+                <select
+                    name="kelurahan"
+                    value={formData.kelurahan}
+                    onChange={e => {
+                        setFormData(prev => ({ ...prev, kelurahan: e.target.value }));
+                        const item = kelurahanList.find(k => k.nama === e.target.value);
+                        setSelectedKelurahanKode(item ? String(item.kode) : '');
+                    }}
+                    className={`${inputClasses} ${fieldErrors.kelurahan ? 'border-red-500' : ''} ${!selectedKecamatanKode ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                    disabled={!selectedKecamatanKode || loadingWilayah.kelurahan}
+                >
+                    <option value="">
+                        {!selectedKecamatanKode
+                            ? '-- Pilih Kecamatan dahulu --'
+                            : loadingWilayah.kelurahan
+                            ? 'Memuat...'
+                            : '-- Pilih Desa/Kelurahan --'}
+                    </option>
+                    {kelurahanList.map(k => (
+                        <option key={k.kode} value={k.nama}>{k.nama}</option>
+                    ))}
+                </select>
+                {fieldErrors.kelurahan && <p className="mt-1 text-xs text-red-500">{fieldErrors.kelurahan}</p>}
+            </div>
+
+            {/* Kode Pos */}
+            {renderInput("Kode Pos", "kode_pos", "text", false, "5 digit kode pos", false)}
         </div>
     );
 
