@@ -493,6 +493,62 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                         </div>
                     )}
 
+                    {/* Officer/PetugasPos - Disetujui Manager Banner + Upload Progress - Mobile */}
+                    {(user?.role === 'officer' || user?.role === 'petugas-pos') && pengajuan.status === 'Disetujui' && (
+                        <div className="mb-5 px-2 animate-in fade-in slide-in-from-top-4 duration-500">
+                            <div className="bg-gradient-to-r from-amber-50 to-emerald-50 border-2 border-amber-400 rounded-xl p-5 shadow-lg">
+                                <div className="flex items-start gap-3">
+                                    <div className="flex-shrink-0 mt-0.5">
+                                        <div className="w-8 h-8 bg-amber-500 rounded-full flex items-center justify-center">
+                                            <Upload className="w-5 h-5 text-white" />
+                                        </div>
+                                    </div>
+                                    <div className="flex-1">
+                                        <h3 className="text-base font-bold text-amber-900 mb-1">✅ Disetujui Manager</h3>
+                                        <p className="text-xs text-amber-700 mb-3">Lengkapi upload semua dokumen persetujuan di tab <strong>Dokumen → Persetujuan</strong>, lalu kirim ke Admin Unit untuk verifikasi.</p>
+                                        {/* Upload Progress Checklist */}
+                                        <div className="bg-white/70 rounded-lg p-3 border border-amber-200 space-y-1.5">
+                                            {[
+                                                { label: 'Pengajuan Permohonan', key: 'pengajuan_permohonan_url' },
+                                                { label: 'Dokumen Akad', key: 'dokumen_akad_url' },
+                                                { label: 'Flagging', key: 'flagging_url' },
+                                                { label: 'Surat Pernyataan Beda Penerima', key: 'surat_pernyataan_beda_url' },
+                                                { label: 'Surat Pemotongan Angsuran', key: 'surat_pernyataan_pemotongan_angsuran_url' },
+                                                { label: 'Foto Penandatanganan SK/Akad', key: 'foto_penandatanganan_url' },
+                                            ].map(({ label, key }) => {
+                                                const uploaded = !!(approvalDocs[key as keyof typeof approvalDocs]);
+                                                const isOptional = key === 'foto_penandatanganan_url';
+                                                return (
+                                                    <div key={key} className="flex items-center gap-2">
+                                                        {uploaded ? (
+                                                            <CheckCircle className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                                                        ) : (
+                                                            <div className="w-3.5 h-3.5 rounded-full border-2 border-amber-400 shrink-0" />
+                                                        )}
+                                                        <span className={`text-[10px] ${uploaded ? 'text-emerald-700 font-semibold line-through opacity-70' : 'text-amber-800 font-medium'}`}>
+                                                            {label}{isOptional ? ' (Opsional)' : ' *'}
+                                                        </span>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                        <div className="mt-2 flex items-center justify-between">
+                                            <span className="text-[10px] text-amber-600">
+                                                {[approvalDocs.pengajuan_permohonan_url, approvalDocs.dokumen_akad_url, approvalDocs.flagging_url, approvalDocs.surat_pernyataan_beda_url, approvalDocs.surat_pernyataan_pemotongan_angsuran_url].filter(Boolean).length} / 5 dokumen wajib selesai
+                                            </span>
+                                            <button
+                                                onClick={() => { setActiveTab('dokumen'); setActiveDocTab('persetujuan'); }}
+                                                className="text-[10px] font-bold text-amber-700 bg-amber-100 px-2 py-1 rounded-lg border border-amber-300"
+                                            >
+                                                Buka Tab Dokumen →
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                     {/* Manager - Menunggu Approval Banner - Mobile */}
                     {user?.role === 'manager' && pengajuan.status === 'Menunggu Approval Manager' && (
                         <div className="mb-5 px-2 animate-in fade-in slide-in-from-top-4 duration-500">
@@ -1117,11 +1173,12 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                                     </button>
                                 </>
                             )}
-                            {user?.role === 'officer' && pengajuan.status === 'Disetujui' && isAllApprovalDocsUploaded() && (
+                            {(user?.role === 'officer' || user?.role === 'petugas-pos') && pengajuan.status === 'Disetujui' && isAllApprovalDocsUploaded() && (
                                 <button
-                                    onClick={() => handleUpdateStatus('Menunggu Verifikasi Admin Unit', 'Kirim Admin Unit?')}
-                                    className="flex-1 px-4 py-3 bg-purple-600 text-white text-sm font-medium rounded-xl hover:bg-purple-700 transition-colors shadow-lg"
+                                    onClick={() => handleUpdateStatus('Menunggu Verifikasi Admin Unit', 'Kirim ke Admin Unit untuk verifikasi dokumen?')}
+                                    className="flex-1 px-4 py-3 bg-purple-600 text-white text-sm font-medium rounded-xl hover:bg-purple-700 transition-colors shadow-lg flex items-center justify-center gap-2"
                                 >
+                                    <CheckCircle className="w-4 h-4" />
                                     Kirim ke Admin Unit
                                 </button>
                             )}
@@ -1151,12 +1208,18 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                             )}
                         </div>
 
-                        {/* Info Message for Officer */}
-                        {user?.role === 'officer' && pengajuan.status === 'Disetujui' && !isAllApprovalDocsUploaded() && (
+                        {/* Info Message for Officer/PetugasPos - Pending Upload */}
+                        {(user?.role === 'officer' || user?.role === 'petugas-pos') && pengajuan.status === 'Disetujui' && !isAllApprovalDocsUploaded() && (
                             <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-xl">
-                                <p className="text-xs text-amber-800 text-center">
-                                    📄 Upload semua dokumen persetujuan untuk melanjutkan ke Admin Unit
+                                <p className="text-xs text-amber-800 text-center font-medium">
+                                    📄 Upload semua dokumen persetujuan terlebih dahulu untuk dapat mengirim ke Admin Unit
                                 </p>
+                                <button
+                                    onClick={() => { setActiveTab('dokumen'); setActiveDocTab('persetujuan'); }}
+                                    className="mt-2 w-full py-1.5 text-xs font-bold text-amber-700 bg-amber-100 rounded-lg border border-amber-300 hover:bg-amber-200 transition-colors"
+                                >
+                                    Buka Tab Dokumen Persetujuan
+                                </button>
                             </div>
                         )}
 
@@ -1292,6 +1355,62 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                                     </div>
                                 </div>
                                 <p className="text-sm text-blue-700">Tinjau seluruh detail pengajuan lalu berikan keputusan persetujuan atau penolakan di bagian bawah halaman.</p>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Officer/PetugasPos - Disetujui Manager Banner + Upload Progress - Desktop */}
+                {(user?.role === 'officer' || user?.role === 'petugas-pos') && pengajuan.status === 'Disetujui' && (
+                    <div className="bg-gradient-to-r from-amber-50 to-emerald-50 border-2 border-amber-400 rounded-2xl p-6 shadow-lg animate-in fade-in slide-in-from-top-4 duration-500">
+                        <div className="flex items-start gap-5">
+                            <div className="flex-shrink-0">
+                                <div className="w-14 h-14 bg-amber-500 rounded-full flex items-center justify-center shadow-lg">
+                                    <Upload className="w-8 h-8 text-white" />
+                                </div>
+                            </div>
+                            <div className="flex-1">
+                                <h3 className="text-xl font-bold text-amber-900 mb-2">✅ Disetujui Manager — Lengkapi Dokumen Persetujuan</h3>
+                                <p className="text-sm text-amber-700 mb-4">Pengajuan ini telah disetujui oleh Manager. Upload semua dokumen persetujuan di tab <strong>Dokumen → Persetujuan</strong>, kemudian klik <strong>Kirim ke Admin Unit</strong> untuk melanjutkan proses verifikasi.</p>
+                                {/* Upload Progress Checklist - Desktop Grid */}
+                                <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 mb-4">
+                                    {[
+                                        { label: 'Pengajuan Permohonan', key: 'pengajuan_permohonan_url' },
+                                        { label: 'Dokumen Akad', key: 'dokumen_akad_url' },
+                                        { label: 'Flagging', key: 'flagging_url' },
+                                        { label: 'Surat Pernyataan Beda Penerima', key: 'surat_pernyataan_beda_url' },
+                                        { label: 'Surat Pemotongan Angsuran', key: 'surat_pernyataan_pemotongan_angsuran_url' },
+                                        { label: 'Foto Penandatanganan SK/Akad', key: 'foto_penandatanganan_url' },
+                                    ].map(({ label, key }) => {
+                                        const uploaded = !!(approvalDocs[key as keyof typeof approvalDocs]);
+                                        const isOptional = key === 'foto_penandatanganan_url';
+                                        return (
+                                            <div key={key} className={`flex items-center gap-2 p-2.5 rounded-lg border ${uploaded ? 'bg-emerald-50 border-emerald-200' : 'bg-white/70 border-amber-200'}`}>
+                                                {uploaded ? (
+                                                    <CheckCircle className="w-4 h-4 text-emerald-500 shrink-0" />
+                                                ) : (
+                                                    <div className="w-4 h-4 rounded-full border-2 border-amber-400 shrink-0" />
+                                                )}
+                                                <span className={`text-xs font-medium ${uploaded ? 'text-emerald-700 line-through opacity-70' : 'text-amber-800'}`}>
+                                                    {label}{isOptional ? ' (Opsional)' : ' *'}
+                                                </span>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                                <div className="flex items-center justify-between">
+                                    <span className="text-sm font-semibold text-amber-700">
+                                        {[approvalDocs.pengajuan_permohonan_url, approvalDocs.dokumen_akad_url, approvalDocs.flagging_url, approvalDocs.surat_pernyataan_beda_url, approvalDocs.surat_pernyataan_pemotongan_angsuran_url].filter(Boolean).length} / 5 dokumen wajib selesai
+                                    </span>
+                                    {!isAllApprovalDocsUploaded() && (
+                                        <button
+                                            onClick={() => { setActiveTab('dokumen'); setActiveDocTab('persetujuan'); }}
+                                            className="text-sm font-bold text-amber-700 bg-amber-100 px-3 py-1.5 rounded-lg border border-amber-300 hover:bg-amber-200 transition-colors"
+                                        >
+                                            Buka Tab Dokumen →
+                                        </button>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1728,11 +1847,12 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                             </button>
                         </>
                     )}
-                    {user?.role === 'officer' && pengajuan.status === 'Disetujui' && isAllApprovalDocsUploaded() && (
+                    {(user?.role === 'officer' || user?.role === 'petugas-pos') && pengajuan.status === 'Disetujui' && isAllApprovalDocsUploaded() && (
                         <button
-                            onClick={() => handleUpdateStatus('Menunggu Verifikasi Admin Unit', 'Kirim Admin Unit?')}
-                            className="px-6 py-2.5 bg-purple-600 text-white text-sm font-medium rounded-xl hover:bg-purple-700 transition-colors shadow-sm"
+                            onClick={() => handleUpdateStatus('Menunggu Verifikasi Admin Unit', 'Kirim ke Admin Unit untuk verifikasi dokumen?')}
+                            className="px-6 py-2.5 bg-purple-600 text-white text-sm font-medium rounded-xl hover:bg-purple-700 transition-colors shadow-sm flex items-center gap-2"
                         >
+                            <CheckCircle className="w-4 h-4" />
                             Kirim ke Admin Unit
                         </button>
                     )}
