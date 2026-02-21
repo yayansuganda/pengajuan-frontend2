@@ -2,7 +2,7 @@
 
 import { useAuth } from '@/modules/auth/presentation/useAuth';
 import { usePengajuan } from '@/modules/pengajuan/presentation/usePengajuan';
-import { FileText, CheckCircle, XCircle, Activity, MapPin, Trophy, Medal, Award, Filter, Wallet, Truck, Flag, AlertCircle, ArrowRight, ChevronRight, FileUp } from 'lucide-react';
+import { FileText, CheckCircle, XCircle, Activity, MapPin, Trophy, Medal, Award, Filter, Wallet, Truck, Flag, AlertCircle, ArrowRight, ChevronRight, FileUp, Search, Edit2 } from 'lucide-react';
 import { MobileLayoutWrapper } from '@/modules/pengajuan/presentation/components/MobileLayoutWrapper';
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -49,6 +49,12 @@ export default function DashboardPage() {
         return filtered;
     }, [pengajuanList, selectedUnit, dateRange]);
 
+    // Officer specific: Loans needing revision
+    const revisionNeededLoans = useMemo(() => {
+        if (user?.role !== 'officer') return [];
+        return pengajuanList.filter(item => item.status === 'Revisi');
+    }, [pengajuanList, user]);
+
     // Officer specific: Loans needing approval documents
     const approvalNeededLoans = useMemo(() => {
         if (user?.role !== 'officer') return [];
@@ -71,6 +77,18 @@ export default function DashboardPage() {
     const disbursementNeededLoans = useMemo(() => {
         if (user?.role !== 'admin-pusat') return [];
         return pengajuanList.filter(item => item.status === 'Menunggu Pencairan');
+    }, [pengajuanList, user]);
+
+    // Manager specific: Loans needing approval
+    const managerApprovalLoans = useMemo(() => {
+        if (user?.role !== 'manager') return [];
+        return pengajuanList.filter(item => item.status === 'Menunggu Approval Manager');
+    }, [pengajuanList, user]);
+
+    // Verifier specific: Loans needing verification
+    const verifierPendingLoans = useMemo(() => {
+        if (user?.role !== 'verifier') return [];
+        return pengajuanList.filter(item => item.status === 'Pending' || item.status === 'Revisi');
     }, [pengajuanList, user]);
 
     // Helper to format currency
@@ -283,6 +301,63 @@ export default function DashboardPage() {
                                 </div>
                             </div>
 
+                            {/* Alert/Action Section for Officer - Revisi - Mobile */}
+                            {user?.role === 'officer' && revisionNeededLoans.length > 0 && (
+                                <div className="mb-4">
+                                    <div className="bg-rose-50 rounded-2xl p-4 border border-rose-100 shadow-sm">
+                                        <div className="flex items-center gap-2 mb-3">
+                                            <div className="p-1.5 bg-rose-100 rounded-full animate-pulse">
+                                                <Edit2 className="w-4 h-4 text-rose-600" />
+                                            </div>
+                                            <h3 className="text-xs font-bold text-rose-900">Perlu Direvisi ({revisionNeededLoans.length})</h3>
+                                        </div>
+                                        <div className="space-y-2">
+                                            {revisionNeededLoans.slice(0, 3).map((item) => (
+                                                <div
+                                                    key={item.id}
+                                                    onClick={() => router.push(`/pengajuan/${item.id}`)}
+                                                    className="bg-white rounded-xl p-3 border border-rose-200 shadow-sm active:scale-[0.98] transition-all cursor-pointer"
+                                                >
+                                                    <div className="flex items-center justify-between gap-3">
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="mb-1">
+                                                                <div className="flex items-center justify-between gap-2">
+                                                                    <span className="text-[10px] font-bold text-slate-800 truncate">{item.nama_lengkap}</span>
+                                                                    <span className="px-1.5 py-0.5 rounded text-[8px] font-bold bg-rose-100 text-rose-700 whitespace-nowrap">
+                                                                        Revisi
+                                                                    </span>
+                                                                </div>
+                                                                <p className="text-[9px] text-slate-500 font-medium">{item.unit}</p>
+                                                            </div>
+                                                            <div className="flex items-center gap-2 text-[10px] text-slate-500">
+                                                                <div className="flex items-center gap-1">
+                                                                    <Activity className="w-3 h-3" />
+                                                                    {new Date(item.created_at).toLocaleDateString()}
+                                                                </div>
+                                                                <span>•</span>
+                                                                <div className="flex items-center gap-1">
+                                                                    <Edit2 className="w-3 h-3 text-rose-500" />
+                                                                    <span className="text-rose-600 font-medium">Perbaiki Data</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <ChevronRight className="w-4 h-4 text-rose-400" />
+                                                    </div>
+                                                </div>
+                                            ))}
+                                            {revisionNeededLoans.length > 3 && (
+                                                <button
+                                                    onClick={() => router.push('/pengajuan')}
+                                                    className="w-full py-2 text-[10px] font-bold text-rose-700 text-center hover:bg-rose-100 rounded-lg transition-colors"
+                                                >
+                                                    Lihat {revisionNeededLoans.length - 3} lainnya...
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
                             {/* Alert/Action Section for Officer - Mobile */}
                             {user?.role === 'officer' && approvalNeededLoans.length > 0 && (
                                 <div className="mb-4">
@@ -447,6 +522,124 @@ export default function DashboardPage() {
                                                     className="w-full py-2 text-[10px] font-bold text-orange-700 text-center hover:bg-orange-100 rounded-lg transition-colors"
                                                 >
                                                     Lihat {verificationNeededLoans.length - 3} lainnya...
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Alert/Action Section for Manager - Mobile */}
+                            {user?.role === 'manager' && managerApprovalLoans.length > 0 && (
+                                <div className="mb-4">
+                                    <div className="bg-blue-50 rounded-2xl p-4 border border-blue-100 shadow-sm">
+                                        <div className="flex items-center gap-2 mb-3">
+                                            <div className="p-1.5 bg-blue-100 rounded-full animate-pulse">
+                                                <CheckCircle className="w-4 h-4 text-blue-600" />
+                                            </div>
+                                            <h3 className="text-xs font-bold text-blue-900">Menunggu Approval ({managerApprovalLoans.length})</h3>
+                                        </div>
+                                        <div className="space-y-2">
+                                            {managerApprovalLoans.slice(0, 3).map((item) => (
+                                                <div
+                                                    key={item.id}
+                                                    onClick={() => router.push(`/pengajuan/${item.id}`)}
+                                                    className="bg-white rounded-xl p-3 border border-blue-200 shadow-sm active:scale-[0.98] transition-all cursor-pointer"
+                                                >
+                                                    <div className="flex items-center justify-between gap-3">
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="mb-1">
+                                                                <div className="flex items-center justify-between gap-2">
+                                                                    <span className="text-[10px] font-bold text-slate-800 truncate">{item.nama_lengkap}</span>
+                                                                    <span className="px-1.5 py-0.5 rounded text-[8px] font-bold bg-blue-100 text-blue-700 whitespace-nowrap">
+                                                                        Menunggu Approval
+                                                                    </span>
+                                                                </div>
+                                                                <p className="text-[9px] text-slate-500 font-medium">{item.unit}</p>
+                                                            </div>
+                                                            <div className="flex items-center gap-2 text-[10px] text-slate-500">
+                                                                <div className="flex items-center gap-1">
+                                                                    <Activity className="w-3 h-3" />
+                                                                    {new Date(item.created_at).toLocaleDateString()}
+                                                                </div>
+                                                                <span>•</span>
+                                                                <div className="flex items-center gap-1">
+                                                                    <CheckCircle className="w-3 h-3 text-blue-500" />
+                                                                    <span className="text-blue-600 font-medium">Setujui / Tolak</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <ChevronRight className="w-4 h-4 text-blue-400" />
+                                                    </div>
+                                                </div>
+                                            ))}
+                                            {managerApprovalLoans.length > 3 && (
+                                                <button
+                                                    onClick={() => router.push('/pengajuan')}
+                                                    className="w-full py-2 text-[10px] font-bold text-blue-700 text-center hover:bg-blue-100 rounded-lg transition-colors"
+                                                >
+                                                    Lihat {managerApprovalLoans.length - 3} lainnya...
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Alert/Action Section for Verifier - Mobile */}
+                            {user?.role === 'verifier' && verifierPendingLoans.length > 0 && (
+                                <div className="mb-4">
+                                    <div className="bg-teal-50 rounded-2xl p-4 border border-teal-100 shadow-sm">
+                                        <div className="flex items-center gap-2 mb-3">
+                                            <div className="p-1.5 bg-teal-100 rounded-full animate-pulse">
+                                                <Search className="w-4 h-4 text-teal-600" />
+                                            </div>
+                                            <h3 className="text-xs font-bold text-teal-900">Perlu Diverifikasi ({verifierPendingLoans.length})</h3>
+                                        </div>
+                                        <div className="space-y-2">
+                                            {verifierPendingLoans.slice(0, 3).map((item) => (
+                                                <div
+                                                    key={item.id}
+                                                    onClick={() => router.push(`/pengajuan/${item.id}`)}
+                                                    className="bg-white rounded-xl p-3 border border-teal-200 shadow-sm active:scale-[0.98] transition-all cursor-pointer"
+                                                >
+                                                    <div className="flex items-center justify-between gap-3">
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="mb-1">
+                                                                <div className="flex items-center justify-between gap-2">
+                                                                    <span className="text-[10px] font-bold text-slate-800 truncate">{item.nama_lengkap}</span>
+                                                                    <span className={`px-1.5 py-0.5 rounded text-[8px] font-bold whitespace-nowrap ${
+                                                                        item.status === 'Revisi'
+                                                                            ? 'bg-amber-100 text-amber-700'
+                                                                            : 'bg-slate-100 text-slate-700'
+                                                                    }`}>
+                                                                        {item.status}
+                                                                    </span>
+                                                                </div>
+                                                                <p className="text-[9px] text-slate-500 font-medium">{item.unit}</p>
+                                                            </div>
+                                                            <div className="flex items-center gap-2 text-[10px] text-slate-500">
+                                                                <div className="flex items-center gap-1">
+                                                                    <Activity className="w-3 h-3" />
+                                                                    {new Date(item.created_at).toLocaleDateString()}
+                                                                </div>
+                                                                <span>•</span>
+                                                                <div className="flex items-center gap-1">
+                                                                    <Search className="w-3 h-3 text-teal-500" />
+                                                                    <span className="text-teal-600 font-medium">Verifikasi</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <ChevronRight className="w-4 h-4 text-teal-400" />
+                                                    </div>
+                                                </div>
+                                            ))}
+                                            {verifierPendingLoans.length > 3 && (
+                                                <button
+                                                    onClick={() => router.push('/pengajuan')}
+                                                    className="w-full py-2 text-[10px] font-bold text-teal-700 text-center hover:bg-teal-100 rounded-lg transition-colors"
+                                                >
+                                                    Lihat {verifierPendingLoans.length - 3} lainnya...
                                                 </button>
                                             )}
                                         </div>
@@ -686,6 +879,213 @@ export default function DashboardPage() {
                                     })}
                                 </div>
                             </div>
+
+                            {/* Alert/Action Section for Officer - Revisi - Desktop */}
+                            {user?.role === 'officer' && revisionNeededLoans.length > 0 && (
+                                <div>
+                                    <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                                        <Edit2 className="h-5 w-5 text-rose-500" />
+                                        Perlu Direvisi
+                                    </h3>
+                                    <div className="bg-rose-50 rounded-2xl border border-rose-100 shadow-sm overflow-hidden">
+                                        <div className="overflow-x-auto">
+                                            <table className="min-w-full divide-y divide-rose-100">
+                                                <thead className="bg-rose-100/60">
+                                                    <tr>
+                                                        <th className="px-6 py-3 text-left text-xs font-semibold text-rose-700 uppercase tracking-wider">Nama</th>
+                                                        <th className="px-6 py-3 text-left text-xs font-semibold text-rose-700 uppercase tracking-wider">Unit</th>
+                                                        <th className="px-6 py-3 text-left text-xs font-semibold text-rose-700 uppercase tracking-wider">Nominal</th>
+                                                        <th className="px-6 py-3 text-left text-xs font-semibold text-rose-700 uppercase tracking-wider">Tanggal</th>
+                                                        <th className="px-6 py-3 text-left text-xs font-semibold text-rose-700 uppercase tracking-wider">Aksi</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="bg-white divide-y divide-rose-100">
+                                                    {revisionNeededLoans.slice(0, 5).map((item) => (
+                                                        <tr
+                                                            key={item.id}
+                                                            className="hover:bg-rose-50 transition-colors cursor-pointer"
+                                                            onClick={() => router.push(`/pengajuan/${item.id}`)}
+                                                        >
+                                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                                <span className="text-sm font-semibold text-slate-900">{item.nama_lengkap}</span>
+                                                            </td>
+                                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                                <span className="text-sm text-slate-600">{item.unit}</span>
+                                                            </td>
+                                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                                <span className="text-sm font-bold text-rose-700">{formatCurrency(Number(item.jumlah_pembiayaan) || 0)}</span>
+                                                            </td>
+                                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                                <span className="text-sm text-slate-500">{new Date(item.created_at).toLocaleDateString('id-ID')}</span>
+                                                            </td>
+                                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                                <button
+                                                                    onClick={(e) => { e.stopPropagation(); router.push(`/pengajuan/${item.id}`); }}
+                                                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-rose-600 text-white text-xs font-medium rounded-lg hover:bg-rose-700 transition-colors"
+                                                                >
+                                                                    <Edit2 className="w-3.5 h-3.5" />
+                                                                    Perbaiki
+                                                                </button>
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        {revisionNeededLoans.length > 5 && (
+                                            <div className="px-6 py-3 bg-rose-50 border-t border-rose-100">
+                                                <button
+                                                    onClick={() => router.push('/pengajuan')}
+                                                    className="text-sm font-semibold text-rose-700 hover:text-rose-900 flex items-center gap-1"
+                                                >
+                                                    Lihat semua {revisionNeededLoans.length} pengajuan
+                                                    <ChevronRight className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Alert/Action Section for Manager - Desktop */}
+                            {user?.role === 'manager' && managerApprovalLoans.length > 0 && (
+                                <div>
+                                    <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                                        <CheckCircle className="h-5 w-5 text-blue-500" />
+                                        Menunggu Approval Manager
+                                    </h3>
+                                    <div className="bg-blue-50 rounded-2xl border border-blue-100 shadow-sm overflow-hidden">
+                                        <div className="overflow-x-auto">
+                                            <table className="min-w-full divide-y divide-blue-100">
+                                                <thead className="bg-blue-100/60">
+                                                    <tr>
+                                                        <th className="px-6 py-3 text-left text-xs font-semibold text-blue-700 uppercase tracking-wider">Nama</th>
+                                                        <th className="px-6 py-3 text-left text-xs font-semibold text-blue-700 uppercase tracking-wider">Unit</th>
+                                                        <th className="px-6 py-3 text-left text-xs font-semibold text-blue-700 uppercase tracking-wider">Jumlah Pembiayaan</th>
+                                                        <th className="px-6 py-3 text-left text-xs font-semibold text-blue-700 uppercase tracking-wider">Tanggal</th>
+                                                        <th className="px-6 py-3 text-left text-xs font-semibold text-blue-700 uppercase tracking-wider">Aksi</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="bg-white divide-y divide-blue-100">
+                                                    {managerApprovalLoans.slice(0, 5).map((item) => (
+                                                        <tr
+                                                            key={item.id}
+                                                            className="hover:bg-blue-50 transition-colors cursor-pointer"
+                                                            onClick={() => router.push(`/pengajuan/${item.id}`)}
+                                                        >
+                                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                                <span className="text-sm font-semibold text-slate-900">{item.nama_lengkap}</span>
+                                                            </td>
+                                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                                <span className="text-sm text-slate-600">{item.unit}</span>
+                                                            </td>
+                                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                                <span className="text-sm font-bold text-blue-700">{formatCurrency(Number(item.jumlah_pembiayaan) || 0)}</span>
+                                                            </td>
+                                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                                <span className="text-sm text-slate-500">{new Date(item.created_at).toLocaleDateString('id-ID')}</span>
+                                                            </td>
+                                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                                <button
+                                                                    onClick={(e) => { e.stopPropagation(); router.push(`/pengajuan/${item.id}`); }}
+                                                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                                                                >
+                                                                    <CheckCircle className="w-3.5 h-3.5" />
+                                                                    Review
+                                                                </button>
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        {managerApprovalLoans.length > 5 && (
+                                            <div className="px-6 py-3 bg-blue-50 border-t border-blue-100">
+                                                <button
+                                                    onClick={() => router.push('/pengajuan')}
+                                                    className="text-sm font-semibold text-blue-700 hover:text-blue-900 flex items-center gap-1"
+                                                >
+                                                    Lihat semua {managerApprovalLoans.length} pengajuan
+                                                    <ChevronRight className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Alert/Action Section for Verifier - Desktop */}
+                            {user?.role === 'verifier' && verifierPendingLoans.length > 0 && (
+                                <div>
+                                    <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                                        <Search className="h-5 w-5 text-teal-500" />
+                                        Perlu Diverifikasi
+                                    </h3>
+                                    <div className="bg-teal-50 rounded-2xl border border-teal-100 shadow-sm overflow-hidden">
+                                        <div className="overflow-x-auto">
+                                            <table className="min-w-full divide-y divide-teal-100">
+                                                <thead className="bg-teal-100/60">
+                                                    <tr>
+                                                        <th className="px-6 py-3 text-left text-xs font-semibold text-teal-700 uppercase tracking-wider">Nama</th>
+                                                        <th className="px-6 py-3 text-left text-xs font-semibold text-teal-700 uppercase tracking-wider">Unit</th>
+                                                        <th className="px-6 py-3 text-left text-xs font-semibold text-teal-700 uppercase tracking-wider">Status</th>
+                                                        <th className="px-6 py-3 text-left text-xs font-semibold text-teal-700 uppercase tracking-wider">Tanggal</th>
+                                                        <th className="px-6 py-3 text-left text-xs font-semibold text-teal-700 uppercase tracking-wider">Aksi</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="bg-white divide-y divide-teal-100">
+                                                    {verifierPendingLoans.slice(0, 5).map((item) => (
+                                                        <tr
+                                                            key={item.id}
+                                                            className="hover:bg-teal-50 transition-colors cursor-pointer"
+                                                            onClick={() => router.push(`/pengajuan/${item.id}`)}
+                                                        >
+                                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                                <span className="text-sm font-semibold text-slate-900">{item.nama_lengkap}</span>
+                                                            </td>
+                                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                                <span className="text-sm text-slate-600">{item.unit}</span>
+                                                            </td>
+                                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                                                    item.status === 'Revisi'
+                                                                        ? 'bg-amber-100 text-amber-800'
+                                                                        : 'bg-slate-100 text-slate-800'
+                                                                }`}>
+                                                                    {item.status}
+                                                                </span>
+                                                            </td>
+                                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                                <span className="text-sm text-slate-500">{new Date(item.created_at).toLocaleDateString('id-ID')}</span>
+                                                            </td>
+                                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                                <button
+                                                                    onClick={(e) => { e.stopPropagation(); router.push(`/pengajuan/${item.id}`); }}
+                                                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-teal-600 text-white text-xs font-medium rounded-lg hover:bg-teal-700 transition-colors"
+                                                                >
+                                                                    <Search className="w-3.5 h-3.5" />
+                                                                    Verifikasi
+                                                                </button>
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        {verifierPendingLoans.length > 5 && (
+                                            <div className="px-6 py-3 bg-teal-50 border-t border-teal-100">
+                                                <button
+                                                    onClick={() => router.push('/pengajuan')}
+                                                    className="text-sm font-semibold text-teal-700 hover:text-teal-900 flex items-center gap-1"
+                                                >
+                                                    Lihat semua {verifierPendingLoans.length} pengajuan
+                                                    <ChevronRight className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
 
                             {/* Top Regions - Desktop */}
                             <div>

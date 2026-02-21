@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, Search, Calendar, FileText, ChevronRight, Briefcase, History, RefreshCw, Circle, CheckCircle, XCircle, Clock, ArrowRight } from 'lucide-react';
+import { Plus, Search, Calendar, FileText, ChevronRight, Briefcase, History, RefreshCw, Circle, CheckCircle, XCircle, Clock, ArrowRight, AlertCircle, Wallet, Truck, FileUp } from 'lucide-react';
 import { Pengajuan, PengajuanFilter } from '../core/PengajuanEntity';
 import { PengajuanRepositoryImpl } from '../data/PengajuanRepositoryImpl';
 import { useAuth } from '@/modules/auth/presentation/useAuth';
@@ -69,6 +69,29 @@ const formatDate = (dateString: string) => {
         month: 'short',
         year: 'numeric'
     });
+};
+
+// Action banner helper - returns info about what action the current user needs to take
+const getActionInfo = (status: string, role: string): { label: string; color: string; icon: React.ElementType } | null => {
+    if (role === 'verifier' && (status === 'Pending' || status === 'Revisi')) {
+        return { label: 'Perlu Diverifikasi', color: 'bg-teal-50 border-teal-200 text-teal-700', icon: Search };
+    }
+    if (role === 'manager' && status === 'Menunggu Approval Manager') {
+        return { label: 'Perlu Diapprove', color: 'bg-blue-50 border-blue-200 text-blue-700', icon: CheckCircle };
+    }
+    if (role === 'officer' && status === 'Disetujui') {
+        return { label: 'Perlu Upload Dokumen', color: 'bg-amber-50 border-amber-200 text-amber-700', icon: FileUp };
+    }
+    if ((role === 'officer' || role === 'petugas-pos') && status === 'Dicairkan') {
+        return { label: 'Perlu Upload Resi', color: 'bg-indigo-50 border-indigo-200 text-indigo-700', icon: Truck };
+    }
+    if (role === 'admin-unit' && status === 'Menunggu Verifikasi Admin Unit') {
+        return { label: 'Perlu Verifikasi', color: 'bg-orange-50 border-orange-200 text-orange-700', icon: AlertCircle };
+    }
+    if (role === 'admin-pusat' && status === 'Menunggu Pencairan') {
+        return { label: 'Perlu Pencairan', color: 'bg-purple-50 border-purple-200 text-purple-700', icon: Wallet };
+    }
+    return null;
 };
 
 // Timeline helpers - Sesuai dengan role yang memproses
@@ -276,6 +299,22 @@ const MobileView = ({ data, search, setSearch, statusFilter, setStatusFilter, da
                                 </div>
                             )}
 
+                            {/* Action Banner for current user role */}
+                            {(() => {
+                                const action = getActionInfo(item.status, user?.role || '');
+                                if (!action) return null;
+                                const ActionIcon = action.icon;
+                                return (
+                                    <div className={`mb-2.5 flex items-center gap-2 border rounded-lg px-3 py-2 ${action.color}`}>
+                                        <div className="p-0.5 rounded-full bg-current/10 animate-pulse shrink-0">
+                                            <ActionIcon className="w-3 h-3" />
+                                        </div>
+                                        <span className="text-[10px] font-bold">{action.label}</span>
+                                        <ChevronRight className="w-3 h-3 ml-auto opacity-60" />
+                                    </div>
+                                );
+                            })()}
+
                             {/* Horizontal Timeline */}
                             <div className="pt-2.5 border-t border-slate-100">
                                 <div className="flex items-center justify-between gap-1">
@@ -443,6 +482,17 @@ const DesktopView = ({ data, search, setSearch, statusFilter, setStatusFilter, d
                                                 <span className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${getStatusColor(item.status).replace('border', '')}`}>
                                                     {item.status}
                                                 </span>
+                                                {(() => {
+                                                    const action = getActionInfo(item.status, user?.role || '');
+                                                    if (!action) return null;
+                                                    const ActionIcon = action.icon;
+                                                    return (
+                                                        <div className={`mt-1 inline-flex items-center gap-1 border rounded-full px-2 py-0.5 ${action.color}`}>
+                                                            <ActionIcon className="w-2.5 h-2.5" />
+                                                            <span className="text-[10px] font-bold whitespace-nowrap">{action.label}</span>
+                                                        </div>
+                                                    );
+                                                })()}
                                             </td>
                                             <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
                                                 <span className="text-indigo-600 hover:text-indigo-900">Detail</span>

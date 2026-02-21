@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useMemo, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { FileText, Activity, CheckCircle, XCircle, Wallet, Truck, Flag } from 'lucide-react';
+import { FileText, Activity, CheckCircle, XCircle, Wallet, Truck, Flag, AlertCircle, ChevronRight, Edit2 } from 'lucide-react';
 import { MobileLayoutWrapper } from '@/modules/pengajuan/presentation/components/MobileLayoutWrapper';
 import { usePengajuan } from '@/modules/pengajuan/presentation/usePengajuan';
 import {
@@ -652,6 +652,48 @@ function FrontingPageContent() {
                             })}
                         </div>
                     </div>
+
+                    {/* Revisi Items - Show items needing revision by petugas-pos */}
+                    {!loadingPengajuan && pengajuanList.filter(item => item.status === 'Revisi').length > 0 && (
+                        <div className="mb-4">
+                            <div className="bg-rose-50 rounded-2xl p-4 border border-rose-200 shadow-sm">
+                                <div className="flex items-center gap-2 mb-3">
+                                    <div className="p-1.5 bg-rose-100 rounded-full animate-pulse">
+                                        <Edit2 className="w-4 h-4 text-rose-600" />
+                                    </div>
+                                    <h2 className="text-sm font-bold text-rose-900">
+                                        Perlu Direvisi ({pengajuanList.filter(item => item.status === 'Revisi').length})
+                                    </h2>
+                                </div>
+                                <div className="space-y-2">
+                                    {pengajuanList.filter(item => item.status === 'Revisi').map((item: any) => (
+                                        <div
+                                            key={item.id}
+                                            onClick={() => router.push(`/fronting/detail/${item.id}`)}
+                                            className="bg-white rounded-xl p-3 border border-rose-200 shadow-sm active:scale-[0.98] transition-transform cursor-pointer"
+                                        >
+                                            <div className="flex items-center justify-between gap-3">
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex items-center justify-between gap-2 mb-1">
+                                                        <span className="text-xs font-bold text-slate-800 truncate">{item.nama_lengkap}</span>
+                                                        <span className="px-1.5 py-0.5 rounded text-[8px] font-bold bg-rose-100 text-rose-700 whitespace-nowrap border border-rose-200">Revisi</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-2 text-[10px] text-slate-500">
+                                                        <Activity className="w-3 h-3" />
+                                                        <span>{new Date(item.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                                                        <span>•</span>
+                                                        <Edit2 className="w-3 h-3 text-rose-500" />
+                                                        <span className="text-rose-600 font-semibold">Perbaiki Data</span>
+                                                    </div>
+                                                </div>
+                                                <ChevronRight className="w-4 h-4 text-rose-400 shrink-0" />
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
                     {/* Dicairkan Items - Show disbursement info */}
                     {!loadingPengajuan && pengajuanList.filter(item => item.status === 'Dicairkan').length > 0 && (

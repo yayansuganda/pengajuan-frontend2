@@ -471,7 +471,7 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                     )}
 
                     {/* Revision Note Alert - Mobile */}
-                    {pengajuan.revision_note && (['Revisi', 'Pending'].includes(pengajuan.status)) && (user?.role === 'officer' || user?.role === 'petugas-pos') && (
+                    {pengajuan.revision_note && (['Revisi', 'Pending'].includes(pengajuan.status)) && (
                         <div className="mb-5 px-2 animate-in fade-in slide-in-from-top-4 duration-500">
                             <div className="bg-gradient-to-r from-amber-50 to-amber-100 border-2 border-amber-400 rounded-xl p-5 shadow-lg">
                                 <div className="flex items-start gap-3">
@@ -481,12 +481,111 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                                         </div>
                                     </div>
                                     <div className="flex-1">
-                                        <h3 className="text-base font-bold text-amber-900 mb-2 flex items-center gap-2">
+                                        <h3 className="text-base font-bold text-amber-900 mb-2">
                                             ✏️ Catatan Revisi
                                         </h3>
                                         <div className="bg-white/60 rounded-lg p-3 border border-amber-200">
                                             <p className="text-sm text-amber-900 leading-relaxed font-medium">{pengajuan.revision_note}</p>
                                         </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Manager - Menunggu Approval Banner - Mobile */}
+                    {user?.role === 'manager' && pengajuan.status === 'Menunggu Approval Manager' && (
+                        <div className="mb-5 px-2 animate-in fade-in slide-in-from-top-4 duration-500">
+                            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-400 rounded-xl p-5 shadow-lg">
+                                <div className="flex items-start gap-3">
+                                    <div className="flex-shrink-0 mt-0.5">
+                                        <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                                            <CheckCircle className="w-5 h-5 text-white" />
+                                        </div>
+                                    </div>
+                                    <div className="flex-1">
+                                        <h3 className="text-base font-bold text-blue-900 mb-2">📋 Menunggu Persetujuan Anda</h3>
+                                        <div className="bg-white/60 rounded-lg p-3 border border-blue-200 space-y-1.5">
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-xs text-blue-600">Jumlah Pembiayaan:</span>
+                                                <span className="text-sm font-bold text-blue-900">{money(pengajuan.jumlah_pembiayaan)}</span>
+                                            </div>
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-xs text-blue-600">Jangka Waktu:</span>
+                                                <span className="text-sm font-bold text-blue-900">{pengajuan.jangka_waktu} Bulan</span>
+                                            </div>
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-xs text-blue-600">Nominal Diterima:</span>
+                                                <span className="text-sm font-bold text-blue-900">{money(pengajuan.nominal_terima)}</span>
+                                            </div>
+                                        </div>
+                                        <p className="text-xs text-blue-600 mt-2">Tinjau detail pengajuan lalu pilih Setujui atau Tolak.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Admin Unit - Menunggu Verifikasi Banner - Mobile */}
+                    {user?.role === 'admin-unit' && ['Menunggu Verifikasi Admin Unit', 'Disetujui'].includes(pengajuan.status) && (
+                        <div className="mb-5 px-2 animate-in fade-in slide-in-from-top-4 duration-500">
+                            <div className="bg-gradient-to-r from-purple-50 to-violet-50 border-2 border-purple-400 rounded-xl p-5 shadow-lg">
+                                <div className="flex items-start gap-3">
+                                    <div className="flex-shrink-0 mt-0.5">
+                                        <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center">
+                                            <CheckCircle className="w-5 h-5 text-white" />
+                                        </div>
+                                    </div>
+                                    <div className="flex-1">
+                                        <h3 className="text-base font-bold text-purple-900 mb-2">🔍 Menunggu Verifikasi Anda</h3>
+                                        <div className="bg-white/60 rounded-lg p-3 border border-purple-200 space-y-1.5">
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-xs text-purple-600">Jumlah Pembiayaan:</span>
+                                                <span className="text-sm font-bold text-purple-900">{money(pengajuan.jumlah_pembiayaan)}</span>
+                                            </div>
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-xs text-purple-600">Nominal Diterima:</span>
+                                                <span className="text-sm font-bold text-purple-900">{money(pengajuan.nominal_terima)}</span>
+                                            </div>
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-xs text-purple-600">Jangka Waktu:</span>
+                                                <span className="text-sm font-bold text-purple-900">{pengajuan.jangka_waktu} Bulan</span>
+                                            </div>
+                                        </div>
+                                        <p className="text-xs text-purple-600 mt-2">Verifikasi kelengkapan dokumen dan kirim ke Admin Pusat untuk pencairan.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Admin Pusat - Menunggu Pencairan Banner - Mobile */}
+                    {user?.role === 'admin-pusat' && pengajuan.status === 'Menunggu Pencairan' && (
+                        <div className="mb-5 px-2 animate-in fade-in slide-in-from-top-4 duration-500">
+                            <div className="bg-gradient-to-r from-orange-50 to-amber-50 border-2 border-orange-400 rounded-xl p-5 shadow-lg">
+                                <div className="flex items-start gap-3">
+                                    <div className="flex-shrink-0 mt-0.5">
+                                        <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center">
+                                            <Wallet className="w-5 h-5 text-white" />
+                                        </div>
+                                    </div>
+                                    <div className="flex-1">
+                                        <h3 className="text-base font-bold text-orange-900 mb-2">💸 Menunggu Proses Pencairan</h3>
+                                        <div className="bg-white/60 rounded-lg p-3 border border-orange-200 space-y-1.5">
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-xs text-orange-600">Jumlah Pembiayaan:</span>
+                                                <span className="text-sm font-bold text-orange-900">{money(pengajuan.jumlah_pembiayaan)}</span>
+                                            </div>
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-xs text-orange-600">Nominal Diterima:</span>
+                                                <span className="text-sm font-bold text-orange-900">{money(pengajuan.nominal_terima)}</span>
+                                            </div>
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-xs text-orange-600">No. Rekening:</span>
+                                                <span className="text-xs font-bold text-orange-900">{pengajuan.no_rekening || '-'}</span>
+                                            </div>
+                                        </div>
+                                        <p className="text-xs text-orange-600 mt-2">Upload bukti transfer pencairan lalu klik Cairkan untuk menyelesaikan proses.</p>
                                     </div>
                                 </div>
                             </div>
@@ -1146,7 +1245,7 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
 
                 {/* Revision Note Alert - Desktop */}
                 {
-                    pengajuan.revision_note && (['Revisi', 'Pending'].includes(pengajuan.status)) && (user?.role === 'officer' || user?.role === 'petugas-pos') && (
+                    pengajuan.revision_note && (['Revisi', 'Pending'].includes(pengajuan.status)) && (
                         <div className="bg-gradient-to-r from-amber-50 to-amber-100 border-2 border-amber-400 rounded-2xl p-6 shadow-lg animate-in fade-in slide-in-from-top-4 duration-500">
                             <div className="flex items-start gap-5">
                                 <div className="flex-shrink-0">
@@ -1155,7 +1254,7 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                                     </div>
                                 </div>
                                 <div className="flex-1">
-                                    <h3 className="text-xl font-bold text-amber-900 mb-3 flex items-center gap-2">
+                                    <h3 className="text-xl font-bold text-amber-900 mb-3">
                                         ✏️ Catatan Revisi
                                     </h3>
                                     <div className="bg-white/70 rounded-xl p-4 border-2 border-amber-300">
@@ -1166,6 +1265,99 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                         </div>
                     )
                 }
+
+                {/* Manager - Menunggu Approval Banner - Desktop */}
+                {user?.role === 'manager' && pengajuan.status === 'Menunggu Approval Manager' && (
+                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-400 rounded-2xl p-6 shadow-lg animate-in fade-in slide-in-from-top-4 duration-500">
+                        <div className="flex items-start gap-5">
+                            <div className="flex-shrink-0">
+                                <div className="w-14 h-14 bg-blue-500 rounded-full flex items-center justify-center shadow-lg">
+                                    <CheckCircle className="w-8 h-8 text-white" />
+                                </div>
+                            </div>
+                            <div className="flex-1">
+                                <h3 className="text-xl font-bold text-blue-900 mb-3">📋 Menunggu Persetujuan Anda</h3>
+                                <div className="grid grid-cols-3 gap-3 mb-3">
+                                    <div className="bg-white/70 rounded-xl p-3 border border-blue-200 text-center">
+                                        <p className="text-xs text-blue-600 mb-1">Jumlah Pembiayaan</p>
+                                        <p className="text-sm font-bold text-blue-900">{money(pengajuan.jumlah_pembiayaan)}</p>
+                                    </div>
+                                    <div className="bg-white/70 rounded-xl p-3 border border-blue-200 text-center">
+                                        <p className="text-xs text-blue-600 mb-1">Jangka Waktu</p>
+                                        <p className="text-sm font-bold text-blue-900">{pengajuan.jangka_waktu} Bulan</p>
+                                    </div>
+                                    <div className="bg-white/70 rounded-xl p-3 border border-blue-200 text-center">
+                                        <p className="text-xs text-blue-600 mb-1">Nominal Diterima</p>
+                                        <p className="text-sm font-bold text-blue-900">{money(pengajuan.nominal_terima)}</p>
+                                    </div>
+                                </div>
+                                <p className="text-sm text-blue-700">Tinjau seluruh detail pengajuan lalu berikan keputusan persetujuan atau penolakan di bagian bawah halaman.</p>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Admin Unit - Menunggu Verifikasi Banner - Desktop */}
+                {user?.role === 'admin-unit' && ['Menunggu Verifikasi Admin Unit', 'Disetujui'].includes(pengajuan.status) && (
+                    <div className="bg-gradient-to-r from-purple-50 to-violet-50 border-2 border-purple-400 rounded-2xl p-6 shadow-lg animate-in fade-in slide-in-from-top-4 duration-500">
+                        <div className="flex items-start gap-5">
+                            <div className="flex-shrink-0">
+                                <div className="w-14 h-14 bg-purple-500 rounded-full flex items-center justify-center shadow-lg">
+                                    <CheckCircle className="w-8 h-8 text-white" />
+                                </div>
+                            </div>
+                            <div className="flex-1">
+                                <h3 className="text-xl font-bold text-purple-900 mb-3">🔍 Menunggu Verifikasi Anda</h3>
+                                <div className="grid grid-cols-3 gap-3 mb-3">
+                                    <div className="bg-white/70 rounded-xl p-3 border border-purple-200 text-center">
+                                        <p className="text-xs text-purple-600 mb-1">Jumlah Pembiayaan</p>
+                                        <p className="text-sm font-bold text-purple-900">{money(pengajuan.jumlah_pembiayaan)}</p>
+                                    </div>
+                                    <div className="bg-white/70 rounded-xl p-3 border border-purple-200 text-center">
+                                        <p className="text-xs text-purple-600 mb-1">Nominal Diterima</p>
+                                        <p className="text-sm font-bold text-purple-900">{money(pengajuan.nominal_terima)}</p>
+                                    </div>
+                                    <div className="bg-white/70 rounded-xl p-3 border border-purple-200 text-center">
+                                        <p className="text-xs text-purple-600 mb-1">Jangka Waktu</p>
+                                        <p className="text-sm font-bold text-purple-900">{pengajuan.jangka_waktu} Bulan</p>
+                                    </div>
+                                </div>
+                                <p className="text-sm text-purple-700">Verifikasi kelengkapan dokumen pengajuan dan kirim ke Admin Pusat untuk proses pencairan dana.</p>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Admin Pusat - Menunggu Pencairan Banner - Desktop */}
+                {user?.role === 'admin-pusat' && pengajuan.status === 'Menunggu Pencairan' && (
+                    <div className="bg-gradient-to-r from-orange-50 to-amber-50 border-2 border-orange-400 rounded-2xl p-6 shadow-lg animate-in fade-in slide-in-from-top-4 duration-500">
+                        <div className="flex items-start gap-5">
+                            <div className="flex-shrink-0">
+                                <div className="w-14 h-14 bg-orange-500 rounded-full flex items-center justify-center shadow-lg">
+                                    <Wallet className="w-8 h-8 text-white" />
+                                </div>
+                            </div>
+                            <div className="flex-1">
+                                <h3 className="text-xl font-bold text-orange-900 mb-3">💸 Menunggu Proses Pencairan</h3>
+                                <div className="grid grid-cols-3 gap-3 mb-3">
+                                    <div className="bg-white/70 rounded-xl p-3 border border-orange-200 text-center">
+                                        <p className="text-xs text-orange-600 mb-1">Jumlah Pembiayaan</p>
+                                        <p className="text-sm font-bold text-orange-900">{money(pengajuan.jumlah_pembiayaan)}</p>
+                                    </div>
+                                    <div className="bg-white/70 rounded-xl p-3 border border-orange-200 text-center">
+                                        <p className="text-xs text-orange-600 mb-1">Nominal Diterima</p>
+                                        <p className="text-sm font-bold text-orange-900">{money(pengajuan.nominal_terima)}</p>
+                                    </div>
+                                    <div className="bg-white/70 rounded-xl p-3 border border-orange-200 text-center">
+                                        <p className="text-xs text-orange-600 mb-1">No. Rekening</p>
+                                        <p className="text-sm font-bold text-orange-900">{pengajuan.no_rekening || '-'}</p>
+                                    </div>
+                                </div>
+                                <p className="text-sm text-orange-700">Upload bukti transfer pencairan di tab Dokumen → Persetujuan, lalu klik tombol Cairkan di bawah.</p>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 {/* Dicairkan Info Banner - Desktop */}
                 {pengajuan.status === 'Dicairkan' && (
