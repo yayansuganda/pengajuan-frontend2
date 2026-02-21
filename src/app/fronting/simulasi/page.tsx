@@ -21,7 +21,6 @@ export default function FrontingSimulasiPage() {
     // Master data
     const [jenisPembiayaanList, setJenisPembiayaanList] = useState<JenisPembiayaan[]>([]);
     const [potonganList, setPotonganList] = useState<Potongan[]>([]);
-    const [allPotonganList, setAllPotonganList] = useState<Potongan[]>([]);
     const [potonganJangkaWaktuList, setPotonganJangkaWaktuList] = useState<PotonganJangkaWaktu[]>([]);
     const [settings, setSettings] = useState<Setting | null>(null);
 
@@ -82,8 +81,6 @@ export default function FrontingSimulasiPage() {
                     settingRepo.getActive()
                 ]);
                 setJenisPembiayaanList(pembiayaanRes.data);
-                // Store all potongan for Ta'awun calculation
-                setAllPotonganList(potonganRes.data.filter(p => p.is_active));
                 // Filter only is_view = true and is_active = true for display
                 setPotonganList(potonganRes.data.filter(p => p.is_view && p.is_active));
                 setPotonganJangkaWaktuList(potonganJWRes.data.filter(p => p.is_active));
@@ -95,16 +92,18 @@ export default function FrontingSimulasiPage() {
         fetchMasterData();
     }, []);
 
-    // Auto-calculate Maks Jangka Waktu (hardcoded to 60 bulan for simulation)
+    // Auto-calculate Maks Jangka Waktu (aligned with create pengajuan logic)
     useEffect(() => {
         if (kategoriPembiayaan === 'Micro' && settings && settings.mikro_jangka_waktu > 0) {
             setMaksJangkaWaktuUsia(settings.mikro_jangka_waktu);
+        } else if (kategoriPembiayaan === 'Macro' && settings && settings.makro_jangka_waktu > 0) {
+            setMaksJangkaWaktuUsia(settings.makro_jangka_waktu);
         } else if (settings) {
             setMaksJangkaWaktuUsia(60); // Default 60 bulan
         }
     }, [kategoriPembiayaan, settings]);
 
-    // Auto-calculate Maks Pembiayaan
+    // Auto-calculate Maks Pembiayaan (aligned with create pengajuan logic)
     useEffect(() => {
         if (kategoriPembiayaan === 'Micro' && settings && settings.mikro_maksimal_pembiayaan > 0) {
             setMaksimalPembiayaan(Math.round(settings.mikro_maksimal_pembiayaan));
@@ -115,19 +114,33 @@ export default function FrontingSimulasiPage() {
         const maksJW = maksJangkaWaktuUsia || 0;
 
         if (gaji > 0 && maksJW > 0) {
-            const maksPembiayaan = gaji * maksJW;
-            setMaksimalPembiayaan(Math.round(maksPembiayaan));
+            const jasaPersen = (settings?.jasa_perbulan || 0) / 100;
+            const factor = (1 / maksJW) + jasaPersen;
+
+            let maxPlafond = 0;
+            if (factor > 0) {
+                maxPlafond = gaji / factor;
+            }
+
+            if (kategoriPembiayaan === 'Macro' && settings && settings.makro_maksimal_pembiayaan > 0) {
+                if (maxPlafond > settings.makro_maksimal_pembiayaan) {
+                    maxPlafond = settings.makro_maksimal_pembiayaan;
+                }
+            }
+
+            const roundedMaxPlafond = Math.floor(maxPlafond / 1000) * 1000;
+            setMaksimalPembiayaan(roundedMaxPlafond);
         } else {
             setMaksimalPembiayaan(0);
         }
     }, [gajiTersedia, maksJangkaWaktuUsia, kategoriPembiayaan, settings]);
 
-    // Find matching potongan jangka waktu
+    // Find matching potongan jangka waktu (fronting is always POS, must match is_pos=true)
     useEffect(() => {
         const jw = parseInt(jangkaWaktu);
         if (jw > 0 && potonganJangkaWaktuList.length > 0) {
             const matched = potonganJangkaWaktuList.find(
-                p => p.min_bulan <= jw && p.max_bulan >= jw
+                p => p.min_bulan <= jw && p.max_bulan >= jw && p.is_pos === true
             );
             setPotonganJangkaWaktu(matched || null);
         } else {
@@ -135,7 +148,7 @@ export default function FrontingSimulasiPage() {
         }
     }, [jangkaWaktu, potonganJangkaWaktuList]);
 
-    // Auto-calculate total potongan
+    // Auto-calculate total potongan (aligned with Create Pengajuan Ta'awun formula)
     useEffect(() => {
         const plafond = parseFloat(jumlahPembiayaan) || 0;
 
@@ -158,16 +171,19 @@ export default function FrontingSimulasiPage() {
                 details.push({ nama: p.nama_potongan, nilai: Math.round(value) });
             });
 
-            // Potongan jangka waktu (Ta'awun)
+            // Ta'awun = Potongan JW (%) - Total Potongan Persentase Visible (%)
             if (potonganJangkaWaktu) {
-                const taawunPotongan = allPotonganList.find(p => p.nama_potongan.toLowerCase().includes("ta'awun"));
-                if (taawunPotongan) {
-                    const taawunValue = calculatePotonganValue(taawunPotongan);
-                    const taawunPerBulan = taawunValue / parseInt(jangkaWaktu);
-                    const taawunJangkaWaktu = potonganJangkaWaktu.potongan_persen / 100 * plafond;
-                    const totalTaawun = taawunPerBulan + taawunJangkaWaktu;
-                    total += totalTaawun;
-                    details.push({ nama: "Ta'awun + Jangka Waktu", nilai: Math.round(totalTaawun) });
+                const visiblePercentageSum = potonganList
+                    .filter(p => p.kategori === 'persentase')
+                    .reduce((sum, p) => sum + (parseFloat(p.persentase_nominal.toString()) || 0), 0);
+
+                const potonganJWPersen = parseFloat(potonganJangkaWaktu.potongan_persen?.toString() || '0');
+                const taawunPersen = potonganJWPersen - visiblePercentageSum;
+
+                if (taawunPersen > 0) {
+                    const taawunValue = (taawunPersen / 100) * plafond;
+                    total += taawunValue;
+                    details.push({ nama: "Ta'awun", nilai: Math.round(taawunValue) });
                 }
             }
 
@@ -177,7 +193,7 @@ export default function FrontingSimulasiPage() {
             setTotalPotongan(0);
             setPotonganDetail([]);
         }
-    }, [jumlahPembiayaan, potonganList, allPotonganList, potonganJangkaWaktu, jangkaWaktu]);
+    }, [jumlahPembiayaan, potonganList, potonganJangkaWaktu]);
 
     // Auto-calculate Angsuran/Bulan
     useEffect(() => {
