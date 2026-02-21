@@ -404,6 +404,12 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
         return selected?.name?.toUpperCase() === 'POS';
     }, [formData.jenis_pelayanan_id, jenisPelayananList]);
 
+    const shouldShowNextButton = useMemo(() => {
+        const isPosRole = user?.role === 'petugas-pos' || user?.role === 'admin-pos';
+        const isStep1CreatePOS = currentStep === 1 && !pengajuanId && isPOS && isPosRole;
+        return !isStep1CreatePOS || nopenDataLoaded;
+    }, [user?.role, currentStep, pengajuanId, isPOS, nopenDataLoaded]);
+
     // Fetch master data on mount
     useEffect(() => {
         const fetchMasterData = async () => {
@@ -3196,14 +3202,16 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
                             Kembali
                         </button>
 
-                        <button
-                            type="button"
-                            onClick={currentStep === STEPS.length ? handleSubmit : nextStep}
-                            disabled={submitting}
-                            className="flex-1 py-2.5 rounded-lg font-medium text-white bg-emerald-600 shadow active:bg-emerald-700 text-xs"
-                        >
-                            {submitting ? '...' : currentStep === STEPS.length ? 'Submit' : 'Lanjut'}
-                        </button>
+                        {shouldShowNextButton && (
+                            <button
+                                type="button"
+                                onClick={currentStep === STEPS.length ? handleSubmit : nextStep}
+                                disabled={submitting}
+                                className="flex-1 py-2.5 rounded-lg font-medium text-white bg-emerald-600 shadow active:bg-emerald-700 text-xs"
+                            >
+                                {submitting ? '...' : currentStep === STEPS.length ? 'Submit' : 'Lanjut'}
+                            </button>
+                        )}
                     </div>
                 </div>
             </div>
@@ -3258,16 +3266,18 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
                             Kembali
                         </button>
 
-                        <button
-                            type="button"
-                            onClick={currentStep === STEPS.length ? handleSubmit : nextStep}
-                            disabled={submitting}
-                            className="inline-flex items-center px-6 py-2.5 border border-transparent shadow-md text-sm font-semibold rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed"
-                        >
-                            {submitting ? 'Menyimpan...' : currentStep === STEPS.length ? 'Submit Pengajuan' : 'Selanjutnya'}
-                            {!submitting && currentStep !== STEPS.length && <ChevronRight className="ml-1.5 -mr-1 h-4 w-4" />}
-                            {!submitting && currentStep === STEPS.length && <Save className="ml-1.5 -mr-1 h-4 w-4" />}
-                        </button>
+                        {shouldShowNextButton && (
+                            <button
+                                type="button"
+                                onClick={currentStep === STEPS.length ? handleSubmit : nextStep}
+                                disabled={submitting}
+                                className="inline-flex items-center px-6 py-2.5 border border-transparent shadow-md text-sm font-semibold rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed"
+                            >
+                                {submitting ? 'Menyimpan...' : currentStep === STEPS.length ? 'Submit Pengajuan' : 'Selanjutnya'}
+                                {!submitting && currentStep !== STEPS.length && <ChevronRight className="ml-1.5 -mr-1 h-4 w-4" />}
+                                {!submitting && currentStep === STEPS.length && <Save className="ml-1.5 -mr-1 h-4 w-4" />}
+                            </button>
+                        )}
                     </div>
                 </div>
             </div>
