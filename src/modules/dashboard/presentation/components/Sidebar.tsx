@@ -19,7 +19,8 @@ import {
     Smartphone,
     MinusCircle,
     Settings,
-    ClipboardCheck
+    ClipboardCheck,
+    BarChart3
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -47,6 +48,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ userRole, isOpen, onClose }) =
 
     // Rekonsiliasi menu - only for super-admin and admin-pos
     const rekonsiliasiMenu = { name: 'Rekonsiliasi', href: '/rekonsiliasi', icon: ClipboardCheck };
+    const rekonsiliasiSubMenus = [
+        { name: 'Dashboard Rekon', href: '/rekonsiliasi/dashboard', icon: BarChart3 },
+        { name: 'Data Rekonsiliasi', href: '/rekonsiliasi', icon: ClipboardCheck },
+    ];
+
+    const isRekonActive = pathname.startsWith('/rekonsiliasi');
+    const [isRekonOpen, setIsRekonOpen] = useState(isRekonActive);
 
     const dataMasterMenus = [
         { name: 'Unit', href: '/unit', icon: Building2 },
@@ -110,22 +118,44 @@ export const Sidebar: React.FC<SidebarProps> = ({ userRole, isOpen, onClose }) =
                                     Menu
                                 </p>
                             </div>
-                            {(() => {
-                                const RekonIcon = rekonsiliasiMenu.icon;
-                                return (
-                                    <Link
-                                        href={rekonsiliasiMenu.href}
-                                        onClick={handleLinkClick}
-                                        className={`group flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 ${isActive(rekonsiliasiMenu.href)
-                                            ? 'bg-indigo-600/10 text-indigo-400 border border-indigo-600/20'
-                                            : 'text-slate-400 hover:bg-slate-800 hover:text-white'
-                                            }`}
-                                    >
-                                        <RekonIcon className={`h-5 w-5 ${isActive(rekonsiliasiMenu.href) ? 'text-indigo-400' : 'text-slate-500 group-hover:text-slate-300'}`} />
-                                        {rekonsiliasiMenu.name}
-                                    </Link>
-                                );
-                            })()}
+                            <button
+                                onClick={() => setIsRekonOpen(!isRekonOpen)}
+                                className={`w-full group flex items-center justify-between px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 ${isRekonActive
+                                    ? 'text-indigo-400 bg-indigo-600/10 border border-indigo-600/20'
+                                    : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+                                    }`}
+                            >
+                                <div className="flex items-center gap-3">
+                                    <ClipboardCheck className={`h-5 w-5 ${isRekonActive ? 'text-indigo-400' : 'text-slate-500 group-hover:text-slate-300'}`} />
+                                    <span>Rekonsiliasi</span>
+                                </div>
+                                <ChevronRight
+                                    className={`h-4 w-4 text-slate-500 transition-transform duration-200 ${isRekonOpen ? 'rotate-90' : ''}`}
+                                />
+                            </button>
+                            {isRekonOpen && (
+                                <div className="mt-1 space-y-1 pl-3">
+                                    {rekonsiliasiSubMenus.map((submenu) => {
+                                        const active = isActive(submenu.href);
+                                        return (
+                                            <Link
+                                                key={submenu.name}
+                                                href={submenu.href}
+                                                onClick={handleLinkClick}
+                                                className={`group flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${active
+                                                    ? 'text-indigo-400 bg-indigo-600/5'
+                                                    : 'text-slate-400 hover:text-slate-200'
+                                                    }`}
+                                            >
+                                                <div className="flex items-center justify-center w-5">
+                                                    <div className={`h-1.5 w-1.5 rounded-full transition-colors ${active ? 'bg-indigo-400' : 'bg-slate-600 group-hover:bg-slate-400'}`} />
+                                                </div>
+                                                {submenu.name}
+                                            </Link>
+                                        );
+                                    })}
+                                </div>
+                            )}
                         </>
                     ) : (
                         <>
@@ -155,22 +185,48 @@ export const Sidebar: React.FC<SidebarProps> = ({ userRole, isOpen, onClose }) =
                             })}
 
                             {/* Rekonsiliasi - Only for super-admin */}
-                            {userRole === 'super-admin' && (() => {
-                                const RekonIcon = rekonsiliasiMenu.icon;
-                                return (
-                                    <Link
-                                        href={rekonsiliasiMenu.href}
-                                        onClick={handleLinkClick}
-                                        className={`group flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 ${isActive(rekonsiliasiMenu.href)
-                                            ? 'bg-indigo-600/10 text-indigo-400 border border-indigo-600/20'
+                            {userRole === 'super-admin' && (
+                                <>
+                                    <button
+                                        onClick={() => setIsRekonOpen(!isRekonOpen)}
+                                        className={`w-full group flex items-center justify-between px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 ${isRekonActive
+                                            ? 'text-indigo-400 bg-indigo-600/10 border border-indigo-600/20'
                                             : 'text-slate-400 hover:bg-slate-800 hover:text-white'
                                             }`}
                                     >
-                                        <RekonIcon className={`h-5 w-5 ${isActive(rekonsiliasiMenu.href) ? 'text-indigo-400' : 'text-slate-500 group-hover:text-slate-300'}`} />
-                                        {rekonsiliasiMenu.name}
-                                    </Link>
-                                );
-                            })()}
+                                        <div className="flex items-center gap-3">
+                                            <ClipboardCheck className={`h-5 w-5 ${isRekonActive ? 'text-indigo-400' : 'text-slate-500 group-hover:text-slate-300'}`} />
+                                            <span>Rekonsiliasi</span>
+                                        </div>
+                                        <ChevronRight
+                                            className={`h-4 w-4 text-slate-500 transition-transform duration-200 ${isRekonOpen ? 'rotate-90' : ''}`}
+                                        />
+                                    </button>
+                                    {isRekonOpen && (
+                                        <div className="mt-1 space-y-1 pl-3">
+                                            {rekonsiliasiSubMenus.map((submenu) => {
+                                                const active = isActive(submenu.href);
+                                                return (
+                                                    <Link
+                                                        key={submenu.name}
+                                                        href={submenu.href}
+                                                        onClick={handleLinkClick}
+                                                        className={`group flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${active
+                                                            ? 'text-indigo-400 bg-indigo-600/5'
+                                                            : 'text-slate-400 hover:text-slate-200'
+                                                            }`}
+                                                    >
+                                                        <div className="flex items-center justify-center w-5">
+                                                            <div className={`h-1.5 w-1.5 rounded-full transition-colors ${active ? 'bg-indigo-400' : 'bg-slate-600 group-hover:bg-slate-400'}`} />
+                                                        </div>
+                                                        {submenu.name}
+                                                    </Link>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+                                </>
+                            )}
                         </>
                     )}
 
