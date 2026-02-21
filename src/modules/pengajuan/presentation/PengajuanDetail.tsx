@@ -622,26 +622,41 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                                 <div className="flex items-start gap-3">
                                     <div className="flex-shrink-0 mt-0.5">
                                         <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center">
-                                            <Wallet className="w-5 h-5 text-white" />
+                                            <Upload className="w-5 h-5 text-white" />
                                         </div>
                                     </div>
                                     <div className="flex-1">
-                                        <h3 className="text-base font-bold text-orange-900 mb-2">💸 Menunggu Proses Pencairan</h3>
-                                        <div className="bg-white/60 rounded-lg p-3 border border-orange-200 space-y-1.5">
-                                            <div className="flex justify-between items-center">
-                                                <span className="text-xs text-orange-600">Jumlah Pembiayaan:</span>
-                                                <span className="text-sm font-bold text-orange-900">{money(pengajuan.jumlah_pembiayaan)}</span>
+                                        <h3 className="text-base font-bold text-orange-900 mb-1">💸 Perlu Upload Bukti Transfer</h3>
+                                        <p className="text-xs text-orange-700 mb-3">Upload bukti transfer di tab <strong>Dokumen → Persetujuan</strong>, lalu klik <strong>Cairkan</strong> untuk menyelesaikan proses pencairan.</p>
+                                        {/* Upload Checklist */}
+                                        <div className="bg-white/70 rounded-lg p-3 border border-orange-200 space-y-2">
+                                            <div className="flex items-center gap-2">
+                                                {approvalDocs.disbursement_proof_url ? (
+                                                    <CheckCircle className="w-4 h-4 text-emerald-500 shrink-0" />
+                                                ) : (
+                                                    <div className="w-4 h-4 rounded-full border-2 border-orange-300 shrink-0" />
+                                                )}
+                                                <span className={`text-xs font-medium ${approvalDocs.disbursement_proof_url ? 'text-emerald-700 line-through' : 'text-orange-800'}`}>
+                                                    Bukti Transfer Pencairan <span className="text-orange-500">*</span>
+                                                </span>
+                                                {approvalDocs.disbursement_proof_url && (
+                                                    <span className="ml-auto text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">✓ Terupload</span>
+                                                )}
                                             </div>
-                                            <div className="flex justify-between items-center">
-                                                <span className="text-xs text-orange-600">Nominal Diterima:</span>
-                                                <span className="text-sm font-bold text-orange-900">{money(pengajuan.nominal_terima)}</span>
-                                            </div>
-                                            <div className="flex justify-between items-center">
-                                                <span className="text-xs text-orange-600">No. Rekening:</span>
-                                                <span className="text-xs font-bold text-orange-900">{pengajuan.no_rekening || '-'}</span>
-                                            </div>
+                                            <p className="text-[10px] text-orange-500 pl-6">
+                                                {approvalDocs.disbursement_proof_url
+                                                    ? 'Bukti transfer sudah diupload. Klik Cairkan untuk melanjutkan.'
+                                                    : 'Belum diupload — pergi ke tab Dokumen → Persetujuan untuk upload.'}
+                                            </p>
                                         </div>
-                                        <p className="text-xs text-orange-600 mt-2">Upload bukti transfer pencairan lalu klik Cairkan untuk menyelesaikan proses.</p>
+                                        {!approvalDocs.disbursement_proof_url && (
+                                            <button
+                                                onClick={() => { setActiveTab('dokumen'); setActiveDocTab('persetujuan'); }}
+                                                className="mt-3 w-full py-2 bg-orange-500 text-white text-xs font-bold rounded-lg hover:bg-orange-600 transition-colors"
+                                            >
+                                                Buka Tab Dokumen →
+                                            </button>
+                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -1236,9 +1251,9 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
 
                         {/* Info Message for Admin Pusat */}
                         {user?.role === 'admin-pusat' && pengajuan.status === 'Menunggu Pencairan' && !approvalDocs.disbursement_proof_url && (
-                            <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-xl">
-                                <p className="text-xs text-amber-800 text-center">
-                                    💸 Upload bukti transfer pencairan untuk menyelesaikan proses
+                            <div className="mt-3 p-3 bg-orange-50 border border-orange-300 rounded-xl">
+                                <p className="text-xs text-orange-800 text-center font-medium">
+                                    📤 Silakan upload <strong>Bukti Transfer</strong> di tab <strong>Dokumen → Persetujuan</strong> untuk mengaktifkan tombol Cairkan
                                 </p>
                             </div>
                         )}
@@ -1453,26 +1468,46 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                         <div className="flex items-start gap-5">
                             <div className="flex-shrink-0">
                                 <div className="w-14 h-14 bg-orange-500 rounded-full flex items-center justify-center shadow-lg">
-                                    <Wallet className="w-8 h-8 text-white" />
+                                    <Upload className="w-8 h-8 text-white" />
                                 </div>
                             </div>
                             <div className="flex-1">
-                                <h3 className="text-xl font-bold text-orange-900 mb-3">💸 Menunggu Proses Pencairan</h3>
-                                <div className="grid grid-cols-3 gap-3 mb-3">
-                                    <div className="bg-white/70 rounded-xl p-3 border border-orange-200 text-center">
-                                        <p className="text-xs text-orange-600 mb-1">Jumlah Pembiayaan</p>
-                                        <p className="text-sm font-bold text-orange-900">{money(pengajuan.jumlah_pembiayaan)}</p>
-                                    </div>
-                                    <div className="bg-white/70 rounded-xl p-3 border border-orange-200 text-center">
-                                        <p className="text-xs text-orange-600 mb-1">Nominal Diterima</p>
-                                        <p className="text-sm font-bold text-orange-900">{money(pengajuan.nominal_terima)}</p>
-                                    </div>
-                                    <div className="bg-white/70 rounded-xl p-3 border border-orange-200 text-center">
-                                        <p className="text-xs text-orange-600 mb-1">No. Rekening</p>
-                                        <p className="text-sm font-bold text-orange-900">{pengajuan.no_rekening || '-'}</p>
+                                <h3 className="text-xl font-bold text-orange-900 mb-1">💸 Perlu Upload Bukti Transfer</h3>
+                                <p className="text-sm text-orange-700 mb-4">Upload bukti transfer pencairan di tab <strong>Dokumen → Persetujuan</strong>, lalu klik tombol <strong>Cairkan</strong> di bawah untuk menyelesaikan proses.</p>
+                                {/* Upload Checklist */}
+                                <div className="bg-white/70 rounded-xl border border-orange-200 p-4 mb-4">
+                                    <div className="flex items-center gap-3">
+                                        {approvalDocs.disbursement_proof_url ? (
+                                            <CheckCircle className="w-5 h-5 text-emerald-500 shrink-0" />
+                                        ) : (
+                                            <div className="w-5 h-5 rounded-full border-2 border-orange-400 shrink-0" />
+                                        )}
+                                        <div className="flex-1">
+                                            <span className={`text-sm font-semibold ${approvalDocs.disbursement_proof_url ? 'text-emerald-700 line-through' : 'text-orange-900'}`}>
+                                                Bukti Transfer Pencairan <span className="text-orange-500 no-underline">*</span>
+                                            </span>
+                                            <p className="text-xs text-orange-600 mt-0.5">
+                                                {approvalDocs.disbursement_proof_url
+                                                    ? 'Sudah diupload. Tombol Cairkan sekarang aktif.'
+                                                    : 'Wajib diupload sebelum bisa mengklik Cairkan.'}
+                                            </p>
+                                        </div>
+                                        {approvalDocs.disbursement_proof_url ? (
+                                            <span className="text-xs font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-1 rounded-lg">✓ Terupload</span>
+                                        ) : (
+                                            <span className="text-xs font-bold text-orange-600 bg-orange-100 border border-orange-300 px-2 py-1 rounded-lg">Belum Upload</span>
+                                        )}
                                     </div>
                                 </div>
-                                <p className="text-sm text-orange-700">Upload bukti transfer pencairan di tab Dokumen → Persetujuan, lalu klik tombol Cairkan di bawah.</p>
+                                {!approvalDocs.disbursement_proof_url && (
+                                    <button
+                                        onClick={() => { setActiveTab('dokumen'); setActiveDocTab('persetujuan'); }}
+                                        className="inline-flex items-center gap-2 px-4 py-2 bg-orange-500 text-white text-sm font-bold rounded-xl hover:bg-orange-600 transition-colors"
+                                    >
+                                        <Upload className="w-4 h-4" />
+                                        Buka Tab Dokumen untuk Upload
+                                    </button>
+                                )}
                             </div>
                         </div>
                     </div>
