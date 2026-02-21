@@ -670,37 +670,48 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                                 <div className="flex items-start gap-3">
                                     <div className="flex-shrink-0 mt-0.5">
                                         <div className="w-8 h-8 bg-teal-500 rounded-full flex items-center justify-center">
-                                            <Wallet className="w-5 h-5 text-white" />
+                                            <CheckCircle className="w-5 h-5 text-white" />
                                         </div>
                                     </div>
                                     <div className="flex-1">
-                                        <h3 className="text-base font-bold text-teal-900 mb-2">
-                                            ✅ Dana Berhasil Dicairkan
-                                        </h3>
-                                        <div className="space-y-2">
-                                            <div className="bg-white/70 rounded-lg p-3 border border-teal-200">
-                                                <div className="flex justify-between items-center mb-1">
-                                                    <span className="text-xs text-teal-700">Jumlah Pembiayaan:</span>
-                                                    <span className="text-sm font-bold text-teal-900">{money(pengajuan.jumlah_pembiayaan)}</span>
-                                                </div>
-                                                {pengajuan.nominal_terima && (
-                                                    <div className="flex justify-between items-center">
-                                                        <span className="text-xs text-teal-700">Nominal Diterima:</span>
-                                                        <span className="text-sm font-bold text-emerald-700">{money(pengajuan.nominal_terima)}</span>
+                                        <h3 className="text-base font-bold text-teal-900 mb-1">✅ Dana Berhasil Dicairkan</h3>
+                                        <p className="text-xs text-teal-700 mb-3">Dana telah berhasil dicairkan ke rekening pemohon.</p>
+                                        {(user?.role === 'officer' || user?.role === 'petugas-pos') && (
+                                            <>
+                                                <p className="text-xs font-semibold text-indigo-800 mb-2">📦 Langkah selanjutnya:</p>
+                                                {/* Resi Upload Checklist */}
+                                                <div className="bg-white/70 rounded-lg p-3 border border-indigo-200 space-y-2">
+                                                    <div className="flex items-center gap-2">
+                                                        {approvalDocs.shipping_receipt_url ? (
+                                                            <CheckCircle className="w-4 h-4 text-emerald-500 shrink-0" />
+                                                        ) : (
+                                                            <div className="w-4 h-4 rounded-full border-2 border-indigo-400 shrink-0 animate-pulse" />
+                                                        )}
+                                                        <span className={`text-xs font-medium ${approvalDocs.shipping_receipt_url ? 'text-emerald-700 line-through' : 'text-indigo-900'}`}>
+                                                            Resi Pengiriman Berkas <span className="text-rose-500">*</span>
+                                                        </span>
+                                                        {approvalDocs.shipping_receipt_url ? (
+                                                            <span className="ml-auto text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">✓ Terupload</span>
+                                                        ) : (
+                                                            <span className="ml-auto text-[10px] font-bold text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded">Wajib</span>
+                                                        )}
                                                     </div>
-                                                )}
-                                            </div>
-                                            {approvalDocs.disbursement_proof_url && (
-                                                <div
-                                                    className="bg-white/70 rounded-lg p-2 border border-teal-200 cursor-pointer"
-                                                    onClick={() => openPreview(approvalDocs.disbursement_proof_url, false)}
-                                                >
-                                                    <p className="text-[10px] font-semibold text-teal-700 mb-1">📄 Bukti Transfer</p>
-                                                    <img src={approvalDocs.disbursement_proof_url} alt="Bukti Transfer" className="w-full h-24 object-cover rounded-lg" />
-                                                    <p className="text-[9px] text-teal-600 mt-1 text-center">Tap untuk perbesar</p>
+                                                    <p className="text-[10px] text-indigo-600 pl-6">
+                                                        {approvalDocs.shipping_receipt_url
+                                                            ? 'Resi sudah diupload. Klik Selesaikan untuk menutup pengajuan.'
+                                                            : 'Upload resi pengiriman berkas fisik ke tab Dokumen → Persetujuan.'}
+                                                    </p>
                                                 </div>
-                                            )}
-                                        </div>
+                                                {!approvalDocs.shipping_receipt_url && (
+                                                    <button
+                                                        onClick={() => { setActiveTab('dokumen'); setActiveDocTab('persetujuan'); }}
+                                                        className="mt-3 w-full py-2 bg-indigo-600 text-white text-xs font-bold rounded-lg hover:bg-indigo-700 transition-colors"
+                                                    >
+                                                        Buka Tab Dokumen →
+                                                    </button>
+                                                )}
+                                            </>
+                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -1519,37 +1530,51 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                         <div className="flex items-start gap-5">
                             <div className="flex-shrink-0">
                                 <div className="w-14 h-14 bg-teal-500 rounded-full flex items-center justify-center shadow-lg">
-                                    <Wallet className="w-8 h-8 text-white" />
+                                    <CheckCircle className="w-8 h-8 text-white" />
                                 </div>
                             </div>
                             <div className="flex-1">
-                                <h3 className="text-xl font-bold text-teal-900 mb-3">
-                                    ✅ Dana Berhasil Dicairkan
-                                </h3>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div className="bg-white/70 rounded-xl p-4 border border-teal-200">
-                                        <div className="flex justify-between items-center mb-2">
-                                            <span className="text-sm text-teal-700">Jumlah Pembiayaan:</span>
-                                            <span className="text-base font-bold text-teal-900">{money(pengajuan.jumlah_pembiayaan)}</span>
-                                        </div>
-                                        {pengajuan.nominal_terima && (
-                                            <div className="flex justify-between items-center">
-                                                <span className="text-sm text-teal-700">Nominal Diterima:</span>
-                                                <span className="text-base font-bold text-emerald-700">{money(pengajuan.nominal_terima)}</span>
+                                <h3 className="text-xl font-bold text-teal-900 mb-1">✅ Dana Berhasil Dicairkan</h3>
+                                <p className="text-sm text-teal-700 mb-4">Dana telah berhasil dicairkan ke rekening pemohon.</p>
+                                {(user?.role === 'officer' || user?.role === 'petugas-pos') && (
+                                    <>
+                                        <p className="text-sm font-semibold text-indigo-800 mb-3">📦 Langkah selanjutnya — Upload Resi Pengiriman Berkas:</p>
+                                        {/* Resi Upload Checklist */}
+                                        <div className="bg-white/70 rounded-xl border border-indigo-200 p-4 mb-4">
+                                            <div className="flex items-center gap-3">
+                                                {approvalDocs.shipping_receipt_url ? (
+                                                    <CheckCircle className="w-5 h-5 text-emerald-500 shrink-0" />
+                                                ) : (
+                                                    <div className="w-5 h-5 rounded-full border-2 border-indigo-400 shrink-0 animate-pulse" />
+                                                )}
+                                                <div className="flex-1">
+                                                    <span className={`text-sm font-semibold ${approvalDocs.shipping_receipt_url ? 'text-emerald-700 line-through' : 'text-indigo-900'}`}>
+                                                        Resi Pengiriman Berkas <span className="text-rose-500 no-underline">*</span>
+                                                    </span>
+                                                    <p className="text-xs text-indigo-600 mt-0.5">
+                                                        {approvalDocs.shipping_receipt_url
+                                                            ? 'Sudah diupload. Tombol Selesaikan sekarang aktif.'
+                                                            : 'Wajib diupload di tab Dokumen → Persetujuan sebelum bisa Selesaikan.'}
+                                                    </p>
+                                                </div>
+                                                {approvalDocs.shipping_receipt_url ? (
+                                                    <span className="text-xs font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-1 rounded-lg">✓ Terupload</span>
+                                                ) : (
+                                                    <span className="text-xs font-bold text-rose-600 bg-rose-50 border border-rose-200 px-2 py-1 rounded-lg">Belum Upload</span>
+                                                )}
                                             </div>
-                                        )}
-                                    </div>
-                                    {approvalDocs.disbursement_proof_url && (
-                                        <div
-                                            className="bg-white/70 rounded-xl p-3 border border-teal-200 cursor-pointer hover:shadow-md transition-shadow"
-                                            onClick={() => openPreview(approvalDocs.disbursement_proof_url, false)}
-                                        >
-                                            <p className="text-xs font-semibold text-teal-700 mb-2">📄 Bukti Transfer Pencairan</p>
-                                            <img src={approvalDocs.disbursement_proof_url} alt="Bukti Transfer" className="w-full h-32 object-cover rounded-lg" />
-                                            <p className="text-xs text-teal-600 mt-1 text-center">Klik untuk perbesar</p>
                                         </div>
-                                    )}
-                                </div>
+                                        {!approvalDocs.shipping_receipt_url && (
+                                            <button
+                                                onClick={() => { setActiveTab('dokumen'); setActiveDocTab('persetujuan'); }}
+                                                className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-bold rounded-xl hover:bg-indigo-700 transition-colors"
+                                            >
+                                                <Upload className="w-4 h-4" />
+                                                Buka Tab Dokumen untuk Upload
+                                            </button>
+                                        )}
+                                    </>
+                                )}
                             </div>
                         </div>
                     </div>
