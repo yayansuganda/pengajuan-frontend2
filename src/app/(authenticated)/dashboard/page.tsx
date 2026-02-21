@@ -106,19 +106,22 @@ export default function DashboardPage() {
         }).format(amount);
     };
 
+    const normalizeStatus = (status?: string) => (status || '').trim().toLowerCase();
+
     // Calculate filtered stats
     const filteredStats = useMemo(() => {
         const calculateSum = (items: typeof filteredPengajuan) => items.reduce((sum, item) => sum + (Number(item.jumlah_pembiayaan) || 0), 0);
 
-        const disetujui = filteredPengajuan.filter(item => item.status === 'Disetujui');
-        const pending = filteredPengajuan.filter(item => item.status === 'Pending');
-        const ditolak = filteredPengajuan.filter(item => item.status === 'Ditolak');
-        const pencairan = filteredPengajuan.filter(item => item.status === 'Menunggu Pencairan' || item.status === 'Dicairkan');
-        const pengiriman = filteredPengajuan.filter(item => item.status === 'Menunggu Verifikasi Admin Unit');
-        const selesai = filteredPengajuan.filter(item => item.status === 'Menunggu Approval Manager' || item.status === 'Menunggu Pencairan');
+        const disetujui = filteredPengajuan.filter(item => normalizeStatus(item.status) === 'disetujui');
+        const pending = filteredPengajuan.filter(item => normalizeStatus(item.status) === 'pending');
+        const ditolak = filteredPengajuan.filter(item => normalizeStatus(item.status) === 'ditolak');
+        const pencairan = filteredPengajuan.filter(item => ['menunggu pencairan', 'dicairkan'].includes(normalizeStatus(item.status)));
+        const pengiriman = filteredPengajuan.filter(item => normalizeStatus(item.status) === 'menunggu verifikasi admin unit');
+        const selesai = filteredPengajuan.filter(item => normalizeStatus(item.status) === 'selesai');
+        const belumSelesai = filteredPengajuan.filter(item => normalizeStatus(item.status) !== 'selesai');
 
         return {
-            total: { count: filteredPengajuan.length, amount: calculateSum(filteredPengajuan) },
+            total: { count: belumSelesai.length, amount: calculateSum(belumSelesai) },
             approved: { count: disetujui.length, amount: calculateSum(disetujui) },
             pending: { count: pending.length, amount: calculateSum(pending) },
             rejected: { count: ditolak.length, amount: calculateSum(ditolak) },
@@ -189,7 +192,7 @@ export default function DashboardPage() {
             gradient: 'from-indigo-500 to-blue-500',
         },
         {
-            name: 'Menunggu Approval',
+            name: 'Selesai',
             value: filteredStats.selesai.count.toString(),
             amount: formatCurrency(filteredStats.selesai.amount),
             icon: Flag,
@@ -246,7 +249,7 @@ export default function DashboardPage() {
                                     <div>
                                         <p className="text-xs font-bold text-amber-900">Informasi Jam Kerja</p>
                                         <p className="text-[11px] text-amber-800 mt-1 leading-relaxed">
-                                            Jam kerja operasional: <strong>08:00 - 15:00</strong>. Pengajuan di luar jam kerja akan diproses pada jam kerja di hari kerja berikutnya.
+                                            Jam kerja operasional: <strong>Senin - Sabtu Jam 08:00 - 15:00</strong>. Pengajuan di luar jam kerja akan diproses pada jam kerja di hari kerja berikutnya.
                                         </p>
                                     </div>
                                 </div>
@@ -835,7 +838,7 @@ export default function DashboardPage() {
                                     <div>
                                         <p className="text-sm font-bold text-amber-900">Informasi Jam Kerja</p>
                                         <p className="text-sm text-amber-800 mt-1">
-                                            Jam kerja operasional: <strong>08:00 - 15:00</strong>. Pengajuan di luar jam kerja akan diproses pada jam kerja di hari kerja berikutnya.
+                                            Jam kerja operasional: <strong>Senin - Sabtu Jam 08:00 - 15:00</strong>. Pengajuan di luar jam kerja akan diproses pada jam kerja di hari kerja berikutnya.
                                         </p>
                                     </div>
                                 </div>

@@ -49,19 +49,22 @@ function FrontingPageContent() {
         }).format(amount);
     };
 
+    const normalizeStatus = (status?: string) => (status || '').trim().toLowerCase();
+
     // Calculate stats
     const stats = useMemo(() => {
         const calculateSum = (items: typeof pengajuanList) => items.reduce((sum, item) => sum + (Number(item.jumlah_pembiayaan) || 0), 0);
 
-        const approved = pengajuanList.filter(item => ['Disetujui', 'Menunggu Verifikasi Admin Unit', 'Menunggu Pencairan'].includes(item.status));
-        const pending = pengajuanList.filter(item => ['Pending', 'Revisi', 'Menunggu Approval Manager'].includes(item.status));
-        const rejected = pengajuanList.filter(item => item.status === 'Ditolak');
-        const disbursed = pengajuanList.filter(item => item.status === 'Dicairkan');
-        const menungguPencairan = pengajuanList.filter(item => item.status === 'Menunggu Pencairan');
-        const completed = pengajuanList.filter(item => item.status === 'Selesai');
+        const approved = pengajuanList.filter(item => ['disetujui', 'menunggu verifikasi admin unit', 'menunggu pencairan'].includes(normalizeStatus(item.status)));
+        const pending = pengajuanList.filter(item => ['pending', 'revisi', 'menunggu approval manager'].includes(normalizeStatus(item.status)));
+        const rejected = pengajuanList.filter(item => normalizeStatus(item.status) === 'ditolak');
+        const disbursed = pengajuanList.filter(item => normalizeStatus(item.status) === 'dicairkan');
+        const menungguPencairan = pengajuanList.filter(item => normalizeStatus(item.status) === 'menunggu pencairan');
+        const completed = pengajuanList.filter(item => normalizeStatus(item.status) === 'selesai');
+        const belumSelesai = pengajuanList.filter(item => normalizeStatus(item.status) !== 'selesai');
 
         return {
-            total: { count: pengajuanList.length, amount: calculateSum(pengajuanList) },
+            total: { count: belumSelesai.length, amount: calculateSum(belumSelesai) },
             approved: { count: approved.length, amount: calculateSum(approved) },
             pending: { count: pending.length, amount: calculateSum(pending) },
             rejected: { count: rejected.length, amount: calculateSum(rejected) },
@@ -209,7 +212,10 @@ function FrontingPageContent() {
                 
                 // Fetch dengan filter petugas_nippos dari localStorage
                 const data = await pengajuanRepository.getPengajuanList({
-                    petugas_nippos: storedUser.nippos // Ambil dari localStorage
+                    petugas_nippos: storedUser.nippos, // Ambil dari localStorage
+                    status: 'all',
+                    page: 1,
+                    limit: 1000,
                 });
                 
                 console.log('[FrontingPage] ✅ Raw response data:', data);
@@ -590,7 +596,7 @@ function FrontingPageContent() {
                             <div>
                                 <p className="text-xs font-bold text-amber-900">Informasi Jam Kerja</p>
                                 <p className="text-[11px] text-amber-800 mt-1 leading-relaxed">
-                                    Jam kerja operasional: <strong>08:00 - 15:00</strong>. Pengajuan di luar jam kerja akan diproses pada jam kerja di hari kerja berikutnya.
+                                    Jam kerja operasional: <strong>Senin - Sabtu Jam 08:00 - 15:00</strong>. Pengajuan di luar jam kerja akan diproses pada jam kerja di hari kerja berikutnya.
                                 </p>
                             </div>
                         </div>

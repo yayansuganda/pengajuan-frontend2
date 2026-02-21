@@ -32,7 +32,11 @@ export const usePengajuan = () => {
                 showLoading('Memuat data pengajuan...');
             }
             setLoading(true);
-            const data = await pengajuanRepository.getPengajuanList();
+            const data = await pengajuanRepository.getPengajuanList({
+                status: 'all',
+                page: 1,
+                limit: 1000,
+            });
             setPengajuanList(Array.isArray(data) ? data : []);
             if (!isFrontingRoute) {
                 hideLoading();
