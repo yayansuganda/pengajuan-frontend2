@@ -863,7 +863,7 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                                             <span className="font-medium text-slate-900">{d(pengajuan.no_rekening)}</span>
                                         </div>
                                         <div className="flex justify-between py-1.5 border-b border-slate-50">
-                                            <span className="text-slate-500">No. Giro Pos</span>
+                                            <span className="text-slate-500">No. Giropos</span>
                                             <span className="font-medium text-slate-900">{d(pengajuan.nomor_rekening_giro_pos)}</span>
                                         </div>
                                     </div>
@@ -1634,7 +1634,7 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                                     <Field label="Kantor Bayar" value={d(pengajuan.kantor_bayar)} />
                                     <Field label="Nama Bank" value={d(pengajuan.nama_bank)} />
                                     <Field label="No. Rekening Bank" value={d(pengajuan.no_rekening)} />
-                                    <Field label="No. Giro Pos" value={d(pengajuan.nomor_rekening_giro_pos)} />
+                                    <Field label="No. Giropos" value={d(pengajuan.nomor_rekening_giro_pos)} />
                                 </Section>
 
                                 {/* Financial */}

@@ -2361,7 +2361,7 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
                         <>
                             {renderInput("Mitra", "mitra", "text", false, "", false, true)}
                             {renderInput("Jenis Pensiun", "jenis_pensiun", "text", false, "", false, true)}
-                            {renderInput("No Giro Pos", "nomor_rekening_giro_pos", "text", false, "", false, true)}
+                            {renderInput("No Giropos", "nomor_rekening_giro_pos", "text", false, "", false, true)}
 
                             <div className="col-span-full mt-4 mb-2 pt-4 border-t border-gray-100">
                                 <h3 className="text-lg font-bold text-gray-900">Data Keuangan</h3>
@@ -2919,9 +2919,9 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
                     <PreviewItem label="Jenis Pembiayaan" value={selectedPembiayaan?.name || ''} />
                     {isPOS ? (
                         <>
-                            <PreviewItem label="Nopen" value={formData.nopen} />
+                            <PreviewItem label="Nopens" value={formData.nopen} />
                             <PreviewItem label="Jenis Pensiun" value={formData.jenis_pensiun} />
-                            <PreviewItem label="No Giro Pos" value={formData.nomor_rekening_giro_pos} />
+                            <PreviewItem label="No Giropos" value={formData.nomor_rekening_giro_pos} />
                             <PreviewItem label="Jenis Dapem" value={formData.jenis_dapem} />
                             <PreviewItem label="Bulan Dapem" value={formData.bulan_dapem} />
                             <PreviewItem label="Status Dapem" value={formData.status_dapem} />

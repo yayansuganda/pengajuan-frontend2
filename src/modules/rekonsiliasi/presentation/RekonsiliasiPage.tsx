@@ -243,7 +243,7 @@ export const RekonsiliasiPage: React.FC = () => {
                 'Kantor Bayar': item.kantor_bayar || '-',
                 'Nama Bank': item.nama_bank || '-',
                 'No Rekening': item.no_rekening || '-',
-                'Nomor Rekening Giro POS': item.nomor_rekening_giro_pos || '-',
+                'Nomor Rekening Giropos': item.nomor_rekening_giro_pos || '-',
 
                 // Data Dapem & Keuangan
                 'Jenis Dapem': item.jenis_dapem || '-',
