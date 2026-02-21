@@ -471,7 +471,8 @@ const DesktopView = ({ data, search, setSearch, statusFilter, setStatusFilter, d
                                         <tr key={item.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => {
                                             const isFronting = user?.role === 'petugas-pos' || user?.role === 'admin-pos';
                                             router.push(isFronting ? `/fronting/detail/${item.id}` : `/pengajuan/${item.id}`);
-                                        }}>                                            <td className="whitespace-nowrap px-3 py-4 text-sm">
+                                        }}>
+                                            <td className="whitespace-nowrap px-3 py-4 text-sm">
                                                 <div className="font-medium text-gray-900">{item.nama_lengkap || 'Nama tidak tersedia'}</div>
                                                 <div className="text-gray-500">{item.nik}</div>
                                             </td>
