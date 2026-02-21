@@ -87,18 +87,18 @@ export default function DashboardPage() {
     const filteredStats = useMemo(() => {
         const calculateSum = (items: typeof filteredPengajuan) => items.reduce((sum, item) => sum + (Number(item.jumlah_pembiayaan) || 0), 0);
 
-        const approved = filteredPengajuan.filter(item => item.status === 'APPROVED');
-        const pending = filteredPengajuan.filter(item => item.status === 'PENDING');
-        const rejected = filteredPengajuan.filter(item => item.status === 'REJECTED');
-        const pencairan = filteredPengajuan.filter(item => ['PENCAIRAN', 'DISBURSED'].includes(item.status?.toUpperCase()));
-        const pengiriman = filteredPengajuan.filter(item => ['PROSES_PENGIRIMAN', 'ON_DELIVERY', 'DELIVERY'].includes(item.status?.toUpperCase()));
-        const selesai = filteredPengajuan.filter(item => ['SELESAI', 'COMPLETED', 'DONE'].includes(item.status?.toUpperCase()));
+        const disetujui = filteredPengajuan.filter(item => item.status === 'Disetujui');
+        const pending = filteredPengajuan.filter(item => item.status === 'Pending');
+        const ditolak = filteredPengajuan.filter(item => item.status === 'Ditolak');
+        const pencairan = filteredPengajuan.filter(item => item.status === 'Menunggu Pencairan' || item.status === 'Dicairkan');
+        const pengiriman = filteredPengajuan.filter(item => item.status === 'Menunggu Verifikasi Admin Unit');
+        const selesai = filteredPengajuan.filter(item => item.status === 'Menunggu Approval Manager' || item.status === 'Menunggu Pencairan');
 
         return {
             total: { count: filteredPengajuan.length, amount: calculateSum(filteredPengajuan) },
-            approved: { count: approved.length, amount: calculateSum(approved) },
+            approved: { count: disetujui.length, amount: calculateSum(disetujui) },
             pending: { count: pending.length, amount: calculateSum(pending) },
-            rejected: { count: rejected.length, amount: calculateSum(rejected) },
+            rejected: { count: ditolak.length, amount: calculateSum(ditolak) },
             pencairan: { count: pencairan.length, amount: calculateSum(pencairan) },
             pengiriman: { count: pengiriman.length, amount: calculateSum(pengiriman) },
             selesai: { count: selesai.length, amount: calculateSum(selesai) },
@@ -159,14 +159,14 @@ export default function DashboardPage() {
             gradient: 'from-violet-500 to-purple-500',
         },
         {
-            name: 'Proses Pengiriman',
+            name: 'Verifikasi Admin Unit',
             value: filteredStats.pengiriman.count.toString(),
             amount: formatCurrency(filteredStats.pengiriman.amount),
             icon: Truck,
             gradient: 'from-indigo-500 to-blue-500',
         },
         {
-            name: 'Selesai',
+            name: 'Menunggu Approval',
             value: filteredStats.selesai.count.toString(),
             amount: formatCurrency(filteredStats.selesai.amount),
             icon: Flag,
