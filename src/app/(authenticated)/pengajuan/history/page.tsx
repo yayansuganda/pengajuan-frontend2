@@ -102,56 +102,48 @@ export default function PengajuanHistoryPage() {
 
     useEffect(() => {
         fetchHistory();
-    }, []);
+    }, [user]);
 
     const fetchHistory = async () => {
+        if (!user) return;
         try {
             setIsLoading(true);
 
-            // Fetch with high limit to get all data
-            // Backend will still filter by unit based on user role
-            // Send status='all' to prevent backend from applying default status filter
-            const allData = await repository.getPengajuanList({
-                status: 'all', // Special value to get all statuses
-                limit: 1000, // Get more data
-                page: 1
-            });
+            let allData: Pengajuan[] = [];
 
-            console.log('📊 History Debug Info:');
-            console.log('- User role:', user?.role);
-            console.log('- User unit:', user?.unit);
-            console.log('- Total data fetched:', allData.length);
-            console.log('- Sample data:', allData.slice(0, 2));
-
-            // Filter by unit_id for non-super-admin users
-            let filteredByUnit = allData;
-            if (user?.role !== 'super-admin') {
-                console.log('- Applying unit filter...');
-                console.log('- User unit value:', JSON.stringify(user?.unit));
-
-                if (user?.unit) {
-                    filteredByUnit = allData.filter((item: Pengajuan) => {
-                        const match = item.unit === user.unit;
-                        console.log(`  Item: "${item.nama_lengkap}" | item.unit="${item.unit}" | user.unit="${user.unit}" | Match: ${match}`);
-                        return match;
-                    });
-                    console.log('- After unit filter:', filteredByUnit.length);
-                } else {
-                    console.log('⚠️ User has no unit property, showing all data');
+            if (user.role === 'petugas-pos') {
+                // petugas-pos: fetch via NIPPOS from localStorage (fronting_user)
+                const raw = localStorage.getItem('fronting_user');
+                const frontingUser = raw ? JSON.parse(raw) : null;
+                const nippos = frontingUser?.nippos || '';
+                if (!nippos) {
+                    setData([]);
+                    return;
                 }
+                allData = await repository.getPengajuanList({
+                    petugas_nippos: nippos,
+                    status: 'all',
+                    limit: 1000,
+                    page: 1,
+                });
             } else {
-                console.log('- No unit filter applied (super-admin)');
+                allData = await repository.getPengajuanList({
+                    status: 'all',
+                    limit: 1000,
+                    page: 1,
+                });
+
+                // Filter by unit for non-super-admin
+                if (user.role !== 'super-admin' && user.unit) {
+                    allData = allData.filter((item: Pengajuan) => item.unit === user.unit);
+                }
             }
 
-            // Filter only completed or rejected submissions
-            const historyData = filteredByUnit.filter((item: Pengajuan) =>
+            // Keep only completed/rejected
+            const historyData = allData.filter((item: Pengajuan) =>
                 item.status === 'Selesai' || item.status === 'Ditolak'
             );
 
-            console.log('- After status filter (Selesai/Ditolak):', historyData.length);
-            console.log('- Final history data:', historyData);
-
-            // Sort by date (newest first)
             historyData.sort((a, b) =>
                 new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
             );
@@ -165,12 +157,16 @@ export default function PengajuanHistoryPage() {
     };
 
     const handleViewDetail = (id: string) => {
-        router.push(`/pengajuan/${id}`);
+        if (user?.role === 'petugas-pos') {
+            router.push(`/fronting/detail/${id}`);
+        } else {
+            router.push(`/pengajuan/${id}`);
+        }
     };
 
     // Mobile View
     const MobileView = () => (
-        <MobileLayoutWrapper showBackground={false}>
+        <MobileLayoutWrapper showBackground={false} moduleName={user?.role === 'petugas-pos' ? 'fronting' : 'default'}>
             {/* Background layers */}
             <div className="fixed inset-0 z-0 pointer-events-none">
                 <img src="/images/loan_header_bg.png" alt="bg" className="w-full h-full object-cover" />
