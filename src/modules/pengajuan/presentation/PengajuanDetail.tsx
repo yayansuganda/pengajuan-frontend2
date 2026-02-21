@@ -865,7 +865,7 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                                 </div>
 
                                 {/* Data Petugas POS - Mobile */}
-                                {pengajuan.petugas_nippos && (
+                                {pengajuan.petugas_nippos && user?.role !== 'officer' && user?.role !== 'petugas-pos' && (
                                     <div>
                                         <h3 className="text-xs font-bold text-slate-900 mb-2 flex items-center gap-1.5">
                                             <UserCheck className="h-3.5 w-3.5 text-indigo-600" /> Data Petugas POS
@@ -1478,7 +1478,7 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                                 </Section>
 
                                 {/* Data Petugas POS - Section */}
-                                {pengajuan.petugas_nippos && (
+                                {pengajuan.petugas_nippos && user?.role !== 'officer' && user?.role !== 'petugas-pos' && (
                                     <Section title="Data Petugas POS" icon={<UserCheck className="h-5 w-5 text-indigo-600" />}>
                                         <Field label="NIPPOS" value={d(pengajuan.petugas_nippos)} />
                                         <Field label="Nama Petugas" value={d(pengajuan.petugas_name)} />
