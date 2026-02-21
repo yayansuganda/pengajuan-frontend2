@@ -53,12 +53,12 @@ function FrontingPageContent() {
     const stats = useMemo(() => {
         const calculateSum = (items: typeof pengajuanList) => items.reduce((sum, item) => sum + (Number(item.jumlah_pembiayaan) || 0), 0);
 
-        const approved = pengajuanList.filter(item => item.status === 'APPROVED');
-        const pending = pengajuanList.filter(item => item.status === 'PENDING');
-        const rejected = pengajuanList.filter(item => item.status === 'REJECTED');
-        const disbursed = pengajuanList.filter(item => item.status === 'DISBURSED');
-        const shipping = pengajuanList.filter(item => item.status === 'SHIPPING');
-        const completed = pengajuanList.filter(item => item.status === 'COMPLETED');
+        const approved = pengajuanList.filter(item => ['Disetujui', 'Menunggu Verifikasi Admin Unit', 'Menunggu Pencairan'].includes(item.status));
+        const pending = pengajuanList.filter(item => ['Pending', 'Revisi', 'Menunggu Approval Manager'].includes(item.status));
+        const rejected = pengajuanList.filter(item => item.status === 'Ditolak');
+        const disbursed = pengajuanList.filter(item => item.status === 'Dicairkan');
+        const menungguPencairan = pengajuanList.filter(item => item.status === 'Menunggu Pencairan');
+        const completed = pengajuanList.filter(item => item.status === 'Selesai');
 
         return {
             total: { count: pengajuanList.length, amount: calculateSum(pengajuanList) },
@@ -66,7 +66,7 @@ function FrontingPageContent() {
             pending: { count: pending.length, amount: calculateSum(pending) },
             rejected: { count: rejected.length, amount: calculateSum(rejected) },
             disbursed: { count: disbursed.length, amount: calculateSum(disbursed) },
-            shipping: { count: shipping.length, amount: calculateSum(shipping) },
+            menungguPencairan: { count: menungguPencairan.length, amount: calculateSum(menungguPencairan) },
             completed: { count: completed.length, amount: calculateSum(completed) },
         };
     }, [pengajuanList]);
@@ -87,7 +87,7 @@ function FrontingPageContent() {
             gradient: 'from-emerald-500 to-teal-500',
         },
         {
-            name: 'Pending',
+            name: 'Pending / Proses',
             value: stats.pending.count.toString(),
             amount: formatCurrency(stats.pending.amount),
             icon: Activity,
@@ -101,16 +101,16 @@ function FrontingPageContent() {
             gradient: 'from-rose-500 to-pink-500',
         },
         {
-            name: 'Pencairan',
+            name: 'Dicairkan',
             value: stats.disbursed.count.toString(),
             amount: formatCurrency(stats.disbursed.amount),
             icon: Wallet,
-            gradient: 'from-violet-500 to-purple-500',
+            gradient: 'from-teal-500 to-green-500',
         },
         {
-            name: 'Proses Pengiriman',
-            value: stats.shipping.count.toString(),
-            amount: formatCurrency(stats.shipping.amount),
+            name: 'Menunggu Pencairan',
+            value: stats.menungguPencairan.count.toString(),
+            amount: formatCurrency(stats.menungguPencairan.amount),
             icon: Truck,
             gradient: 'from-indigo-500 to-blue-500',
         },
@@ -653,7 +653,45 @@ function FrontingPageContent() {
                         </div>
                     </div>
 
-                    {/* Warning jika belum login ke backend */}
+                    {/* Dicairkan Items - Show disbursement info */}
+                    {!loadingPengajuan && pengajuanList.filter(item => item.status === 'Dicairkan').length > 0 && (
+                        <div className="mb-4">
+                            <h2 className="text-sm font-bold text-slate-800 mb-2 flex items-center gap-1.5">
+                                <span className="w-2 h-2 rounded-full bg-teal-500 inline-block"></span>
+                                Dana Telah Dicairkan
+                            </h2>
+                            <div className="space-y-2">
+                                {pengajuanList.filter(item => item.status === 'Dicairkan').map((item: any) => (
+                                    <div
+                                        key={item.id}
+                                        onClick={() => router.push(`/pengajuan/${item.id}`)}
+                                        className="bg-gradient-to-r from-teal-50 to-emerald-50 border border-teal-200 rounded-xl p-3 cursor-pointer active:scale-[0.98] transition-transform shadow-sm"
+                                    >
+                                        <div className="flex items-center justify-between mb-1.5">
+                                            <span className="text-xs font-bold text-teal-700 bg-teal-100 px-2 py-0.5 rounded-full border border-teal-200">✓ Dicairkan</span>
+                                            <span className="text-xs text-slate-500">{new Date(item.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                                        </div>
+                                        <p className="text-sm font-bold text-slate-900 mb-0.5">{item.nama_lengkap}</p>
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-xs text-slate-500">Pencairan Dana:</span>
+                                            <span className="text-sm font-bold text-teal-700">
+                                                {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(item.jumlah_pembiayaan)}
+                                            </span>
+                                        </div>
+                                        {item.nominal_terima && (
+                                            <div className="flex items-center justify-between mt-0.5">
+                                                <span className="text-xs text-slate-500">Nominal Diterima:</span>
+                                                <span className="text-xs font-semibold text-emerald-700">
+                                                    {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(item.nominal_terima)}
+                                                </span>
+                                            </div>
+                                        )}
+                                        <p className="text-[10px] text-teal-600 mt-1.5 font-medium">Tap untuk lihat detail & bukti transfer →</p>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
 
                     {/* Info Card */}
                     <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-white">

@@ -493,6 +493,50 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                         </div>
                     )}
 
+                    {/* Dicairkan Info Banner - Mobile */}
+                    {pengajuan.status === 'Dicairkan' && (
+                        <div className="mb-5 px-2 animate-in fade-in slide-in-from-top-4 duration-500">
+                            <div className="bg-gradient-to-r from-teal-50 to-emerald-50 border-2 border-teal-400 rounded-xl p-5 shadow-lg">
+                                <div className="flex items-start gap-3">
+                                    <div className="flex-shrink-0 mt-0.5">
+                                        <div className="w-8 h-8 bg-teal-500 rounded-full flex items-center justify-center">
+                                            <Wallet className="w-5 h-5 text-white" />
+                                        </div>
+                                    </div>
+                                    <div className="flex-1">
+                                        <h3 className="text-base font-bold text-teal-900 mb-2">
+                                            ✅ Dana Berhasil Dicairkan
+                                        </h3>
+                                        <div className="space-y-2">
+                                            <div className="bg-white/70 rounded-lg p-3 border border-teal-200">
+                                                <div className="flex justify-between items-center mb-1">
+                                                    <span className="text-xs text-teal-700">Jumlah Pembiayaan:</span>
+                                                    <span className="text-sm font-bold text-teal-900">{money(pengajuan.jumlah_pembiayaan)}</span>
+                                                </div>
+                                                {pengajuan.nominal_terima && (
+                                                    <div className="flex justify-between items-center">
+                                                        <span className="text-xs text-teal-700">Nominal Diterima:</span>
+                                                        <span className="text-sm font-bold text-emerald-700">{money(pengajuan.nominal_terima)}</span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                            {approvalDocs.disbursement_proof_url && (
+                                                <div
+                                                    className="bg-white/70 rounded-lg p-2 border border-teal-200 cursor-pointer"
+                                                    onClick={() => openPreview(approvalDocs.disbursement_proof_url, false)}
+                                                >
+                                                    <p className="text-[10px] font-semibold text-teal-700 mb-1">📄 Bukti Transfer</p>
+                                                    <img src={approvalDocs.disbursement_proof_url} alt="Bukti Transfer" className="w-full h-24 object-cover rounded-lg" />
+                                                    <p className="text-[9px] text-teal-600 mt-1 text-center">Tap untuk perbesar</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                     {/* Main Card */}
                     <div className="bg-white rounded-3xl shadow-xl shadow-slate-900/10 p-5">
                         {/* Financial Summary - Compact */}
@@ -982,12 +1026,12 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                                     Kirim ke Admin Unit
                                 </button>
                             )}
-                            {user?.role === 'admin-unit' && pengajuan.status === 'Menunggu Verifikasi Admin Unit' && (
+                            {user?.role === 'admin-unit' && ['Menunggu Verifikasi Admin Unit', 'Disetujui'].includes(pengajuan.status) && (
                                 <button
-                                    onClick={() => handleUpdateStatus('Menunggu Pencairan', 'Kirim Pusat?')}
+                                    onClick={() => handleUpdateStatus('Menunggu Pencairan', 'Kirim ke Admin Pusat untuk Pencairan?')}
                                     className="flex-1 px-4 py-3 bg-orange-600 text-white text-sm font-medium rounded-xl hover:bg-orange-700 transition-colors shadow-lg"
                                 >
-                                    Verifikasi
+                                    Verifikasi & Kirim ke Admin Pusat
                                 </button>
                             )}
                             {user?.role === 'admin-pusat' && pengajuan.status === 'Menunggu Pencairan' && approvalDocs.disbursement_proof_url && (
@@ -998,7 +1042,7 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                                     Cairkan
                                 </button>
                             )}
-                            {user?.role === 'officer' && pengajuan.status === 'Dicairkan' && approvalDocs.shipping_receipt_url && (
+                            {(user?.role === 'officer' || user?.role === 'petugas-pos') && pengajuan.status === 'Dicairkan' && approvalDocs.shipping_receipt_url && (
                                 <button
                                     onClick={() => handleUpdateStatus('Selesai', 'Selesaikan?')}
                                     className="flex-1 px-4 py-3 bg-indigo-600 text-white text-sm font-medium rounded-xl hover:bg-indigo-700 transition-colors shadow-lg"
@@ -1018,7 +1062,7 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                         )}
 
                         {/* Info Message for Officer - Shipping Receipt */}
-                        {user?.role === 'officer' && pengajuan.status === 'Dicairkan' && !approvalDocs.shipping_receipt_url && (
+                        {(user?.role === 'officer' || user?.role === 'petugas-pos') && pengajuan.status === 'Dicairkan' && !approvalDocs.shipping_receipt_url && (
                             <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-xl">
                                 <p className="text-xs text-amber-800 text-center">
                                     🚚 Upload resi pengiriman berkas fisik untuk menyelesaikan pengajuan
@@ -1122,6 +1166,48 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                         </div>
                     )
                 }
+
+                {/* Dicairkan Info Banner - Desktop */}
+                {pengajuan.status === 'Dicairkan' && (
+                    <div className="bg-gradient-to-r from-teal-50 to-emerald-50 border-2 border-teal-400 rounded-2xl p-6 shadow-lg animate-in fade-in slide-in-from-top-4 duration-500">
+                        <div className="flex items-start gap-5">
+                            <div className="flex-shrink-0">
+                                <div className="w-14 h-14 bg-teal-500 rounded-full flex items-center justify-center shadow-lg">
+                                    <Wallet className="w-8 h-8 text-white" />
+                                </div>
+                            </div>
+                            <div className="flex-1">
+                                <h3 className="text-xl font-bold text-teal-900 mb-3">
+                                    ✅ Dana Berhasil Dicairkan
+                                </h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="bg-white/70 rounded-xl p-4 border border-teal-200">
+                                        <div className="flex justify-between items-center mb-2">
+                                            <span className="text-sm text-teal-700">Jumlah Pembiayaan:</span>
+                                            <span className="text-base font-bold text-teal-900">{money(pengajuan.jumlah_pembiayaan)}</span>
+                                        </div>
+                                        {pengajuan.nominal_terima && (
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-sm text-teal-700">Nominal Diterima:</span>
+                                                <span className="text-base font-bold text-emerald-700">{money(pengajuan.nominal_terima)}</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                    {approvalDocs.disbursement_proof_url && (
+                                        <div
+                                            className="bg-white/70 rounded-xl p-3 border border-teal-200 cursor-pointer hover:shadow-md transition-shadow"
+                                            onClick={() => openPreview(approvalDocs.disbursement_proof_url, false)}
+                                        >
+                                            <p className="text-xs font-semibold text-teal-700 mb-2">📄 Bukti Transfer Pencairan</p>
+                                            <img src={approvalDocs.disbursement_proof_url} alt="Bukti Transfer" className="w-full h-32 object-cover rounded-lg" />
+                                            <p className="text-xs text-teal-600 mt-1 text-center">Klik untuk perbesar</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 {/* Financial Summary */}
                 < div className="grid grid-cols-2 lg:grid-cols-4 gap-3" >
@@ -1400,7 +1486,7 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                                                     desc={doc.desc}
                                                     url={doc.url}
                                                     action={
-                                                        doc.uploadInfo && ((doc.uploadInfo.type === 'disbursement' && (user?.role === 'admin-pusat' || user?.role === 'super-admin')) || (doc.uploadInfo.type === 'shipping' && (user?.role === 'officer' || user?.role === 'super-admin'))) ? (
+                                                        doc.uploadInfo && ((doc.uploadInfo.type === 'disbursement' && (user?.role === 'admin-pusat' || user?.role === 'super-admin')) || (doc.uploadInfo.type === 'shipping' && (user?.role === 'officer' || user?.role === 'petugas-pos' || user?.role === 'super-admin'))) ? (
                                                             <button onClick={() => { setUploadTarget(doc.uploadInfo!.type as any); setIsUploadModalOpen(true); }} className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 flex items-center gap-1">
                                                                 <Upload className="h-3 w-3" /> {doc.url ? 'Update' : 'Upload'}
                                                             </button>
@@ -1458,12 +1544,12 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                             Kirim ke Admin Unit
                         </button>
                     )}
-                    {user?.role === 'admin-unit' && pengajuan.status === 'Menunggu Verifikasi Admin Unit' && (
+                    {user?.role === 'admin-unit' && ['Menunggu Verifikasi Admin Unit', 'Disetujui'].includes(pengajuan.status) && (
                         <button
-                            onClick={() => handleUpdateStatus('Menunggu Pencairan', 'Kirim Pusat?')}
+                            onClick={() => handleUpdateStatus('Menunggu Pencairan', 'Kirim ke Admin Pusat untuk Pencairan?')}
                             className="px-6 py-2.5 bg-orange-600 text-white text-sm font-medium rounded-xl hover:bg-orange-700 transition-colors shadow-sm"
                         >
-                            Verifikasi
+                            Verifikasi & Kirim ke Admin Pusat
                         </button>
                     )}
                     {user?.role === 'admin-pusat' && pengajuan.status === 'Menunggu Pencairan' && approvalDocs.disbursement_proof_url && (
@@ -1474,7 +1560,7 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                             Cairkan
                         </button>
                     )}
-                    {user?.role === 'officer' && pengajuan.status === 'Dicairkan' && approvalDocs.shipping_receipt_url && (
+                    {(user?.role === 'officer' || user?.role === 'petugas-pos') && pengajuan.status === 'Dicairkan' && approvalDocs.shipping_receipt_url && (
                         <button
                             onClick={() => handleUpdateStatus('Selesai', 'Selesaikan?')}
                             className="px-6 py-2.5 bg-indigo-600 text-white text-sm font-medium rounded-xl hover:bg-indigo-700 transition-colors shadow-sm"

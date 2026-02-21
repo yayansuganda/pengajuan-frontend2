@@ -225,11 +225,16 @@ const MobileView = ({ data, search, setSearch, statusFilter, setStatusFilter, da
                         )}
                     </div>
                 ) : (
-                    data.map((item) => (
+                    data.map((item) => {
+                        const isFronting = forceVisible || user?.role === 'petugas-pos' || user?.role === 'admin-pos';
+                        const detailPath = isFronting ? `/fronting/detail/${item.id}` : `/pengajuan/${item.id}`;
+                        const isDicairkan = item.status === 'Dicairkan';
+
+                        return (
                         <div
                             key={item.id}
-                            onClick={() => router.push(`/pengajuan/${item.id}`)}
-                            className="bg-white p-3.5 rounded-xl border border-slate-100 shadow-sm active:scale-[0.98] transition-transform"
+                            onClick={() => router.push(detailPath)}
+                            className={`bg-white p-3.5 rounded-xl border shadow-sm active:scale-[0.98] transition-transform ${isDicairkan ? 'border-teal-200 bg-gradient-to-br from-white to-teal-50' : 'border-slate-100'}`}
                         >
                             <div className="flex justify-between items-start mb-2">
                                 <h3 className="font-bold text-slate-800 text-sm line-clamp-1 flex-1 mr-2">{item.nama_lengkap || 'Nama tidak tersedia'}</h3>
@@ -257,6 +262,20 @@ const MobileView = ({ data, search, setSearch, statusFilter, setStatusFilter, da
                                 </div>
                             </div>
 
+                            {/* Dicairkan Info Banner */}
+                            {isDicairkan && (
+                                <div className="mb-2.5 bg-teal-50 border border-teal-200 rounded-lg px-3 py-2">
+                                    <p className="text-[10px] font-bold text-teal-700 mb-1">✓ Dana Berhasil Dicairkan</p>
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-[10px] text-teal-600">Nominal Diterima:</span>
+                                        <span className="text-xs font-bold text-teal-800">
+                                            {formatCurrency((item as any).nominal_terima || item.jumlah_pembiayaan)}
+                                        </span>
+                                    </div>
+                                    <p className="text-[9px] text-teal-500 mt-1">Tap untuk lihat bukti transfer →</p>
+                                </div>
+                            )}
+
                             {/* Horizontal Timeline */}
                             <div className="pt-2.5 border-t border-slate-100">
                                 <div className="flex items-center justify-between gap-1">
@@ -281,7 +300,8 @@ const MobileView = ({ data, search, setSearch, statusFilter, setStatusFilter, da
                                 </div>
                             </div>
                         </div>
-                    ))
+                        );
+                    })
                 )}
             </div>
 
@@ -409,8 +429,10 @@ const DesktopView = ({ data, search, setSearch, statusFilter, setStatusFilter, d
                                     <tr><td colSpan={6} className="px-3 py-10 text-center text-sm text-gray-500">Tidak ada pengajuan</td></tr>
                                 ) : (
                                     data.map((item) => (
-                                        <tr key={item.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => router.push(`/pengajuan/${item.id}`)}>
-                                            <td className="whitespace-nowrap px-3 py-4 text-sm">
+                                        <tr key={item.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => {
+                                            const isFronting = user?.role === 'petugas-pos' || user?.role === 'admin-pos';
+                                            router.push(isFronting ? `/fronting/detail/${item.id}` : `/pengajuan/${item.id}`);
+                                        }}>                                            <td className="whitespace-nowrap px-3 py-4 text-sm">
                                                 <div className="font-medium text-gray-900">{item.nama_lengkap || 'Nama tidak tersedia'}</div>
                                                 <div className="text-gray-500">{item.nik}</div>
                                             </td>
