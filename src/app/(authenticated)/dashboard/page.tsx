@@ -240,6 +240,18 @@ export default function DashboardPage() {
                                 </div>
                             </div>
 
+                            <div className="mb-4 bg-amber-50 border border-amber-200 rounded-2xl p-4 shadow-sm">
+                                <div className="flex items-start gap-2.5">
+                                    <AlertCircle className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
+                                    <div>
+                                        <p className="text-xs font-bold text-amber-900">Informasi Jam Kerja</p>
+                                        <p className="text-[11px] text-amber-800 mt-1 leading-relaxed">
+                                            Jam kerja operasional: <strong>08:00 - 15:00</strong>. Pengajuan di luar jam kerja akan diproses pada jam kerja di hari kerja berikutnya.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
                             {/* Filters */}
                             <div className="mb-4 bg-white/80 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-white">
                                 <div className="flex items-center gap-2 mb-3">
@@ -813,6 +825,18 @@ export default function DashboardPage() {
                                                 Pantau aktivitas pengajuan dan kelola data unit Anda dengan mudah melalui dashboard ini.
                                             </p>
                                         </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 shadow-sm">
+                                <div className="flex items-start gap-3">
+                                    <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5 shrink-0" />
+                                    <div>
+                                        <p className="text-sm font-bold text-amber-900">Informasi Jam Kerja</p>
+                                        <p className="text-sm text-amber-800 mt-1">
+                                            Jam kerja operasional: <strong>08:00 - 15:00</strong>. Pengajuan di luar jam kerja akan diproses pada jam kerja di hari kerja berikutnya.
+                                        </p>
                                     </div>
                                 </div>
                             </div>

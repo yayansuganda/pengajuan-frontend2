@@ -584,18 +584,18 @@ function FrontingPageContent() {
                         </div>
                     </div>
 
-                    {/* Info: Data Filter by NIPPOS */}
-                    {isLoggedIn && frontingUser?.nippos && (
-                        <div className="mb-4 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl p-3 shadow-md">
-                            <div className="flex items-center gap-2 text-white">
-                                <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></div>
-                                <p className="text-xs font-semibold">
-                                    Data ter-filter untuk NIPPOS: {frontingUser.nippos}
+                    <div className="mb-4 bg-amber-50 border border-amber-200 rounded-2xl p-4 shadow-sm">
+                        <div className="flex items-start gap-2.5">
+                            <AlertCircle className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
+                            <div>
+                                <p className="text-xs font-bold text-amber-900">Informasi Jam Kerja</p>
+                                <p className="text-[11px] text-amber-800 mt-1 leading-relaxed">
+                                    Jam kerja operasional: <strong>08:00 - 15:00</strong>. Pengajuan di luar jam kerja akan diproses pada jam kerja di hari kerja berikutnya.
                                 </p>
                             </div>
                         </div>
-                    )}
-
+                    </div>
+ 
                     {/* Loading indicator saat fetch pengajuan */}
                     {loadingPengajuan && (
                         <div className="mb-4 bg-white/90 backdrop-blur-sm rounded-xl p-4 shadow-sm border border-white">
