@@ -24,6 +24,8 @@ const STEPS = [
     { number: 5, title: 'Review', icon: Eye, description: 'Konfirmasi' }
 ];
 
+const MIN_SISA_GAJI_ERROR_MESSAGE = 'Sisa gaji harus di atas Rp 50.000. Pengajuan pinjaman tidak dapat dilanjutkan.';
+
 // Education levels list
 const EDUCATION_LEVELS = [
     'SD',
@@ -163,6 +165,11 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
     // Field errors state for inline validation
     const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
 
+    // NIK auto-check state: 'idle' | 'checking' | 'duplicate' | 'available'
+    const [nikCheckState, setNikCheckState] = useState<'idle' | 'checking' | 'duplicate' | 'available'>('idle');
+    const nikCheckDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const nikCheckRequestRef = useRef(0);
+
     // NOPEN API loading state
     const [loadingNopen, setLoadingNopen] = useState(false);
 
@@ -284,28 +291,76 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
         if (found) setSelectedKelurahanKode(String(found.kode));
     }, [pengajuanId, formData.kelurahan, kelurahanList]); // eslint-disable-line react-hooks/exhaustive-deps
 
+    const triggerNikAutoCheck = (nikValue: string) => {
+        if (nikCheckDebounceRef.current) {
+            clearTimeout(nikCheckDebounceRef.current);
+            nikCheckDebounceRef.current = null;
+        }
+
+        if (nikValue.length !== 16) {
+            setNikCheckState('idle');
+            return;
+        }
+
+        const requestId = ++nikCheckRequestRef.current;
+        setNikCheckState('checking');
+
+        nikCheckDebounceRef.current = setTimeout(async () => {
+            try {
+                const repo = new PengajuanRepositoryImpl();
+                const result = await repo.checkDuplicate(nikValue);
+                if (requestId !== nikCheckRequestRef.current) return;
+                setNikCheckState(result.exists ? 'duplicate' : 'available');
+            } catch {
+                if (requestId !== nikCheckRequestRef.current) return;
+                setNikCheckState('idle');
+            }
+        }, 300);
+    };
+
+    useEffect(() => {
+        return () => {
+            if (nikCheckDebounceRef.current) {
+                clearTimeout(nikCheckDebounceRef.current);
+            }
+        };
+    }, []);
+
     // Duplicate NIK Check Logic (Triggered on Next Step using dedicated endpoint)
     const checkDuplicateNik = async (): Promise<boolean> => {
         if (!formData.nik || formData.nik.length !== 16) return false;
 
+        // Reuse already-fetched result to avoid double API call
+        if (nikCheckState === 'duplicate') {
+            await Swal.fire({
+                icon: 'warning',
+                title: 'Pengajuan Aktif Ditemukan',
+                text: `NIK ${formData.nik} memiliki pengajuan yang sedang diproses. Tidak dapat membuat pengajuan baru.`,
+                confirmButtonText: 'OK'
+            });
+            return true;
+        }
+        if (nikCheckState === 'available') return false;
+
+        // Fallback: still checking or idle — call API
         try {
             const repo = new PengajuanRepositoryImpl();
-            // Call dedicated check-duplicate endpoint
             const result = await repo.checkDuplicate(formData.nik);
-
             if (result.exists) {
+                setNikCheckState('duplicate');
                 await Swal.fire({
                     icon: 'warning',
                     title: 'Pengajuan Aktif Ditemukan',
                     text: `NIK ${formData.nik} memiliki pengajuan yang sedang diproses (Status: ${result.status}). Tidak dapat membuat pengajuan baru.`,
                     confirmButtonText: 'OK'
                 });
-                return true; // Duplicate found, block
+                return true;
             }
-            return false; // No duplicate found
+            setNikCheckState('available');
+            return false;
         } catch (error) {
             console.error('Error checking duplicate NIK:', error);
-            return false; // Assume safe on error
+            return false;
         }
     };
 
@@ -920,6 +975,41 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
         return user?.role === 'petugas-pos' || user?.role === 'admin-pos';
     }, [user?.role]);
 
+    useEffect(() => {
+        const isPetugasPosCreateStep1 =
+            user?.role === 'petugas-pos' &&
+            isPOS &&
+            !pengajuanId &&
+            currentStep === 1;
+
+        if (!isPetugasPosCreateStep1 || !nopenDataLoaded) {
+            setFieldErrors(prev => {
+                if (prev.gaji_tersedia !== MIN_SISA_GAJI_ERROR_MESSAGE) return prev;
+                const newErrors = { ...prev };
+                delete newErrors.gaji_tersedia;
+                return newErrors;
+            });
+            return;
+        }
+
+        const gajiTersedia = parseFloat((formData.gaji_tersedia || '').replace(/\./g, '')) || 0;
+
+        if (gajiTersedia <= 50000) {
+            setFieldErrors(prev => {
+                if (prev.gaji_tersedia === MIN_SISA_GAJI_ERROR_MESSAGE) return prev;
+                return { ...prev, gaji_tersedia: MIN_SISA_GAJI_ERROR_MESSAGE };
+            });
+            return;
+        }
+
+        setFieldErrors(prev => {
+            if (prev.gaji_tersedia !== MIN_SISA_GAJI_ERROR_MESSAGE) return prev;
+            const newErrors = { ...prev };
+            delete newErrors.gaji_tersedia;
+            return newErrors;
+        });
+    }, [user?.role, isPOS, pengajuanId, currentStep, nopenDataLoaded, formData.gaji_tersedia]);
+
 
 
     // Format number to Indonesian format (12.500)
@@ -978,6 +1068,29 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
             if (value.length > 5) return;
         }
 
+        if (name === 'nik') {
+            triggerNikAutoCheck(value);
+        }
+
+        if (name === 'kategori_pembiayaan') {
+            const currentJangkaWaktu = parseInt(formData.jangka_waktu || '0');
+            if (currentJangkaWaktu > 0) {
+                const minJangkaWaktu = value === 'Macro' ? 12 : 6;
+                if (currentJangkaWaktu < minJangkaWaktu) {
+                    setFieldErrors(prev => ({
+                        ...prev,
+                        jangka_waktu: `Jangka Waktu minimal ${minJangkaWaktu} bulan${value === 'Macro' ? ' untuk kategori Makro' : ''}`
+                    }));
+                } else if (fieldErrors.jangka_waktu) {
+                    setFieldErrors(prev => {
+                        const newErrors = { ...prev };
+                        delete newErrors.jangka_waktu;
+                        return newErrors;
+                    });
+                }
+            }
+        }
+
         setFormData(prev => ({ ...prev, [name]: value }));
 
         // Reset NOPEN data loaded flag when user changes NOPEN
@@ -1030,16 +1143,18 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
                 if (name === 'jangka_waktu') {
                     const currentVal = parseInt(rawValue || '0');
                     const maxVal = parseInt(formData.maksimal_jangka_waktu_usia || '0');
+                    const isMakro = formData.kategori_pembiayaan === 'Macro';
+                    const minJangkaWaktu = isMakro ? 12 : 6;
 
                     if (maxVal > 0 && currentVal > maxVal) {
                         setFieldErrors(prev => ({
                             ...prev,
                             [name]: `Jangka waktu tidak boleh melebihi ${maxVal} bulan`
                         }));
-                    } else if (currentVal > 0 && currentVal < 6) {
+                    } else if (currentVal > 0 && currentVal < minJangkaWaktu) {
                         setFieldErrors(prev => ({
                             ...prev,
-                            [name]: `Jangka waktu minimal 6 bulan`
+                            [name]: `Jangka Waktu minimal ${minJangkaWaktu} bulan${isMakro ? ' untuk kategori Makro' : ''}`
                         }));
                     } else {
                         // Clear specific error if valid
@@ -1433,6 +1548,22 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
         if (currentStep === 1) {
             if (!formData.jenis_pelayanan_id) errors.jenis_pelayanan_id = 'Jenis Pelayanan wajib dipilih';
             if (!formData.jenis_pelayanan_id) errors.jenis_pelayanan_id = 'Jenis Pelayanan wajib dipilih';
+
+            const isPetugasPosRole = user?.role === 'petugas-pos';
+            if (isPetugasPosRole && isPOS && !pengajuanId) {
+                if (!formData.nopen.trim()) {
+                    errors.nopen = 'NOPEN wajib diisi';
+                }
+
+                if (!nopenDataLoaded) {
+                    errors.nopen = 'Silakan klik "Cek Data" terlebih dahulu sebelum lanjut ke step berikutnya';
+                }
+
+                const gajiTersedia = parseFloat((formData.gaji_tersedia || '').replace(/\./g, '')) || 0;
+                if (nopenDataLoaded && gajiTersedia <= 50000) {
+                    errors.gaji_tersedia = MIN_SISA_GAJI_ERROR_MESSAGE;
+                }
+            }
         }
 
         // Step 2: Data Diri
@@ -1892,7 +2023,63 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
                 <h3 className="text-lg font-bold text-gray-900">Informasi Pribadi</h3>
             </div>
 
-            {renderInput("NIK", "nik", "text", true, "16 nomor identitas", false)}
+            {/* NIK Input with auto-check indicator */}
+            <div className="col-span-1">
+                <label htmlFor="nik" className="block text-sm font-semibold text-gray-900 mb-1">
+                    NIK <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                    <input
+                        type="text"
+                        name="nik"
+                        id="nik"
+                        required
+                        maxLength={16}
+                        className={`block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 text-gray-900 bg-white placeholder-gray-400 border pr-9 ${
+                            fieldErrors.nik ? 'border-red-500 focus:border-red-500 focus:ring-red-500' :
+                            nikCheckState === 'duplicate' ? 'border-red-400 focus:border-red-500 focus:ring-red-500' :
+                            nikCheckState === 'available' ? 'border-green-400 focus:border-green-500 focus:ring-green-500' : ''
+                        }`}
+                        placeholder="16 nomor identitas"
+                        value={formData.nik}
+                        onChange={handleChange}
+                    />
+                    {/* Right-side status icon */}
+                    <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none">
+                        {nikCheckState === 'checking' && (
+                            <svg className="animate-spin w-4 h-4 text-indigo-500" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                            </svg>
+                        )}
+                        {nikCheckState === 'available' && (
+                            <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                            </svg>
+                        )}
+                        {nikCheckState === 'duplicate' && (
+                            <svg className="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        )}
+                    </div>
+                </div>
+                {/* Inline status message */}
+                {nikCheckState === 'checking' && (
+                    <p className="mt-1 text-xs text-indigo-600">Memeriksa NIK...</p>
+                )}
+                {nikCheckState === 'available' && (
+                    <p className="mt-1 text-xs text-green-600 flex items-center gap-1">NIK tersedia, belum ada pengajuan aktif.</p>
+                )}
+                {nikCheckState === 'duplicate' && (
+                    <p className="mt-1 text-xs text-red-600 flex items-center gap-1">NIK ini sudah memiliki pengajuan yang sedang diproses.</p>
+                )}
+                {fieldErrors.nik && nikCheckState !== 'duplicate' && (
+                    <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
+                        <AlertCircle className="w-4 h-4" />{fieldErrors.nik}
+                    </p>
+                )}
+            </div>
             {renderInput("Nama Lengkap", "nama_lengkap", "text", true, "Sesuai KTP")}
             {renderSimpleSelect("Jenis Kelamin", "jenis_kelamin", ["Laki-laki", "Perempuan"], true)}
             {renderInput("Tempat Lahir", "tempat_lahir", "text", true)}
@@ -2155,24 +2342,30 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
                                 💡 Klik <strong>Cek Data</strong> untuk mengambil data dari sistem Pos Indonesia
                             </p>
                         )}
+                        {fieldErrors.nopen && (
+                            <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
+                                <AlertCircle className="w-4 h-4" />
+                                {fieldErrors.nopen}
+                            </p>
+                        )}
                     </div>
 
                     {/* Form fields below NOPEN — only shown after API data is loaded */}
                     {nopenDataLoaded && (
                         <>
                             {renderInput("Mitra", "mitra", "text", false, "", false, true)}
-                            {renderInput("Jenis Pensiun", "jenis_pensiun")}
-                            {renderInput("No Giro Pos", "nomor_rekening_giro_pos", "text", false, "", false)}
+                            {renderInput("Jenis Pensiun", "jenis_pensiun", "text", false, "", false, true)}
+                            {renderInput("No Giro Pos", "nomor_rekening_giro_pos", "text", false, "", false, true)}
 
                             <div className="col-span-full mt-4 mb-2 pt-4 border-t border-gray-100">
                                 <h3 className="text-lg font-bold text-gray-900">Data Keuangan</h3>
                             </div>
-                            {renderInput("Gaji Bersih", "gaji_bersih", "number", false, "Rp", true)}
-                            {renderInput("Total Potongan Pinjaman", "total_potongan_pinjaman", "number", false, "Rp", true)}
-                            {renderInput("Gaji Tersedia", "gaji_tersedia", "number", false, "Rp", true)}
-                            {renderInput("Jenis Dapem", "jenis_dapem")}
-                            {renderInput("Bulan Dapem", "bulan_dapem")}
-                            {renderInput("Status Dapem", "status_dapem")}
+                            {renderInput("Gaji Bersih", "gaji_bersih", "number", false, "Rp", true, true)}
+                            {renderInput("Total Potongan Pinjaman", "total_potongan_pinjaman", "number", false, "Rp", true, true)}
+                            {renderInput("Gaji Tersedia", "gaji_tersedia", "number", false, "Rp", true, true)}
+                            {renderInput("Jenis Dapem", "jenis_dapem", "text", false, "", false, true)}
+                            {renderInput("Bulan Dapem", "bulan_dapem", "text", false, "", false, true)}
+                            {renderInput("Status Dapem", "status_dapem", "text", false, "", false, true)}
                         </>
                     )}
                 </>
