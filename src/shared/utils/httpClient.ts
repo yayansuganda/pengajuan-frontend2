@@ -53,8 +53,8 @@ function createHttpClient(): AxiosInstance {
                 requestData: error.config?.data,
             };
 
-            console.error('❌ API Error Details:', errorDetails);
-            console.error('❌ Full Error Object:', error);
+            console.error('❌ API Error Details:', JSON.stringify(errorDetails, null, 2));
+            console.error('❌ Full Error Object:', error?.message, '| status:', errorDetails.status, '| url:', errorDetails.fullURL);
 
             // Parse error message to user-friendly format
             const userFriendlyMessage = parseErrorMessage(error);

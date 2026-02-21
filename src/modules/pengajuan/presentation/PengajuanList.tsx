@@ -31,6 +31,7 @@ interface ViewProps {
 const STATUS_OPTIONS = [
     { value: '', label: 'Semua Status' },
     { value: 'Pending', label: 'Pending' },
+    { value: 'Revisi', label: 'Revisi' },
     { value: 'Menunggu Approval Manager', label: 'Menunggu Manager' },
     { value: 'Menunggu Verifikasi Admin Unit', label: 'Verifikasi Admin Unit' },
     { value: 'Menunggu Pencairan', label: 'Menunggu Pencairan' },
@@ -39,6 +40,35 @@ const STATUS_OPTIONS = [
     { value: 'Disetujui', label: 'Disetujui' },
     { value: 'Ditolak', label: 'Ditolak' },
 ];
+
+// Returns info text shown when no explicit status filter is selected, describing what data the role sees by default
+const getRoleDefaultFilterInfo = (role: string): { label: string; color: string } | null => {
+    if (role === 'verifier') {
+        return {
+            label: 'Default: Menampilkan semua data unit Anda kecuali yang sudah Selesai',
+            color: 'bg-teal-50 border-teal-200 text-teal-800',
+        };
+    }
+    if (role === 'manager') {
+        return {
+            label: 'Default: Hanya menampilkan data yang dikirim Verifier (Menunggu Approval)',
+            color: 'bg-blue-50 border-blue-200 text-blue-800',
+        };
+    }
+    if (role === 'admin-unit') {
+        return {
+            label: 'Default: Hanya menampilkan data yang dikirim oleh petugas (Menunggu Verifikasi Admin Unit)',
+            color: 'bg-purple-50 border-purple-200 text-purple-800',
+        };
+    }
+    if (role === 'admin-pusat') {
+        return {
+            label: 'Default: Hanya menampilkan data yang dikirim Admin Unit (Menunggu Pencairan)',
+            color: 'bg-orange-50 border-orange-200 text-orange-800',
+        };
+    }
+    return null;
+};
 
 const getStatusColor = (status: string) => {
     switch (status) {
@@ -178,6 +208,17 @@ const MobileView = ({ data, search, setSearch, statusFilter, setStatusFilter, da
 
 
                 <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 space-y-3">
+                    {/* Role default filter info badge */}
+                    {(() => {
+                        const info = getRoleDefaultFilterInfo(user?.role || '');
+                        if (!info || statusFilter !== '') return null;
+                        return (
+                            <div className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-medium ${info.color}`}>
+                                <span>ℹ️</span>
+                                <span>{info.label}</span>
+                            </div>
+                        );
+                    })()}
                     {/* Search Bar */}
                     <div className="relative">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -198,7 +239,14 @@ const MobileView = ({ data, search, setSearch, statusFilter, setStatusFilter, da
                                 onChange={(e) => setStatusFilter(e.target.value)}
                                 className="w-full pl-3 pr-8 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-600 appearance-none focus:bg-white focus:ring-2 focus:ring-indigo-500 transition-colors"
                             >
-                                {STATUS_OPTIONS.map(opt => (
+                                <option value="">
+                                    {user?.role === 'verifier' ? 'Default (Semua kecuali Selesai)' :
+                                     user?.role === 'manager' ? 'Default (Menunggu Approval)' :
+                                     user?.role === 'admin-unit' ? 'Default (Menunggu Verifikasi)' :
+                                     user?.role === 'admin-pusat' ? 'Default (Menunggu Pencairan)' :
+                                     'Semua Status'}
+                                </option>
+                                {STATUS_OPTIONS.slice(1).map(opt => (
                                     <option key={opt.value} value={opt.value}>{opt.label}</option>
                                 ))}
                             </select>
@@ -382,6 +430,17 @@ const DesktopView = ({ data, search, setSearch, statusFilter, setStatusFilter, d
                         </div>
                     ) : null;
                 })()}
+                {/* Role default filter info badge */}
+                {(() => {
+                    const info = getRoleDefaultFilterInfo(user?.role || '');
+                    if (!info || statusFilter !== '') return null;
+                    return (
+                        <div className={`mt-3 inline-flex items-center gap-2 border rounded-lg px-4 py-2 text-xs font-medium ${info.color}`}>
+                            <span>ℹ️</span>
+                            <span>{info.label}</span>
+                        </div>
+                    );
+                })()}
             </div>
             <div className="mt-4 sm:ml-16 sm:mt-0 sm:flex-none flex gap-3">
                 <button
@@ -429,7 +488,14 @@ const DesktopView = ({ data, search, setSearch, statusFilter, setStatusFilter, d
                         onChange={(e) => setStatusFilter(e.target.value)}
                         className="w-full px-3 py-2 text-sm text-gray-900 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     >
-                        {STATUS_OPTIONS.map((opt) => (
+                        <option value="">
+                            {user?.role === 'verifier' ? 'Default (Semua kecuali Selesai)' :
+                             user?.role === 'manager' ? 'Default (Menunggu Approval)' :
+                             user?.role === 'admin-unit' ? 'Default (Menunggu Verifikasi)' :
+                             user?.role === 'admin-pusat' ? 'Default (Menunggu Pencairan)' :
+                             'Semua Status'}
+                        </option>
+                        {STATUS_OPTIONS.slice(1).map((opt) => (
                             <option key={opt.value} value={opt.value}>{opt.label}</option>
                         ))}
                     </select>
