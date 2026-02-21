@@ -17,6 +17,8 @@ export const RekonsiliasiPage: React.FC = () => {
     const [filteredList, setFilteredList] = useState<Pengajuan[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [filterStatus, setFilterStatus] = useState('');
+    const [filterRegional, setFilterRegional] = useState('');
+    const [filterKcu, setFilterKcu] = useState('');
     const [dateFrom, setDateFrom] = useState('');
     const [dateTo, setDateTo] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -34,19 +36,43 @@ export const RekonsiliasiPage: React.FC = () => {
         'Ditolak',
     ];
 
+    const regionalOptions = useMemo(() => {
+        return Array.from(
+            new Set(
+                pengajuanList
+                    .map((item) => item.petugas_kc_name?.trim())
+                    .filter((value): value is string => Boolean(value))
+            )
+        ).sort((a, b) => a.localeCompare(b, 'id-ID'));
+    }, [pengajuanList]);
+
+    const kcuOptions = useMemo(() => {
+        return Array.from(
+            new Set(
+                pengajuanList
+                    .map((item) => item.petugas_kcu_name?.trim())
+                    .filter((value): value is string => Boolean(value))
+            )
+        ).sort((a, b) => a.localeCompare(b, 'id-ID'));
+    }, [pengajuanList]);
+
     // Hitung jumlah filter aktif
     const activeFilterCount = useMemo(() => {
         let count = 0;
         if (searchQuery.trim()) count++;
         if (filterStatus) count++;
+        if (filterRegional) count++;
+        if (filterKcu) count++;
         if (dateFrom) count++;
         if (dateTo) count++;
         return count;
-    }, [searchQuery, filterStatus, dateFrom, dateTo]);
+    }, [searchQuery, filterStatus, filterRegional, filterKcu, dateFrom, dateTo]);
 
     const resetFilters = () => {
         setSearchQuery('');
         setFilterStatus('');
+        setFilterRegional('');
+        setFilterKcu('');
         setDateFrom('');
         setDateTo('');
     };
@@ -144,6 +170,16 @@ export const RekonsiliasiPage: React.FC = () => {
             filtered = filtered.filter((item) => item.status === filterStatus);
         }
 
+        // Filter by kantor regional (petugas KC)
+        if (filterRegional) {
+            filtered = filtered.filter((item) => (item.petugas_kc_name || '') === filterRegional);
+        }
+
+        // Filter by kantor KCU
+        if (filterKcu) {
+            filtered = filtered.filter((item) => (item.petugas_kcu_name || '') === filterKcu);
+        }
+
         // Filter by date range (created_at)
         if (dateFrom) {
             const from = new Date(dateFrom);
@@ -163,7 +199,7 @@ export const RekonsiliasiPage: React.FC = () => {
         }
 
         setFilteredList(filtered);
-    }, [searchQuery, filterStatus, dateFrom, dateTo, pengajuanList]);
+    }, [searchQuery, filterStatus, filterRegional, filterKcu, dateFrom, dateTo, pengajuanList]);
 
     // Export to Excel
     const handleExportExcel = () => {
@@ -390,9 +426,9 @@ export const RekonsiliasiPage: React.FC = () => {
     };
 
     return (
-        <div className="p-6 space-y-6">
+        <div className="p-4 sm:p-6 space-y-6 w-full max-w-full min-w-0 overflow-x-hidden">
             {/* Header */}
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 w-full max-w-full min-w-0 overflow-hidden">
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                     <div>
                         <h1 className="text-2xl font-bold text-slate-900">Rekonsiliasi Data POS</h1>
@@ -447,14 +483,14 @@ export const RekonsiliasiPage: React.FC = () => {
                     </div>
 
                     {/* Row 2: Filter Status + Range Tanggal */}
-                    <div className="flex flex-col sm:flex-row gap-3 p-4 bg-slate-50 rounded-xl border border-slate-200">
-                        <div className="flex items-center gap-2 text-slate-500 shrink-0">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-12 gap-3 p-4 bg-slate-50 rounded-xl border border-slate-200">
+                        <div className="flex items-center gap-2 text-slate-500 shrink-0 xl:col-span-1">
                             <Filter className="h-4 w-4" />
                             <span className="text-sm font-medium text-slate-600">Filter:</span>
                         </div>
 
                         {/* Filter Status */}
-                        <div className="flex-1 min-w-[180px]">
+                        <div className="min-w-0 xl:col-span-2">
                             <select
                                 value={filterStatus}
                                 onChange={(e) => setFilterStatus(e.target.value)}
@@ -467,8 +503,36 @@ export const RekonsiliasiPage: React.FC = () => {
                             </select>
                         </div>
 
+                        {/* Filter Kantor Regional */}
+                        <div className="min-w-0 xl:col-span-2">
+                            <select
+                                value={filterRegional}
+                                onChange={(e) => setFilterRegional(e.target.value)}
+                                className="w-full py-2 pl-3 pr-8 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white"
+                            >
+                                <option value="">Semua Kantor Regional</option>
+                                {regionalOptions.map((regional) => (
+                                    <option key={regional} value={regional}>{regional}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        {/* Filter Kantor KCU */}
+                        <div className="min-w-0 xl:col-span-2">
+                            <select
+                                value={filterKcu}
+                                onChange={(e) => setFilterKcu(e.target.value)}
+                                className="w-full py-2 pl-3 pr-8 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white"
+                            >
+                                <option value="">Semua Kantor KCU</option>
+                                {kcuOptions.map((kcu) => (
+                                    <option key={kcu} value={kcu}>{kcu}</option>
+                                ))}
+                            </select>
+                        </div>
+
                         {/* Filter Tanggal Dari */}
-                        <div className="flex items-center gap-2 flex-1 min-w-[160px]">
+                        <div className="flex items-center gap-2 min-w-0 xl:col-span-2">
                             <Calendar className="h-4 w-4 text-slate-400 shrink-0" />
                             <input
                                 type="date"
@@ -480,10 +544,10 @@ export const RekonsiliasiPage: React.FC = () => {
                         </div>
 
                         {/* Separator */}
-                        <span className="text-slate-400 self-center text-sm shrink-0">s/d</span>
+                        <span className="hidden xl:inline text-slate-400 self-center text-sm shrink-0 justify-self-center">s/d</span>
 
                         {/* Filter Tanggal Sampai */}
-                        <div className="flex items-center gap-2 flex-1 min-w-[160px]">
+                        <div className="flex items-center gap-2 min-w-0 xl:col-span-2">
                             <Calendar className="h-4 w-4 text-slate-400 shrink-0" />
                             <input
                                 type="date"
@@ -498,7 +562,7 @@ export const RekonsiliasiPage: React.FC = () => {
                         {activeFilterCount > 0 && (
                             <button
                                 onClick={resetFilters}
-                                className="inline-flex items-center gap-1.5 px-3 py-2 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-600 text-sm font-medium rounded-lg transition-colors shrink-0"
+                                className="inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-600 text-sm font-medium rounded-lg transition-colors shrink-0 xl:col-span-1"
                             >
                                 <X className="h-3.5 w-3.5" />
                                 Reset
@@ -512,14 +576,14 @@ export const RekonsiliasiPage: React.FC = () => {
             </div>
 
             {/* Table */}
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 w-full max-w-full min-w-0 overflow-hidden">
                 <div
-                    className="overflow-x-auto overflow-y-auto max-h-[600px] relative custom-scrollbar"
+                    className="w-full max-w-full min-w-0 overflow-x-auto overflow-y-auto max-h-[600px] relative custom-scrollbar overscroll-x-contain"
                     style={{
                         scrollBehavior: 'smooth'
                     }}
                 >
-                    <table className="w-full text-sm">
+                    <table className="min-w-full w-max text-sm">
                         <thead className="bg-slate-50 border-b border-slate-200 sticky top-0 z-10 shadow-sm">
                             <tr>
                                 <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">No</th>
@@ -570,7 +634,7 @@ export const RekonsiliasiPage: React.FC = () => {
                                         <td className="px-4 py-3 text-slate-900 whitespace-nowrap font-semibold">{formatMoney(item.jumlah_pembiayaan)}</td>
                                         <td className="px-4 py-3 text-slate-900 whitespace-nowrap">{item.jangka_waktu} Bulan</td>
                                         <td className="px-4 py-3 text-slate-900 whitespace-nowrap">{formatMoney(item.besar_angsuran)}</td>
-                                        <td className="px-4 py-3 text-slate-900 whitespace-nowrap font-semibold text-emerald-600">{formatMoney(item.nominal_terima)}</td>
+                                        <td className="px-4 py-3 whitespace-nowrap font-semibold text-emerald-600">{formatMoney(item.nominal_terima)}</td>
                                         <td className="px-4 py-3 text-slate-900 whitespace-nowrap font-mono text-xs">{item.petugas_nippos || '-'}</td>
                                         <td className="px-4 py-3 text-slate-900 whitespace-nowrap">{item.petugas_name || '-'}</td>
                                         <td className="px-4 py-3 text-slate-900 whitespace-nowrap">{item.petugas_kcu_name || '-'}</td>
@@ -586,7 +650,7 @@ export const RekonsiliasiPage: React.FC = () => {
             {/* Info Footer */}
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <div className="flex items-start gap-3">
-                    <FileSpreadsheet className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                    <FileSpreadsheet className="h-5 w-5 text-blue-600 shrink-0 mt-0.5" />
                     <div className="flex-1">
                         <h3 className="text-sm font-semibold text-blue-900 mb-1">Informasi Export Excel</h3>
                         <p className="text-xs text-blue-800">

@@ -64,7 +64,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
                 />
 
                 {/* Main Content Area */}
-                <div className="flex-1 lg:ml-64 flex flex-col min-h-screen transition-all duration-300">
+                <div className="flex-1 lg:ml-64 flex flex-col min-h-screen min-w-0 transition-all duration-300">
                     {/* Top Header */}
                     <Header
                         user={user}
@@ -73,8 +73,8 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
                     />
 
                     {/* Page Content */}
-                    <main className="flex-1 p-6 lg:p-8 overflow-y-auto w-full">
-                        <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    <main className="flex-1 p-6 lg:p-8 overflow-y-auto w-full min-w-0">
+                        <div className="w-full min-w-0 animate-in fade-in slide-in-from-bottom-4 duration-500">
                             {children}
                         </div>
                     </main>
