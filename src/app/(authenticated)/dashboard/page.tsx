@@ -18,6 +18,8 @@ export default function DashboardPage() {
     // Filter states
     const [selectedUnit, setSelectedUnit] = useState<string>('all');
     const [dateRange, setDateRange] = useState<string>('30');
+    const [startDate, setStartDate] = useState<string>('');
+    const [endDate, setEndDate] = useState<string>('');
 
     // Get unique units for filter
     const units = useMemo(() => {
@@ -34,7 +36,7 @@ export default function DashboardPage() {
             filtered = filtered.filter(item => item.unit === selectedUnit);
         }
 
-        // Filter by date range
+        // Filter by date range quick select
         if (dateRange !== 'all') {
             const days = parseInt(dateRange);
             const cutoffDate = new Date();
@@ -46,8 +48,28 @@ export default function DashboardPage() {
             });
         }
 
+        // Filter by custom date range (if provided)
+        if (startDate || endDate) {
+            filtered = filtered.filter(item => {
+                const itemDate = new Date(item.created_at);
+                if (isNaN(itemDate.getTime())) return false;
+
+                if (startDate) {
+                    const start = new Date(`${startDate}T00:00:00`);
+                    if (itemDate < start) return false;
+                }
+
+                if (endDate) {
+                    const end = new Date(`${endDate}T23:59:59`);
+                    if (itemDate > end) return false;
+                }
+
+                return true;
+            });
+        }
+
         return filtered;
-    }, [pengajuanList, selectedUnit, dateRange]);
+    }, [pengajuanList, selectedUnit, dateRange, startDate, endDate]);
 
     // Officer specific: Loans needing revision
     const revisionNeededLoans = useMemo(() => {
@@ -292,7 +314,37 @@ export default function DashboardPage() {
                                             ))}
                                         </select>
                                     </div>
+
+                                    <div>
+                                        <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Dari Tanggal</label>
+                                        <input
+                                            type="date"
+                                            value={startDate}
+                                            onChange={(e) => setStartDate(e.target.value)}
+                                            className="w-full text-xs px-3 py-2 rounded-lg border border-slate-200 bg-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Sampai Tanggal</label>
+                                        <input
+                                            type="date"
+                                            value={endDate}
+                                            onChange={(e) => setEndDate(e.target.value)}
+                                            className="w-full text-xs px-3 py-2 rounded-lg border border-slate-200 bg-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                        />
+                                    </div>
                                 </div>
+                            </div>
+
+                            <div className="mb-4">
+                                <button
+                                    onClick={() => router.push('/pengajuan/create')}
+                                    className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 text-white text-xs font-bold shadow-sm hover:bg-indigo-700 transition-colors"
+                                >
+                                    <FileText className="w-4 h-4" />
+                                    Tambah Pengajuan Baru
+                                </button>
                             </div>
 
                             {/* Stats Grid - Compact */}
@@ -850,7 +902,7 @@ export default function DashboardPage() {
                                     <Filter className="w-5 h-5 text-indigo-600" />
                                     <h3 className="text-sm font-bold text-slate-800">Filter Data</h3>
                                 </div>
-                                <div className="grid grid-cols-2 gap-4">
+                                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                                     {/* Date Range Filter */}
                                     <div>
                                         <label className="text-sm font-semibold text-slate-700 mb-2 block">Periode Waktu</label>
@@ -881,7 +933,37 @@ export default function DashboardPage() {
                                             ))}
                                         </select>
                                     </div>
+
+                                    <div>
+                                        <label className="text-sm font-semibold text-slate-700 mb-2 block">Dari Tanggal</label>
+                                        <input
+                                            type="date"
+                                            value={startDate}
+                                            onChange={(e) => setStartDate(e.target.value)}
+                                            className="w-full px-4 py-2.5 rounded-lg border border-slate-200 bg-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="text-sm font-semibold text-slate-700 mb-2 block">Sampai Tanggal</label>
+                                        <input
+                                            type="date"
+                                            value={endDate}
+                                            onChange={(e) => setEndDate(e.target.value)}
+                                            className="w-full px-4 py-2.5 rounded-lg border border-slate-200 bg-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
+                                        />
+                                    </div>
                                 </div>
+                            </div>
+
+                            <div>
+                                <button
+                                    onClick={() => router.push('/pengajuan/create')}
+                                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-semibold shadow-sm hover:bg-indigo-700 transition-colors"
+                                >
+                                    <FileText className="w-4 h-4" />
+                                    Tambah Pengajuan Baru
+                                </button>
                             </div>
 
                             {/* Stats Grid */}

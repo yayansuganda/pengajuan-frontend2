@@ -29,6 +29,8 @@ function FrontingPageContent() {
     const [loadingPengajuan, setLoadingPengajuan] = useState(false);
     const [refreshTrigger, setRefreshTrigger] = useState(0);
     const [hasError, setHasError] = useState(false);
+    const [startDate, setStartDate] = useState<string>('');
+    const [endDate, setEndDate] = useState<string>('');
 
     const authRepository = new AuthRepositoryImpl();
     const pengajuanRepository = new PengajuanRepositoryImpl();
@@ -51,17 +53,38 @@ function FrontingPageContent() {
 
     const normalizeStatus = (status?: string) => (status || '').trim().toLowerCase();
 
+    const filteredPengajuan = useMemo(() => {
+        if (!startDate && !endDate) return pengajuanList;
+
+        return pengajuanList.filter(item => {
+            const itemDate = new Date(item.created_at);
+            if (isNaN(itemDate.getTime())) return false;
+
+            if (startDate) {
+                const start = new Date(`${startDate}T00:00:00`);
+                if (itemDate < start) return false;
+            }
+
+            if (endDate) {
+                const end = new Date(`${endDate}T23:59:59`);
+                if (itemDate > end) return false;
+            }
+
+            return true;
+        });
+    }, [pengajuanList, startDate, endDate]);
+
     // Calculate stats
     const stats = useMemo(() => {
-        const calculateSum = (items: typeof pengajuanList) => items.reduce((sum, item) => sum + (Number(item.jumlah_pembiayaan) || 0), 0);
+        const calculateSum = (items: typeof filteredPengajuan) => items.reduce((sum, item) => sum + (Number(item.jumlah_pembiayaan) || 0), 0);
 
-        const approved = pengajuanList.filter(item => ['disetujui', 'menunggu verifikasi admin unit', 'menunggu pencairan'].includes(normalizeStatus(item.status)));
-        const pending = pengajuanList.filter(item => ['pending', 'revisi', 'menunggu approval manager'].includes(normalizeStatus(item.status)));
-        const rejected = pengajuanList.filter(item => normalizeStatus(item.status) === 'ditolak');
-        const disbursed = pengajuanList.filter(item => normalizeStatus(item.status) === 'dicairkan');
-        const menungguPencairan = pengajuanList.filter(item => normalizeStatus(item.status) === 'menunggu pencairan');
-        const completed = pengajuanList.filter(item => normalizeStatus(item.status) === 'selesai');
-        const belumSelesai = pengajuanList.filter(item => normalizeStatus(item.status) !== 'selesai');
+        const approved = filteredPengajuan.filter(item => ['disetujui', 'menunggu verifikasi admin unit', 'menunggu pencairan'].includes(normalizeStatus(item.status)));
+        const pending = filteredPengajuan.filter(item => ['pending', 'revisi', 'menunggu approval manager'].includes(normalizeStatus(item.status)));
+        const rejected = filteredPengajuan.filter(item => normalizeStatus(item.status) === 'ditolak');
+        const disbursed = filteredPengajuan.filter(item => normalizeStatus(item.status) === 'dicairkan');
+        const menungguPencairan = filteredPengajuan.filter(item => normalizeStatus(item.status) === 'menunggu pencairan');
+        const completed = filteredPengajuan.filter(item => normalizeStatus(item.status) === 'selesai');
+        const belumSelesai = filteredPengajuan.filter(item => normalizeStatus(item.status) !== 'selesai');
 
         return {
             total: { count: belumSelesai.length, amount: calculateSum(belumSelesai) },
@@ -72,7 +95,7 @@ function FrontingPageContent() {
             menungguPencairan: { count: menungguPencairan.length, amount: calculateSum(menungguPencairan) },
             completed: { count: completed.length, amount: calculateSum(completed) },
         };
-    }, [pengajuanList]);
+    }, [filteredPengajuan]);
 
     const statsDisplay = [
         {
@@ -601,6 +624,39 @@ function FrontingPageContent() {
                             </div>
                         </div>
                     </div>
+
+                    <div className="mb-4 bg-white/90 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-white">
+                        <div className="flex items-center justify-between mb-3">
+                            <h3 className="text-xs font-bold text-slate-800">Filter Range Tanggal</h3>
+                            <button
+                                onClick={() => router.push('/pengajuan/create')}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-[11px] font-semibold hover:bg-indigo-700 transition-colors"
+                            >
+                                <FileText className="w-3.5 h-3.5" />
+                                Tambah Pengajuan Baru
+                            </button>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                            <div>
+                                <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Dari Tanggal</label>
+                                <input
+                                    type="date"
+                                    value={startDate}
+                                    onChange={(e) => setStartDate(e.target.value)}
+                                    className="w-full text-xs px-3 py-2 rounded-lg border border-slate-200 bg-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                />
+                            </div>
+                            <div>
+                                <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Sampai Tanggal</label>
+                                <input
+                                    type="date"
+                                    value={endDate}
+                                    onChange={(e) => setEndDate(e.target.value)}
+                                    className="w-full text-xs px-3 py-2 rounded-lg border border-slate-200 bg-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                />
+                            </div>
+                        </div>
+                    </div>
  
                     {/* Loading indicator saat fetch pengajuan */}
                     {loadingPengajuan && (
@@ -629,9 +685,9 @@ function FrontingPageContent() {
                             </div>
                         </div>
 
-                        {!loadingPengajuan && pengajuanList.length === 0 && isLoggedIn && (
+                        {!loadingPengajuan && filteredPengajuan.length === 0 && isLoggedIn && (
                             <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-3 text-center">
-                                <p className="text-sm text-amber-800 font-medium">📭 Belum ada pengajuan</p>
+                                <p className="text-sm text-amber-800 font-medium">📭 Belum ada pengajuan pada rentang tanggal ini</p>
                             </div>
                         )}
 
@@ -660,7 +716,7 @@ function FrontingPageContent() {
                     </div>
 
                     {/* Revisi Items - Show items needing revision by petugas-pos */}
-                    {!loadingPengajuan && pengajuanList.filter(item => item.status === 'Revisi').length > 0 && (
+                    {!loadingPengajuan && filteredPengajuan.filter(item => item.status === 'Revisi').length > 0 && (
                         <div className="mb-4">
                             <div className="bg-rose-50 rounded-2xl p-4 border border-rose-200 shadow-sm">
                                 <div className="flex items-center gap-2 mb-3">
@@ -668,11 +724,11 @@ function FrontingPageContent() {
                                         <Edit2 className="w-4 h-4 text-rose-600" />
                                     </div>
                                     <h2 className="text-sm font-bold text-rose-900">
-                                        Perlu Direvisi ({pengajuanList.filter(item => item.status === 'Revisi').length})
+                                        Perlu Direvisi ({filteredPengajuan.filter(item => item.status === 'Revisi').length})
                                     </h2>
                                 </div>
                                 <div className="space-y-2">
-                                    {pengajuanList.filter(item => item.status === 'Revisi').map((item: any) => (
+                                    {filteredPengajuan.filter(item => item.status === 'Revisi').map((item: any) => (
                                         <div
                                             key={item.id}
                                             onClick={() => router.push(`/fronting/detail/${item.id}`)}
@@ -702,7 +758,7 @@ function FrontingPageContent() {
                     )}
 
                     {/* Disetujui Manager - Perlu Upload Dokumen */}
-                    {!loadingPengajuan && pengajuanList.filter(item => item.status === 'Disetujui').length > 0 && (
+                    {!loadingPengajuan && filteredPengajuan.filter(item => item.status === 'Disetujui').length > 0 && (
                         <div className="mb-4">
                             <div className="bg-amber-50 rounded-2xl p-4 border border-amber-200 shadow-sm">
                                 <div className="flex items-center gap-2 mb-2">
@@ -710,14 +766,14 @@ function FrontingPageContent() {
                                         <FileUp className="w-4 h-4 text-amber-600" />
                                     </div>
                                     <h2 className="text-sm font-bold text-amber-900">
-                                        ✅ Disetujui Manager — Perlu Upload Dokumen ({pengajuanList.filter(item => item.status === 'Disetujui').length})
+                                        ✅ Disetujui Manager — Perlu Upload Dokumen ({filteredPengajuan.filter(item => item.status === 'Disetujui').length})
                                     </h2>
                                 </div>
                                 <p className="text-[10px] text-amber-700 bg-amber-100 rounded-lg px-3 py-2 mb-3">
                                     Pengajuan berikut telah <strong>disetujui oleh Manager</strong>. Segera lengkapi upload dokumen persetujuan untuk melanjutkan ke proses selanjutnya.
                                 </p>
                                 <div className="space-y-2">
-                                    {pengajuanList.filter(item => item.status === 'Disetujui').map((item: any) => (
+                                    {filteredPengajuan.filter(item => item.status === 'Disetujui').map((item: any) => (
                                         <div
                                             key={item.id}
                                             onClick={() => router.push(`/fronting/detail/${item.id}`)}
@@ -748,14 +804,14 @@ function FrontingPageContent() {
                     )}
 
                     {/* Dicairkan Items - Show disbursement info */}
-                    {!loadingPengajuan && pengajuanList.filter(item => item.status === 'Dicairkan').length > 0 && (
+                    {!loadingPengajuan && filteredPengajuan.filter(item => item.status === 'Dicairkan').length > 0 && (
                         <div className="mb-4">
                             <h2 className="text-sm font-bold text-slate-800 mb-2 flex items-center gap-1.5">
                                 <span className="w-2 h-2 rounded-full bg-teal-500 inline-block"></span>
                                 Dana Telah Dicairkan
                             </h2>
                             <div className="space-y-2">
-                                {pengajuanList.filter(item => item.status === 'Dicairkan').map((item: any) => (
+                                {filteredPengajuan.filter(item => item.status === 'Dicairkan').map((item: any) => (
                                     <div
                                         key={item.id}
                                         onClick={() => router.push(`/fronting/detail/${item.id}`)}
