@@ -150,7 +150,7 @@ export const RekonsiliasiDashboardPage: React.FC = () => {
     // ===== Derived: Helper to get count+amount from by_status =====
     const getStatusData = (statusNames: string[]) => {
         if (!stats) return { count: 0, amount: 0 };
-        return stats.by_status
+        return (stats.by_status || [])
             .filter(s => statusNames.map(n => n.toLowerCase()).includes(s.status.toLowerCase()))
             .reduce((acc, s) => ({ count: acc.count + s.count, amount: acc.amount + s.amount }), { count: 0, amount: 0 });
     };
@@ -166,7 +166,7 @@ export const RekonsiliasiDashboardPage: React.FC = () => {
     // ===== Derived =====
     const approvalRate = useMemo(() => {
         if (!stats || stats.total_pos === 0) return 0;
-        const tot = stats.by_status.filter(s => ['Disetujui', 'Dicairkan', 'Selesai', 'Approved', 'Lunas', 'Completed'].includes(s.status)).reduce((a, s) => a + s.count, 0);
+        const tot = (stats.by_status || []).filter(s => ['Disetujui', 'Dicairkan', 'Selesai', 'Approved', 'Lunas', 'Completed'].includes(s.status)).reduce((a, s) => a + s.count, 0);
         return Math.round((tot / stats.total_pos) * 100);
     }, [stats]);
 
@@ -177,14 +177,14 @@ export const RekonsiliasiDashboardPage: React.FC = () => {
 
     const pieData = useMemo(() => {
         if (!stats) return [];
-        return stats.by_status.map(s => ({
+        return (stats.by_status || []).map(s => ({
             name: s.status, value: s.count, amount: s.amount, total: stats.total_pos, color: getStatusColor(s.status).hex,
         }));
     }, [stats]);
 
     const monthlyChartData = useMemo(() => {
         if (!stats) return [];
-        return stats.by_month.slice(-12).map(m => ({
+        return (stats.by_month || []).slice(-12).map(m => ({
             month: formatMonthLabel(m.month),
             'Total': m.count, 'Dicairkan': m.dicairkan, 'Disetujui': m.disetujui, 'Dalam Proses': m.pending, 'Ditolak': m.ditolak, 'Selesai': m.selesai,
         }));
@@ -192,7 +192,7 @@ export const RekonsiliasiDashboardPage: React.FC = () => {
 
     const monthlyAmountData = useMemo(() => {
         if (!stats) return [];
-        return stats.by_month.slice(-12).map(m => ({
+        return (stats.by_month || []).slice(-12).map(m => ({
             month: formatMonthLabel(m.month),
             'Nominal Masuk': Math.round(m.amount / 1_000_000 * 10) / 10,
             'Nominal Dicairkan': Math.round(m.amount_dicairkan / 1_000_000 * 10) / 10,
@@ -217,8 +217,8 @@ export const RekonsiliasiDashboardPage: React.FC = () => {
         });
     }, [stats]);
 
-    const maxStatusCount = useMemo(() => stats ? Math.max(...stats.by_status.map(s => s.count), 1) : 1, [stats]);
-    const maxRegionalCount = useMemo(() => stats ? Math.max(...stats.by_regional.map(r => r.count), 1) : 1, [stats]);
+    const maxStatusCount = useMemo(() => stats ? Math.max(...(stats.by_status || []).map(s => s.count), 1) : 1, [stats]);
+    const maxRegionalCount = useMemo(() => stats ? Math.max(...(stats.by_regional || []).map(r => r.count), 1) : 1, [stats]);
 
     if (loading && !stats) {
         return (

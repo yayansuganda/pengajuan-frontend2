@@ -1,4 +1,4 @@
-import { RekonsiliasiStats } from '../core/RekonsiliasiDashboardEntity';
+import { RekonsiliasiStats, RekonsiliasiFilterOptions } from '../core/RekonsiliasiDashboardEntity';
 import httpClient from '@/shared/utils/httpClient';
 
 export class RekonsiliasiDashboardRepository {
@@ -8,6 +8,11 @@ export class RekonsiliasiDashboardRepository {
         if (dateTo) params.date_to = dateTo;
 
         const response = await httpClient.get<RekonsiliasiStats>('/dashboard/rekonsiliasi-stats', { params });
+        return response.data;
+    }
+
+    async getFilterOptions(): Promise<RekonsiliasiFilterOptions> {
+        const response = await httpClient.get<RekonsiliasiFilterOptions>('/dashboard/rekonsiliasi-filter-options');
         return response.data;
     }
 }

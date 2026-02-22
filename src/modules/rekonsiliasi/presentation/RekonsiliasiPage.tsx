@@ -4,12 +4,15 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/modules/auth/presentation/useAuth';
 import { PengajuanRepositoryImpl } from '@/modules/pengajuan/data/PengajuanRepositoryImpl';
 import { Pengajuan } from '@/modules/pengajuan/core/PengajuanEntity';
+import { RekonsiliasiDashboardRepository } from '@/modules/rekonsiliasi/data/RekonsiliasiDashboardRepository';
+import { RekonsiliasiFilterOptions } from '@/modules/rekonsiliasi/core/RekonsiliasiDashboardEntity';
 import { showLoading, hideLoading, showError, showSuccess } from '@/shared/utils/sweetAlert';
 import { handleError } from '@/shared/utils/errorHandler';
-import { Download, FileSpreadsheet, Search, RefreshCw, Filter, X, Calendar } from 'lucide-react';
+import { Download, FileSpreadsheet, Search, RefreshCw, Filter, X, Calendar, ChevronDown } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
 const pengajuanRepo = new PengajuanRepositoryImpl();
+const rekonsiliasiRepo = new RekonsiliasiDashboardRepository();
 
 export const RekonsiliasiPage: React.FC = () => {
     const { user } = useAuth();
@@ -23,6 +26,7 @@ export const RekonsiliasiPage: React.FC = () => {
     const [dateTo, setDateTo] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [total, setTotal] = useState(0);
+    const [filterOptions, setFilterOptions] = useState<RekonsiliasiFilterOptions | null>(null);
 
     // Daftar status untuk dropdown filter
     const STATUS_OPTIONS = [
@@ -36,25 +40,15 @@ export const RekonsiliasiPage: React.FC = () => {
         'Ditolak',
     ];
 
+    // Gunakan data dari API untuk dropdown options
     const regionalOptions = useMemo(() => {
-        return Array.from(
-            new Set(
-                pengajuanList
-                    .map((item) => item.petugas_kc_name?.trim())
-                    .filter((value): value is string => Boolean(value))
-            )
-        ).sort((a, b) => a.localeCompare(b, 'id-ID'));
-    }, [pengajuanList]);
+        return filterOptions?.regionals || [];
+    }, [filterOptions]);
 
     const kcuOptions = useMemo(() => {
-        return Array.from(
-            new Set(
-                pengajuanList
-                    .map((item) => item.petugas_kcu_name?.trim())
-                    .filter((value): value is string => Boolean(value))
-            )
-        ).sort((a, b) => a.localeCompare(b, 'id-ID'));
-    }, [pengajuanList]);
+        // Jika regional dipilih, filter KCU berdasarkan data yang tersedia
+        return filterOptions?.kcu_list || [];
+    }, [filterOptions]);
 
     // Hitung jumlah filter aktif
     const activeFilterCount = useMemo(() => {
@@ -121,11 +115,19 @@ export const RekonsiliasiPage: React.FC = () => {
             setIsLoading(true);
             showLoading('Memuat data rekonsiliasi POS...');
 
-            // Fetch all POS pengajuan
-            const allData = await pengajuanRepo.getPengajuanList({
-                limit: 9999, // Get all data
-                page: 1,
-            });
+            // Fetch filter options dan data secara parallel
+            const [allData, options] = await Promise.all([
+                pengajuanRepo.getPengajuanList({
+                    limit: 9999,
+                    page: 1,
+                }),
+                rekonsiliasiRepo.getFilterOptions().catch(() => null),
+            ]);
+
+            // Set filter options from API
+            if (options) {
+                setFilterOptions(options);
+            }
 
             // Filter hanya yang jenis pelayanan POS
             const posPengajuan = allData.filter(
@@ -482,95 +484,108 @@ export const RekonsiliasiPage: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* Row 2: Filter Status + Range Tanggal */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-12 gap-3 p-4 bg-slate-50 rounded-xl border border-slate-200">
-                        <div className="flex items-center gap-2 text-slate-500 shrink-0 xl:col-span-1">
-                            <Filter className="h-4 w-4" />
-                            <span className="text-sm font-medium text-slate-600">Filter:</span>
+                    {/* Row 2: Filter Dropdowns */}
+                    <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-3">
+                        {/* Baris 1: Filter Status, Regional, KCU */}
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                            <div className="flex items-center gap-2 text-slate-500 shrink-0">
+                                <Filter className="h-4 w-4" />
+                                <span className="text-sm font-medium text-slate-600">Filter:</span>
+                            </div>
+
+                            {/* Filter Status */}
+                            <div className="relative min-w-0 w-full sm:w-auto sm:flex-1 sm:max-w-56">
+                                <select
+                                    value={filterStatus}
+                                    onChange={(e) => setFilterStatus(e.target.value)}
+                                    className="w-full py-2 pl-3 pr-8 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white appearance-none"
+                                >
+                                    <option value="">Semua Status</option>
+                                    {STATUS_OPTIONS.map(s => (
+                                        <option key={s} value={s}>{s}</option>
+                                    ))}
+                                </select>
+                                <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+                            </div>
+
+                            {/* Filter Kantor Regional */}
+                            <div className="relative min-w-0 w-full sm:w-auto sm:flex-1 sm:max-w-64">
+                                <select
+                                    value={filterRegional}
+                                    onChange={(e) => setFilterRegional(e.target.value)}
+                                    className="w-full py-2 pl-3 pr-8 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white appearance-none"
+                                >
+                                    <option value="">Semua Kantor Regional ({regionalOptions.length})</option>
+                                    {regionalOptions.map((regional) => (
+                                        <option key={regional} value={regional}>{regional}</option>
+                                    ))}
+                                </select>
+                                <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+                            </div>
+
+                            {/* Filter Kantor KCU */}
+                            <div className="relative min-w-0 w-full sm:w-auto sm:flex-1 sm:max-w-64">
+                                <select
+                                    value={filterKcu}
+                                    onChange={(e) => setFilterKcu(e.target.value)}
+                                    className="w-full py-2 pl-3 pr-8 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white appearance-none"
+                                >
+                                    <option value="">Semua Kantor KCU ({kcuOptions.length})</option>
+                                    {kcuOptions.map((kcu) => (
+                                        <option key={kcu} value={kcu}>{kcu}</option>
+                                    ))}
+                                </select>
+                                <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+                            </div>
+
+                            {/* Reset Filter */}
+                            {activeFilterCount > 0 && (
+                                <button
+                                    onClick={resetFilters}
+                                    className="inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-600 text-sm font-medium rounded-lg transition-colors shrink-0"
+                                >
+                                    <X className="h-3.5 w-3.5" />
+                                    Reset
+                                    <span className="bg-rose-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold">
+                                        {activeFilterCount}
+                                    </span>
+                                </button>
+                            )}
                         </div>
 
-                        {/* Filter Status */}
-                        <div className="min-w-0 xl:col-span-2">
-                            <select
-                                value={filterStatus}
-                                onChange={(e) => setFilterStatus(e.target.value)}
-                                className="w-full py-2 pl-3 pr-8 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white"
-                            >
-                                <option value="">Semua Status</option>
-                                {STATUS_OPTIONS.map(s => (
-                                    <option key={s} value={s}>{s}</option>
-                                ))}
-                            </select>
+                        {/* Baris 2: Filter Range Tanggal */}
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 pt-2 border-t border-slate-200">
+                            <div className="flex items-center gap-2 text-slate-500 shrink-0">
+                                <Calendar className="h-4 w-4" />
+                                <span className="text-sm font-medium text-slate-600">Periode:</span>
+                            </div>
+
+                            {/* Filter Tanggal Dari */}
+                            <div className="flex items-center gap-2 min-w-0 w-full sm:w-auto">
+                                <span className="text-xs text-slate-500 shrink-0">Dari</span>
+                                <input
+                                    type="date"
+                                    value={dateFrom}
+                                    onChange={(e) => setDateFrom(e.target.value)}
+                                    className="w-full sm:w-44 py-2 px-3 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white"
+                                    title="Tanggal Dari"
+                                />
+                            </div>
+
+                            <span className="hidden sm:inline text-slate-400 text-sm shrink-0">s/d</span>
+
+                            {/* Filter Tanggal Sampai */}
+                            <div className="flex items-center gap-2 min-w-0 w-full sm:w-auto">
+                                <span className="text-xs text-slate-500 shrink-0 sm:hidden">Sampai</span>
+                                <input
+                                    type="date"
+                                    value={dateTo}
+                                    onChange={(e) => setDateTo(e.target.value)}
+                                    className="w-full sm:w-44 py-2 px-3 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white"
+                                    title="Tanggal Sampai"
+                                />
+                            </div>
                         </div>
-
-                        {/* Filter Kantor Regional */}
-                        <div className="min-w-0 xl:col-span-2">
-                            <select
-                                value={filterRegional}
-                                onChange={(e) => setFilterRegional(e.target.value)}
-                                className="w-full py-2 pl-3 pr-8 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white"
-                            >
-                                <option value="">Semua Kantor Regional</option>
-                                {regionalOptions.map((regional) => (
-                                    <option key={regional} value={regional}>{regional}</option>
-                                ))}
-                            </select>
-                        </div>
-
-                        {/* Filter Kantor KCU */}
-                        <div className="min-w-0 xl:col-span-2">
-                            <select
-                                value={filterKcu}
-                                onChange={(e) => setFilterKcu(e.target.value)}
-                                className="w-full py-2 pl-3 pr-8 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white"
-                            >
-                                <option value="">Semua Kantor KCU</option>
-                                {kcuOptions.map((kcu) => (
-                                    <option key={kcu} value={kcu}>{kcu}</option>
-                                ))}
-                            </select>
-                        </div>
-
-                        {/* Filter Tanggal Dari */}
-                        <div className="flex items-center gap-2 min-w-0 xl:col-span-2">
-                            <Calendar className="h-4 w-4 text-slate-400 shrink-0" />
-                            <input
-                                type="date"
-                                value={dateFrom}
-                                onChange={(e) => setDateFrom(e.target.value)}
-                                className="w-full py-2 px-3 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white"
-                                title="Tanggal Dari"
-                            />
-                        </div>
-
-                        {/* Separator */}
-                        <span className="hidden xl:inline text-slate-400 self-center text-sm shrink-0 justify-self-center">s/d</span>
-
-                        {/* Filter Tanggal Sampai */}
-                        <div className="flex items-center gap-2 min-w-0 xl:col-span-2">
-                            <Calendar className="h-4 w-4 text-slate-400 shrink-0" />
-                            <input
-                                type="date"
-                                value={dateTo}
-                                onChange={(e) => setDateTo(e.target.value)}
-                                className="w-full py-2 px-3 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white"
-                                title="Tanggal Sampai"
-                            />
-                        </div>
-
-                        {/* Reset Filter */}
-                        {activeFilterCount > 0 && (
-                            <button
-                                onClick={resetFilters}
-                                className="inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-600 text-sm font-medium rounded-lg transition-colors shrink-0 xl:col-span-1"
-                            >
-                                <X className="h-3.5 w-3.5" />
-                                Reset
-                                <span className="bg-rose-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold">
-                                    {activeFilterCount}
-                                </span>
-                            </button>
-                        )}
                     </div>
                 </div>
             </div>

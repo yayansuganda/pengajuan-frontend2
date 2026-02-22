@@ -47,3 +47,8 @@ export interface RekonsiliasiStats {
     by_month: RekonsiliasiMonthlyCount[];
     by_regional_status: RekonsiliasiRegionalStatus[];
 }
+
+export interface RekonsiliasiFilterOptions {
+    regionals: string[];
+    kcu_list: string[];
+}
