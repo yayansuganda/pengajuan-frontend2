@@ -50,7 +50,7 @@ interface WilayahItem { kode: number | string; nama: string; }
 const UPLOAD_FIELDS = [
     { name: 'upload_ktp_pemohon', label: 'KTP Pemohon', hasTemplate: false, required: true },
     { name: 'upload_karip_buku_asabri', label: 'KARIP / Buku ASABRI', hasTemplate: false, required: true },
-    { name: 'upload_slip_gaji_terakhir', label: 'Resi Penerimaan', hasTemplate: false, required: true },
+    { name: 'upload_slip_gaji_terakhir', label: 'Resi Penerimaan Gaji', hasTemplate: false, required: true },
     { name: 'upload_sk_pensiun', label: 'SK Pensiun', hasTemplate: false, required: false },
     { name: 'upload_borrower_photos', label: 'Foto Pemohon', hasTemplate: false, required: true, multiple: true },
 ];
@@ -1217,6 +1217,24 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
 
         // Only fetch if NOPEN is filled and isPOS
         if (!nopen || !isPOS) return;
+
+        // Clear all Step 1 API-filled fields before fetching new data
+        setNopenDataLoaded(false);
+        setFormData(prev => ({
+            ...prev,
+            nama_lengkap: '',
+            jenis_pensiun: '',
+            nomor_rekening_giro_pos: '',
+            gaji_bersih: '',
+            total_potongan_pinjaman: '',
+            gaji_tersedia: '',
+            jenis_dapem: '',
+            bulan_dapem: '',
+            status_dapem: '',
+            mitra: '',
+            kantor_bayar: '',
+            kantor_pos_petugas: '',
+        }));
 
         try {
             setLoadingNopen(true);

@@ -304,15 +304,9 @@ function FrontingPageContent() {
                     setFrontingUser(storedUser);
                     setIsLoading(false); // Show page immediately
                     
-                    // Auto-login in background (non-blocking)
-                    const token = localStorage.getItem('token');
-                    if (!token) {
-                        console.log('[FrontingPage] No backend auth token, attempting auto-login in background...');
-                        autoLoginPetugasPos(); // Don't await - run in background
-                    } else {
-                        console.log('[FrontingPage] ✅ Backend auth token found, user already logged in');
-                        setIsLoggedIn(true); // Set state if already logged in
-                    }
+                    // Always auto-login to ensure a fresh valid token (stale/mismatched tokens cause 401)
+                    console.log('[FrontingPage] Performing auto-login to ensure valid token...');
+                    autoLoginPetugasPos(); // Don't await - run in background
                     
                     return;
                 }
@@ -596,7 +590,7 @@ function FrontingPageContent() {
                             <div className="flex flex-col gap-1.5">
                                 <div className="inline-flex items-center gap-1.5 bg-emerald-500/20 px-2.5 py-1 rounded-full border border-emerald-400/30">
                                     <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse"></div>
-                                    <span className="text-[10px] font-bold text-emerald-300">AUTHENTICATED</span>
+                                    <span className="text-[10px] font-bold text-emerald-300">{frontingUser.nippos}</span>
                                 </div>
                                 {isAutoLoggingIn && (
                                     <div className="inline-flex items-center gap-1.5 bg-amber-500/20 px-2.5 py-1 rounded-full border border-amber-400/30 animate-pulse">
@@ -606,7 +600,7 @@ function FrontingPageContent() {
                                 )}
                                 {!isAutoLoggingIn && isLoggedIn && (
                                     <div className="inline-flex items-center gap-1.5 bg-blue-500/20 px-2.5 py-1 rounded-full border border-blue-400/30">
-                                        <span className="text-[10px] font-bold text-blue-300">✓ LOGGED IN</span>
+                                        <span className="text-[10px] font-bold text-blue-300">{frontingUser.account_no}</span>
                                     </div>
                                 )}
                             </div>
@@ -625,39 +619,6 @@ function FrontingPageContent() {
                         </div>
                     </div>
 
-                    <div className="mb-4 bg-white/90 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-white">
-                        <div className="flex items-center justify-between mb-3">
-                            <h3 className="text-xs font-bold text-slate-800">Filter Range Tanggal</h3>
-                            <button
-                                onClick={() => router.push('/pengajuan/create')}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-[11px] font-semibold hover:bg-indigo-700 transition-colors"
-                            >
-                                <FileText className="w-3.5 h-3.5" />
-                                Tambah Pengajuan Baru
-                            </button>
-                        </div>
-                        <div className="grid grid-cols-2 gap-2">
-                            <div>
-                                <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Dari Tanggal</label>
-                                <input
-                                    type="date"
-                                    value={startDate}
-                                    onChange={(e) => setStartDate(e.target.value)}
-                                    className="w-full text-xs px-3 py-2 rounded-lg border border-slate-200 bg-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                                />
-                            </div>
-                            <div>
-                                <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Sampai Tanggal</label>
-                                <input
-                                    type="date"
-                                    value={endDate}
-                                    onChange={(e) => setEndDate(e.target.value)}
-                                    className="w-full text-xs px-3 py-2 rounded-lg border border-slate-200 bg-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                                />
-                            </div>
-                        </div>
-                    </div>
- 
                     {/* Loading indicator saat fetch pengajuan */}
                     {loadingPengajuan && (
                         <div className="mb-4 bg-white/90 backdrop-blur-sm rounded-xl p-4 shadow-sm border border-white">
@@ -682,6 +643,40 @@ function FrontingPageContent() {
                                         <span>🔄</span> Refresh
                                     </button>
                                 )}
+                            </div>
+                        </div>
+
+                        {/* Filter Range Tanggal */}
+                        <div className="mb-3 bg-white/90 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-white">
+                            <div className="flex items-center justify-between mb-3">
+                                <h3 className="text-xs font-bold text-slate-800">Filter Range Tanggal</h3>
+                                <button
+                                    onClick={() => router.push('/pengajuan/create')}
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-[11px] font-semibold hover:bg-indigo-700 transition-colors"
+                                >
+                                    <FileText className="w-3.5 h-3.5" />
+                                    Tambah Pengajuan Baru
+                                </button>
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Dari Tanggal</label>
+                                    <input
+                                        type="date"
+                                        value={startDate}
+                                        onChange={(e) => setStartDate(e.target.value)}
+                                        className="w-full text-xs px-3 py-2 rounded-lg border border-slate-200 bg-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Sampai Tanggal</label>
+                                    <input
+                                        type="date"
+                                        value={endDate}
+                                        onChange={(e) => setEndDate(e.target.value)}
+                                        className="w-full text-xs px-3 py-2 rounded-lg border border-slate-200 bg-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                    />
+                                </div>
                             </div>
                         </div>
 
