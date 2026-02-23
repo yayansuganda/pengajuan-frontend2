@@ -411,7 +411,7 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
         // Hidden for petugas-pos (not required)
         ...(user?.role !== 'petugas-pos' ? [{ title: 'Surat Pernyataan Beda Penerima', desc: 'Pernyataan Ahli Waris', url: pengajuan.surat_pernyataan_beda_url, key: 'surat_pernyataan_beda_url' }] : []),
         { title: 'Surat Pernyataan Pemotongan Angsuran', desc: 'Pernyataan Pemotongan Angsuran', url: pengajuan.surat_pernyataan_pemotongan_angsuran_url, key: 'surat_pernyataan_pemotongan_angsuran_url' },
-        { title: 'Foto Penandatanganan SK/Akad', desc: 'Dokumentasi Penandatanganan', url: pengajuan.foto_penandatanganan_url, key: 'foto_penandatanganan_url' },
+        { title: 'Foto Penandatanganan Akad', desc: 'Dokumentasi Penandatanganan', url: pengajuan.foto_penandatanganan_url, key: 'foto_penandatanganan_url' },
         { title: 'Bukti Transfer', desc: 'Bukti Pencairan Dana', url: pengajuan.disbursement_proof_url, key: 'disbursement_proof_url', uploadInfo: { type: 'disbursement', label: 'Bukti Transfer' } },
         { title: 'Resi Pengiriman Berkas', desc: 'Bukti Pengiriman Fisik', url: pengajuan.shipping_receipt_url, key: 'shipping_receipt_url', uploadInfo: { type: 'shipping', label: 'Resi Pengiriman' } },
     ];
@@ -518,7 +518,7 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                                                 { label: 'Flagging', key: 'flagging_url' },
                                                 ...(user?.role !== 'petugas-pos' ? [{ label: 'Surat Pernyataan Beda Penerima', key: 'surat_pernyataan_beda_url' }] : []),
                                                 { label: 'Surat Pemotongan Angsuran', key: 'surat_pernyataan_pemotongan_angsuran_url' },
-                                                { label: 'Foto Penandatanganan SK/Akad', key: 'foto_penandatanganan_url' },
+                                                { label: 'Foto Penandatanganan Akad', key: 'foto_penandatanganan_url' },
                                             ].map(({ label, key }) => {
                                                 const uploaded = !!(approvalDocs[key as keyof typeof approvalDocs]);
                                                 const isOptional = key === 'foto_penandatanganan_url';
@@ -853,6 +853,10 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                                             <span className="font-medium text-slate-900">{d(pengajuan.nopen)}</span>
                                         </div>
                                         <div className="flex justify-between py-1.5 border-b border-slate-50">
+                                            <span className="text-slate-500">Mitra</span>
+                                            <span className="font-medium text-slate-900">{d(pengajuan.mitra)}</span>
+                                        </div>
+                                        <div className="flex justify-between py-1.5 border-b border-slate-50">
                                             <span className="text-slate-500">Jenis Pensiun</span>
                                             <span className="font-medium text-slate-900">{d(pengajuan.jenis_pensiun)}</span>
                                         </div>
@@ -1105,10 +1109,14 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                                             const acceptType = isPdfDoc ? 'application/pdf' : 'image/*';
 
                                             // Template URLs
+                                            const mitraLower = (pengajuan.mitra || '').toLowerCase();
+                                            const flaggingTemplate = mitraLower.includes('taspen')
+                                                ? '/templates/template-flagging-taspen.pdf'
+                                                : '/templates/template-flagging-asabri.pdf';
                                             const templateUrls: Record<string, string> = {
                                                 'pengajuan_permohonan_url': '/templates/template-pengajuan-permohonan.pdf',
                                                 'dokumen_akad_url': '/templates/template-dokumen-akad.pdf',
-                                                'flagging_url': '/templates/template-flagging.pdf',
+                                                'flagging_url': flaggingTemplate,
                                                 'surat_pernyataan_beda_url': '/templates/template-surat-pernyataan-beda.pdf',
                                                 'surat_pernyataan_pemotongan_angsuran_url': '/templates/template-pernyataan-potongan-angsuran.pdf',
                                                 'foto_penandatanganan_url': '/templates/template-foto-penandatanganan.pdf',
@@ -1420,7 +1428,7 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                                         { label: 'Flagging', key: 'flagging_url' },
                                         ...(user?.role !== 'petugas-pos' ? [{ label: 'Surat Pernyataan Beda Penerima', key: 'surat_pernyataan_beda_url' }] : []),
                                         { label: 'Surat Pemotongan Angsuran', key: 'surat_pernyataan_pemotongan_angsuran_url' },
-                                        { label: 'Foto Penandatanganan SK/Akad', key: 'foto_penandatanganan_url' },
+                                        { label: 'Foto Penandatanganan Akad', key: 'foto_penandatanganan_url' },
                                     ].map(({ label, key }) => {
                                         const uploaded = !!(approvalDocs[key as keyof typeof approvalDocs]);
                                         const isOptional = key === 'foto_penandatanganan_url';
@@ -1642,6 +1650,7 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                                 {/* Pension */}
                                 <Section title="Data Pensiun" icon={<Briefcase className="h-5 w-5 text-amber-600" />}>
                                     <Field label="Nomor Pensiun (Nopen)" value={d(pengajuan.nopen)} />
+                                    <Field label="Mitra" value={d(pengajuan.mitra)} />
                                     <Field label="Jenis Pensiun" value={d(pengajuan.jenis_pensiun)} />
                                     <Field label="Kantor Bayar" value={d(pengajuan.kantor_bayar)} />
                                     <Field label="Nama Bank" value={d(pengajuan.nama_bank)} />
