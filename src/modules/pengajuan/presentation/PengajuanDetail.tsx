@@ -1273,10 +1273,38 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
 
                         {/* Info Message for Officer - Shipping Receipt */}
                         {(user?.role === 'officer' || user?.role === 'petugas-pos') && pengajuan.status === 'Dicairkan' && !approvalDocs.shipping_receipt_url && (
-                            <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-xl">
-                                <p className="text-xs text-amber-800 text-center">
-                                    🚚 Upload resi pengiriman berkas fisik untuk menyelesaikan pengajuan
-                                </p>
+                            <div className="mt-3 bg-amber-50 border border-amber-200 rounded-xl overflow-hidden">
+                                <div className="bg-amber-500 px-4 py-2 flex items-center gap-2">
+                                    <span className="text-base">🚚</span>
+                                    <p className="text-xs font-bold text-white">Tujuan Pengiriman Berkas Fisik</p>
+                                </div>
+                                <div className="p-3 space-y-1.5">
+                                    <div className="flex items-start gap-2">
+                                        <span className="text-[10px] font-semibold text-amber-600 w-20 shrink-0">ID PEL POS</span>
+                                        <span className="text-[10px] font-bold text-amber-900">FINKSPPSMM04571A</span>
+                                    </div>
+                                    <div className="flex items-start gap-2">
+                                        <span className="text-[10px] font-semibold text-amber-600 w-20 shrink-0">Penerima</span>
+                                        <span className="text-[10px] font-bold text-amber-900">RATMOYO</span>
+                                    </div>
+                                    <div className="flex items-start gap-2">
+                                        <span className="text-[10px] font-semibold text-amber-600 w-20 shrink-0">Jabatan</span>
+                                        <span className="text-[10px] text-amber-800">Manager Bisnis</span>
+                                    </div>
+                                    <div className="flex items-start gap-2">
+                                        <span className="text-[10px] font-semibold text-amber-600 w-20 shrink-0">Instansi</span>
+                                        <span className="text-[10px] text-amber-800">KSPPS Manunggal Makmur</span>
+                                    </div>
+                                    <div className="flex items-start gap-2">
+                                        <span className="text-[10px] font-semibold text-amber-600 w-20 shrink-0">Alamat</span>
+                                        <span className="text-[10px] text-amber-800">Jl. Slamet Riyadi No.3, Kartasura - Kab. Sukoharjo, Prov. Jawa Tengah – Kode Pos 57168</span>
+                                    </div>
+                                    <div className="pt-1.5 border-t border-amber-200 mt-1">
+                                        <p className="text-[10px] text-amber-700 font-medium text-center">
+                                            Upload resi pengiriman di tab <strong>Dokumen → Persetujuan</strong> untuk menyelesaikan pengajuan
+                                        </p>
+                                    </div>
+                                </div>
                             </div>
                         )}
 
