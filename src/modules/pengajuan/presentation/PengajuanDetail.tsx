@@ -234,7 +234,9 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
     };
 
     const isAllApprovalDocsUploaded = () => {
-        return approvalDocs.pengajuan_permohonan_url && approvalDocs.dokumen_akad_url && approvalDocs.flagging_url && approvalDocs.surat_pernyataan_beda_url && approvalDocs.surat_pernyataan_pemotongan_angsuran_url;
+        const base = approvalDocs.pengajuan_permohonan_url && approvalDocs.dokumen_akad_url && approvalDocs.flagging_url && approvalDocs.surat_pernyataan_pemotongan_angsuran_url;
+        if (user?.role === 'petugas-pos') return !!base;
+        return !!(base && approvalDocs.surat_pernyataan_beda_url);
     };
 
     const d = (val: any) => (val === undefined || val === null || val === '') ? '-' : String(val);
@@ -406,7 +408,8 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
         { title: 'Pengajuan Permohonan', desc: 'Formulir Permohonan', url: pengajuan.pengajuan_permohonan_url, key: 'pengajuan_permohonan_url' },
         { title: 'Dokumen Akad', desc: 'Surat Perjanjian', url: pengajuan.dokumen_akad_url, key: 'dokumen_akad_url' },
         { title: 'Flagging', desc: 'Dokumen Flagging', url: pengajuan.flagging_url, key: 'flagging_url' },
-        { title: 'Surat Pernyataan Beda Penerima', desc: 'Pernyataan Ahli Waris', url: pengajuan.surat_pernyataan_beda_url, key: 'surat_pernyataan_beda_url' },
+        // Hidden for petugas-pos (not required)
+        ...(user?.role !== 'petugas-pos' ? [{ title: 'Surat Pernyataan Beda Penerima', desc: 'Pernyataan Ahli Waris', url: pengajuan.surat_pernyataan_beda_url, key: 'surat_pernyataan_beda_url' }] : []),
         { title: 'Surat Pernyataan Pemotongan Angsuran', desc: 'Pernyataan Pemotongan Angsuran', url: pengajuan.surat_pernyataan_pemotongan_angsuran_url, key: 'surat_pernyataan_pemotongan_angsuran_url' },
         { title: 'Foto Penandatanganan SK/Akad', desc: 'Dokumentasi Penandatanganan', url: pengajuan.foto_penandatanganan_url, key: 'foto_penandatanganan_url' },
         { title: 'Bukti Transfer', desc: 'Bukti Pencairan Dana', url: pengajuan.disbursement_proof_url, key: 'disbursement_proof_url', uploadInfo: { type: 'disbursement', label: 'Bukti Transfer' } },
@@ -513,7 +516,7 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                                                 { label: 'Pengajuan Permohonan', key: 'pengajuan_permohonan_url' },
                                                 { label: 'Dokumen Akad', key: 'dokumen_akad_url' },
                                                 { label: 'Flagging', key: 'flagging_url' },
-                                                { label: 'Surat Pernyataan Beda Penerima', key: 'surat_pernyataan_beda_url' },
+                                                ...(user?.role !== 'petugas-pos' ? [{ label: 'Surat Pernyataan Beda Penerima', key: 'surat_pernyataan_beda_url' }] : []),
                                                 { label: 'Surat Pemotongan Angsuran', key: 'surat_pernyataan_pemotongan_angsuran_url' },
                                                 { label: 'Foto Penandatanganan SK/Akad', key: 'foto_penandatanganan_url' },
                                             ].map(({ label, key }) => {
@@ -535,7 +538,10 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                                         </div>
                                         <div className="mt-2 flex items-center justify-between">
                                             <span className="text-[10px] text-amber-600">
-                                                {[approvalDocs.pengajuan_permohonan_url, approvalDocs.dokumen_akad_url, approvalDocs.flagging_url, approvalDocs.surat_pernyataan_beda_url, approvalDocs.surat_pernyataan_pemotongan_angsuran_url].filter(Boolean).length} / 5 dokumen wajib selesai
+                                                {user?.role === 'petugas-pos'
+                                                    ? `${[approvalDocs.pengajuan_permohonan_url, approvalDocs.dokumen_akad_url, approvalDocs.flagging_url, approvalDocs.surat_pernyataan_pemotongan_angsuran_url].filter(Boolean).length} / 4 dokumen wajib selesai`
+                                                    : `${[approvalDocs.pengajuan_permohonan_url, approvalDocs.dokumen_akad_url, approvalDocs.flagging_url, approvalDocs.surat_pernyataan_beda_url, approvalDocs.surat_pernyataan_pemotongan_angsuran_url].filter(Boolean).length} / 5 dokumen wajib selesai`
+                                                }
                                             </span>
                                             <button
                                                 onClick={() => { setActiveTab('dokumen'); setActiveDocTab('persetujuan'); }}
@@ -1076,7 +1082,10 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
 
                                             // Officer & Petugas POS: Upload Approval Docs when Disetujui
                                             if ((user?.role === 'officer' || user?.role === 'petugas-pos') && pengajuan.status === 'Disetujui') {
-                                                canUpload = ['pengajuan_permohonan_url', 'dokumen_akad_url', 'flagging_url', 'surat_pernyataan_beda_url', 'surat_pernyataan_pemotongan_angsuran_url', 'foto_penandatanganan_url'].includes(docKey);
+                                                const uploadableDocs = user?.role === 'petugas-pos'
+                                                    ? ['pengajuan_permohonan_url', 'dokumen_akad_url', 'flagging_url', 'surat_pernyataan_pemotongan_angsuran_url', 'foto_penandatanganan_url']
+                                                    : ['pengajuan_permohonan_url', 'dokumen_akad_url', 'flagging_url', 'surat_pernyataan_beda_url', 'surat_pernyataan_pemotongan_angsuran_url', 'foto_penandatanganan_url'];
+                                                canUpload = uploadableDocs.includes(docKey);
                                             }
 
                                             // Admin Unit: Upload Logic REMOVED (Verification Only)
@@ -1101,7 +1110,7 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                                                 'dokumen_akad_url': '/templates/template-dokumen-akad.pdf',
                                                 'flagging_url': '/templates/template-flagging.pdf',
                                                 'surat_pernyataan_beda_url': '/templates/template-surat-pernyataan-beda.pdf',
-                                                'surat_pernyataan_pemotongan_angsuran_url': '/templates/template-surat-pernyataan-pemotongan-angsuran.pdf',
+                                                'surat_pernyataan_pemotongan_angsuran_url': '/templates/template-pernyataan-potongan-angsuran.pdf',
                                                 'foto_penandatanganan_url': '/templates/template-foto-penandatanganan.pdf',
                                             };
 
@@ -1409,7 +1418,7 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                                         { label: 'Pengajuan Permohonan', key: 'pengajuan_permohonan_url' },
                                         { label: 'Dokumen Akad', key: 'dokumen_akad_url' },
                                         { label: 'Flagging', key: 'flagging_url' },
-                                        { label: 'Surat Pernyataan Beda Penerima', key: 'surat_pernyataan_beda_url' },
+                                        ...(user?.role !== 'petugas-pos' ? [{ label: 'Surat Pernyataan Beda Penerima', key: 'surat_pernyataan_beda_url' }] : []),
                                         { label: 'Surat Pemotongan Angsuran', key: 'surat_pernyataan_pemotongan_angsuran_url' },
                                         { label: 'Foto Penandatanganan SK/Akad', key: 'foto_penandatanganan_url' },
                                     ].map(({ label, key }) => {
@@ -1431,7 +1440,10 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                                 </div>
                                 <div className="flex items-center justify-between">
                                     <span className="text-sm font-semibold text-amber-700">
-                                        {[approvalDocs.pengajuan_permohonan_url, approvalDocs.dokumen_akad_url, approvalDocs.flagging_url, approvalDocs.surat_pernyataan_beda_url, approvalDocs.surat_pernyataan_pemotongan_angsuran_url].filter(Boolean).length} / 5 dokumen wajib selesai
+                                        {user?.role === 'petugas-pos'
+                                            ? `${[approvalDocs.pengajuan_permohonan_url, approvalDocs.dokumen_akad_url, approvalDocs.flagging_url, approvalDocs.surat_pernyataan_pemotongan_angsuran_url].filter(Boolean).length} / 4 dokumen wajib selesai`
+                                            : `${[approvalDocs.pengajuan_permohonan_url, approvalDocs.dokumen_akad_url, approvalDocs.flagging_url, approvalDocs.surat_pernyataan_beda_url, approvalDocs.surat_pernyataan_pemotongan_angsuran_url].filter(Boolean).length} / 5 dokumen wajib selesai`
+                                        }
                                     </span>
                                     {!isAllApprovalDocsUploaded() && (
                                         <button
