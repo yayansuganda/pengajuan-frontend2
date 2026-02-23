@@ -40,7 +40,7 @@ export default function HelpPage() {
                                     <span className="text-slate-400 group-open:rotate-180 transition-transform">▼</span>
                                 </summary>
                                 <div className="mt-2 px-3 py-2 text-sm text-slate-600 leading-relaxed">
-                                    Proses verifikasi membutuhkan waktu 1-3 hari kerja setelah semua dokumen lengkap.
+                                    Proses verifikasi membutuhkan waktu Max 1 Hari.
                                 </div>
                             </details>
 
@@ -88,7 +88,7 @@ export default function HelpPage() {
 
                         {/* WhatsApp Call Center */}
                         <a
-                            href="https://wa.me/6282322168666"
+                            href="https://wa.me/628139353643"
                             target="_blank"
                             rel="noopener noreferrer"
                             className="bg-white rounded-xl p-4 shadow-sm border border-slate-200 flex items-center justify-between hover:bg-slate-50 transition-colors"
@@ -99,7 +99,7 @@ export default function HelpPage() {
                                 </div>
                                 <div className="flex flex-col">
                                     <span className="font-semibold text-slate-900">Call Center</span>
-                                    <span className="text-xs text-slate-500">+62 823-2216-8666</span>
+                                    <span className="text-xs text-slate-500">+62 813-9353-643</span>
                                 </div>
                             </div>
                             <span className="text-emerald-600 font-medium text-sm">Hubungi</span>
