@@ -364,6 +364,7 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
         'Menunggu Verifikasi Admin Unit': { color: 'text-purple-700', bg: 'bg-purple-50 border-purple-200', icon: <Clock className="h-4 w-4 text-purple-500" /> },
         'Menunggu Pencairan': { color: 'text-orange-700', bg: 'bg-orange-50 border-orange-200', icon: <Clock className="h-4 w-4 text-orange-500" /> },
         'Dicairkan': { color: 'text-teal-700', bg: 'bg-teal-50 border-teal-200', icon: <Wallet className="h-4 w-4 text-teal-500" /> },
+        'Menunggu Verifikasi Akhir': { color: 'text-cyan-700', bg: 'bg-cyan-50 border-cyan-200', icon: <Clock className="h-4 w-4 text-cyan-500" /> },
         'Selesai': { color: 'text-indigo-700', bg: 'bg-indigo-50 border-indigo-200', icon: <CheckCircle className="h-4 w-4 text-indigo-500" /> },
         'Pending': { color: 'text-amber-700', bg: 'bg-amber-50 border-amber-200', icon: <Clock className="h-4 w-4 text-amber-500" /> },
         'Revisi': { color: 'text-amber-700', bg: 'bg-amber-50 border-amber-200', icon: <AlertCircle className="h-4 w-4 text-amber-500" /> },
@@ -706,7 +707,7 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                                                     </div>
                                                     <p className="text-[10px] text-indigo-600 pl-6">
                                                         {approvalDocs.shipping_receipt_url
-                                                            ? 'Resi sudah diupload. Klik Selesaikan untuk menutup pengajuan.'
+                                                            ? 'Resi sudah diupload. Klik Kirim Ke Verifikator untuk melanjutkan.'
                                                             : 'Upload resi pengiriman berkas fisik ke tab Dokumen → Persetujuan.'}
                                                     </p>
                                                 </div>
@@ -720,6 +721,39 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                                                 )}
                                             </>
                                         )}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Verifier - Menunggu Verifikasi Akhir Banner - Mobile */}
+                    {user?.role === 'verifier' && pengajuan.status === 'Menunggu Verifikasi Akhir' && (
+                        <div className="mb-5 px-2 animate-in fade-in slide-in-from-top-4 duration-500">
+                            <div className="bg-gradient-to-r from-cyan-50 to-blue-50 border-2 border-cyan-400 rounded-xl p-5 shadow-lg">
+                                <div className="flex items-start gap-3">
+                                    <div className="flex-shrink-0 mt-0.5">
+                                        <div className="w-8 h-8 bg-cyan-500 rounded-full flex items-center justify-center">
+                                            <CheckCircle className="w-5 h-5 text-white" />
+                                        </div>
+                                    </div>
+                                    <div className="flex-1">
+                                        <h3 className="text-base font-bold text-cyan-900 mb-2">📋 Menunggu Verifikasi Akhir Anda</h3>
+                                        <div className="bg-white/60 rounded-lg p-3 border border-cyan-200 space-y-1.5">
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-xs text-cyan-600">Jumlah Pembiayaan:</span>
+                                                <span className="text-sm font-bold text-cyan-900">{money(pengajuan.jumlah_pembiayaan)}</span>
+                                            </div>
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-xs text-cyan-600">Nominal Diterima:</span>
+                                                <span className="text-sm font-bold text-cyan-900">{money(pengajuan.nominal_terima)}</span>
+                                            </div>
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-xs text-cyan-600">Jangka Waktu:</span>
+                                                <span className="text-sm font-bold text-cyan-900">{pengajuan.jangka_waktu} Bulan</span>
+                                            </div>
+                                        </div>
+                                        <p className="text-xs text-cyan-600 mt-2">Dana sudah dicairkan dan berkas sudah dikirim. Tinjau kelengkapan lalu klik <strong>Selesai</strong> untuk menyelesaikan pengajuan.</p>
                                     </div>
                                 </div>
                             </div>
@@ -1253,10 +1287,20 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                             )}
                             {(user?.role === 'officer' || user?.role === 'petugas-pos') && pengajuan.status === 'Dicairkan' && approvalDocs.shipping_receipt_url && (
                                 <button
-                                    onClick={() => handleUpdateStatus('Selesai', 'Selesaikan?')}
-                                    className="flex-1 px-4 py-3 bg-indigo-600 text-white text-sm font-medium rounded-xl hover:bg-indigo-700 transition-colors shadow-lg"
+                                    onClick={() => handleUpdateStatus('Menunggu Verifikasi Akhir', 'Kirim ke Verifikator untuk penyelesaian?')}
+                                    className="flex-1 px-4 py-3 bg-cyan-600 text-white text-sm font-medium rounded-xl hover:bg-cyan-700 transition-colors shadow-lg flex items-center justify-center gap-2"
                                 >
-                                    Selesaikan
+                                    <CheckCircle className="w-4 h-4" />
+                                    Kirim Ke Verifikator
+                                </button>
+                            )}
+                            {user?.role === 'verifier' && pengajuan.status === 'Menunggu Verifikasi Akhir' && (
+                                <button
+                                    onClick={() => handleUpdateStatus('Selesai', 'Selesaikan pengajuan ini?')}
+                                    className="flex-1 px-4 py-3 bg-indigo-600 text-white text-sm font-medium rounded-xl hover:bg-indigo-700 transition-colors shadow-lg flex items-center justify-center gap-2"
+                                >
+                                    <CheckCircle className="w-4 h-4" />
+                                    Selesai
                                 </button>
                             )}
                         </div>
@@ -1611,8 +1655,8 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                                                     </span>
                                                     <p className="text-xs text-indigo-600 mt-0.5">
                                                         {approvalDocs.shipping_receipt_url
-                                                            ? 'Sudah diupload. Tombol Selesaikan sekarang aktif.'
-                                                            : 'Wajib diupload di tab Dokumen → Persetujuan sebelum bisa Selesaikan.'}
+                                                            ? 'Sudah diupload. Tombol Kirim Ke Verifikator sekarang aktif.'
+                                                            : 'Wajib diupload di tab Dokumen → Persetujuan sebelum bisa Kirim Ke Verifikator.'}
                                                     </p>
                                                 </div>
                                                 {approvalDocs.shipping_receipt_url ? (
@@ -1633,6 +1677,40 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                                         )}
                                     </>
                                 )}
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Verifier - Menunggu Verifikasi Akhir Banner - Desktop */}
+                {user?.role === 'verifier' && pengajuan.status === 'Menunggu Verifikasi Akhir' && (
+                    <div className="bg-gradient-to-r from-cyan-50 to-blue-50 border-2 border-cyan-400 rounded-2xl p-6 shadow-lg animate-in fade-in slide-in-from-top-4 duration-500">
+                        <div className="flex items-start gap-5">
+                            <div className="flex-shrink-0">
+                                <div className="w-14 h-14 bg-cyan-500 rounded-full flex items-center justify-center shadow-lg">
+                                    <CheckCircle className="w-8 h-8 text-white" />
+                                </div>
+                            </div>
+                            <div className="flex-1">
+                                <h3 className="text-xl font-bold text-cyan-900 mb-1">📋 Menunggu Verifikasi Akhir Anda</h3>
+                                <p className="text-sm text-cyan-700 mb-4">Dana sudah dicairkan dan berkas sudah dikirimkan oleh petugas. Tinjau kelengkapan data dan dokumen.</p>
+                                <div className="bg-white/70 rounded-xl border border-cyan-200 p-4 mb-4">
+                                    <div className="grid grid-cols-3 gap-4">
+                                        <div>
+                                            <span className="text-xs text-cyan-600">Jumlah Pembiayaan</span>
+                                            <p className="text-sm font-bold text-cyan-900">{money(pengajuan.jumlah_pembiayaan)}</p>
+                                        </div>
+                                        <div>
+                                            <span className="text-xs text-cyan-600">Nominal Diterima</span>
+                                            <p className="text-sm font-bold text-cyan-900">{money(pengajuan.nominal_terima)}</p>
+                                        </div>
+                                        <div>
+                                            <span className="text-xs text-cyan-600">Jangka Waktu</span>
+                                            <p className="text-sm font-bold text-cyan-900">{pengajuan.jangka_waktu} Bulan</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <p className="text-sm text-cyan-700">Klik tombol <strong>Selesai</strong> di bawah untuk menyelesaikan proses pengajuan ini.</p>
                             </div>
                         </div>
                     </div>
@@ -1993,10 +2071,20 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                     )}
                     {(user?.role === 'officer' || user?.role === 'petugas-pos') && pengajuan.status === 'Dicairkan' && approvalDocs.shipping_receipt_url && (
                         <button
-                            onClick={() => handleUpdateStatus('Selesai', 'Selesaikan?')}
-                            className="px-6 py-2.5 bg-indigo-600 text-white text-sm font-medium rounded-xl hover:bg-indigo-700 transition-colors shadow-sm"
+                            onClick={() => handleUpdateStatus('Menunggu Verifikasi Akhir', 'Kirim ke Verifikator untuk penyelesaian?')}
+                            className="px-6 py-2.5 bg-cyan-600 text-white text-sm font-medium rounded-xl hover:bg-cyan-700 transition-colors shadow-sm flex items-center gap-2"
                         >
-                            Selesaikan
+                            <CheckCircle className="w-4 h-4" />
+                            Kirim Ke Verifikator
+                        </button>
+                    )}
+                    {user?.role === 'verifier' && pengajuan.status === 'Menunggu Verifikasi Akhir' && (
+                        <button
+                            onClick={() => handleUpdateStatus('Selesai', 'Selesaikan pengajuan ini?')}
+                            className="px-6 py-2.5 bg-indigo-600 text-white text-sm font-medium rounded-xl hover:bg-indigo-700 transition-colors shadow-sm flex items-center gap-2"
+                        >
+                            <CheckCircle className="w-4 h-4" />
+                            Selesai
                         </button>
                     )}
                 </div>

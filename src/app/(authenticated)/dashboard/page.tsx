@@ -115,7 +115,7 @@ export default function DashboardPage() {
     // Verifier specific: Loans needing verification
     const verifierPendingLoans = useMemo(() => {
         if (user?.role !== 'verifier') return [];
-        return pengajuanList.filter(item => item.status === 'Pending' || item.status === 'Revisi');
+        return pengajuanList.filter(item => item.status === 'Pending' || item.status === 'Revisi' || item.status === 'Menunggu Verifikasi Akhir');
     }, [pengajuanList, user]);
 
     // Helper to format currency
@@ -683,11 +683,10 @@ export default function DashboardPage() {
                                                             <div className="mb-1">
                                                                 <div className="flex items-center justify-between gap-2">
                                                                     <span className="text-[10px] font-bold text-slate-800 truncate">{item.nama_lengkap}</span>
-                                                                    <span className={`px-1.5 py-0.5 rounded text-[8px] font-bold whitespace-nowrap ${
-                                                                        item.status === 'Revisi'
+                                                                    <span className={`px-1.5 py-0.5 rounded text-[8px] font-bold whitespace-nowrap ${item.status === 'Revisi'
                                                                             ? 'bg-amber-100 text-amber-700'
                                                                             : 'bg-slate-100 text-slate-700'
-                                                                    }`}>
+                                                                        }`}>
                                                                         {item.status}
                                                                     </span>
                                                                 </div>
@@ -1242,11 +1241,10 @@ export default function DashboardPage() {
                                                                 <span className="text-sm text-slate-600">{item.unit}</span>
                                                             </td>
                                                             <td className="px-6 py-4 whitespace-nowrap">
-                                                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                                                    item.status === 'Revisi'
+                                                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${item.status === 'Revisi'
                                                                         ? 'bg-amber-100 text-amber-800'
                                                                         : 'bg-slate-100 text-slate-800'
-                                                                }`}>
+                                                                    }`}>
                                                                     {item.status}
                                                                 </span>
                                                             </td>

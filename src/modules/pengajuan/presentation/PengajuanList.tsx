@@ -36,6 +36,7 @@ const STATUS_OPTIONS = [
     { value: 'Menunggu Verifikasi Admin Unit', label: 'Verifikasi Admin Unit' },
     { value: 'Menunggu Pencairan', label: 'Menunggu Pencairan' },
     { value: 'Dicairkan', label: 'Dicairkan' },
+    { value: 'Menunggu Verifikasi Akhir', label: 'Menunggu Verifikasi Akhir' },
     { value: 'Selesai', label: 'Selesai' },
     { value: 'Disetujui', label: 'Disetujui' },
     { value: 'Ditolak', label: 'Ditolak' },
@@ -78,6 +79,7 @@ const getStatusColor = (status: string) => {
         case 'Menunggu Verifikasi Admin Unit': return 'bg-purple-100 text-purple-700 border-purple-200';
         case 'Menunggu Pencairan': return 'bg-orange-100 text-orange-700 border-orange-200';
         case 'Dicairkan': return 'bg-teal-100 text-teal-700 border-teal-200';
+        case 'Menunggu Verifikasi Akhir': return 'bg-cyan-100 text-cyan-700 border-cyan-200';
         case 'Selesai': return 'bg-indigo-100 text-indigo-700 border-indigo-200';
         case 'Ditolak': return 'bg-rose-100 text-rose-700 border-rose-200';
         case 'Pending': return 'bg-amber-100 text-amber-700 border-amber-200';
@@ -121,6 +123,9 @@ const getActionInfo = (status: string, role: string): { label: string; color: st
     if (role === 'admin-pusat' && status === 'Menunggu Pencairan') {
         return { label: 'Perlu Pencairan', color: 'bg-purple-50 border-purple-200 text-purple-700', icon: Wallet };
     }
+    if (role === 'verifier' && status === 'Menunggu Verifikasi Akhir') {
+        return { label: 'Perlu Verifikasi Akhir', color: 'bg-cyan-50 border-cyan-200 text-cyan-700', icon: CheckCircle };
+    }
     return null;
 };
 
@@ -132,6 +137,7 @@ const getTimelineSteps = () => [
     { status: 'Menunggu Verifikasi Admin Unit', icon: Clock, label: 'Admin Unit', tooltip: 'Verifikasi admin unit' },
     { status: 'Menunggu Pencairan', icon: Clock, label: 'Admin Pusat', tooltip: 'Proses pencairan' },
     { status: 'Dicairkan', icon: CheckCircle, label: 'Dicairkan', tooltip: 'Dana telah dicairkan' },
+    { status: 'Menunggu Verifikasi Akhir', icon: Clock, label: 'Verifikator', tooltip: 'Menunggu verifikasi akhir' },
     { status: 'Selesai', icon: CheckCircle, label: 'Selesai', tooltip: 'Proses selesai' },
 ];
 
@@ -241,10 +247,10 @@ const MobileView = ({ data, search, setSearch, statusFilter, setStatusFilter, da
                             >
                                 <option value="">
                                     {user?.role === 'verifier' ? 'Default (Semua kecuali Selesai)' :
-                                     user?.role === 'manager' ? 'Default (Menunggu Approval)' :
-                                     user?.role === 'admin-unit' ? 'Default (Menunggu Verifikasi)' :
-                                     user?.role === 'admin-pusat' ? 'Default (Menunggu Pencairan)' :
-                                     'Semua Status'}
+                                        user?.role === 'manager' ? 'Default (Menunggu Approval)' :
+                                            user?.role === 'admin-unit' ? 'Default (Menunggu Verifikasi)' :
+                                                user?.role === 'admin-pusat' ? 'Default (Menunggu Pencairan)' :
+                                                    'Semua Status'}
                                 </option>
                                 {STATUS_OPTIONS.slice(1).map(opt => (
                                     <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -302,91 +308,91 @@ const MobileView = ({ data, search, setSearch, statusFilter, setStatusFilter, da
                         const isDicairkan = item.status === 'Dicairkan';
 
                         return (
-                        <div
-                            key={item.id}
-                            onClick={() => router.push(detailPath)}
-                            className={`bg-white p-3.5 rounded-xl border shadow-sm active:scale-[0.98] transition-transform ${isDicairkan ? 'border-teal-200 bg-gradient-to-br from-white to-teal-50' : 'border-slate-100'}`}
-                        >
-                            <div className="flex justify-between items-start mb-2">
-                                <h3 className="font-bold text-slate-800 text-sm line-clamp-1 flex-1 mr-2">{item.nama_lengkap || 'Nama tidak tersedia'}</h3>
-                                <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider border whitespace-nowrap ${getStatusColor(item.status)}`}>
-                                    {item.status}
-                                </span>
-                            </div>
+                            <div
+                                key={item.id}
+                                onClick={() => router.push(detailPath)}
+                                className={`bg-white p-3.5 rounded-xl border shadow-sm active:scale-[0.98] transition-transform ${isDicairkan ? 'border-teal-200 bg-gradient-to-br from-white to-teal-50' : 'border-slate-100'}`}
+                            >
+                                <div className="flex justify-between items-start mb-2">
+                                    <h3 className="font-bold text-slate-800 text-sm line-clamp-1 flex-1 mr-2">{item.nama_lengkap || 'Nama tidak tersedia'}</h3>
+                                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider border whitespace-nowrap ${getStatusColor(item.status)}`}>
+                                        {item.status}
+                                    </span>
+                                </div>
 
-                            <div className="flex items-end justify-between mb-3">
-                                <div className="space-y-0.5">
-                                    <div className="flex items-center gap-1.5 text-xs text-slate-500">
-                                        <Calendar className="w-3 h-3" />
-                                        <span>{formatDate(item.created_at)}</span>
-                                    </div>
-                                    {item.unit && (
+                                <div className="flex items-end justify-between mb-3">
+                                    <div className="space-y-0.5">
                                         <div className="flex items-center gap-1.5 text-xs text-slate-500">
-                                            <Briefcase className="w-3 h-3" />
-                                            <span className="truncate max-w-[120px]">{item.unit}</span>
+                                            <Calendar className="w-3 h-3" />
+                                            <span>{formatDate(item.created_at)}</span>
                                         </div>
-                                    )}
-                                </div>
-                                <div className="text-right">
-                                    <p className="text-[10px] text-slate-400 font-medium uppercase">Nominal</p>
-                                    <p className="text-sm font-bold text-indigo-600">{formatCurrency(item.jumlah_pembiayaan)}</p>
-                                </div>
-                            </div>
-
-                            {/* Dicairkan Info Banner */}
-                            {isDicairkan && (
-                                <div className="mb-2.5 bg-teal-50 border border-teal-200 rounded-lg px-3 py-2">
-                                    <p className="text-[10px] font-bold text-teal-700 mb-1">✓ Dana Berhasil Dicairkan</p>
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-[10px] text-teal-600">Nominal Diterima:</span>
-                                        <span className="text-xs font-bold text-teal-800">
-                                            {formatCurrency((item as any).nominal_terima || item.jumlah_pembiayaan)}
-                                        </span>
-                                    </div>
-                                    <p className="text-[9px] text-teal-500 mt-1">Tap untuk lihat bukti transfer →</p>
-                                </div>
-                            )}
-
-                            {/* Action Banner for current user role */}
-                            {(() => {
-                                const action = getActionInfo(item.status, user?.role || '');
-                                if (!action) return null;
-                                const ActionIcon = action.icon;
-                                return (
-                                    <div className={`mb-2.5 flex items-center gap-2 border rounded-lg px-3 py-2 ${action.color}`}>
-                                        <div className="p-0.5 rounded-full bg-current/10 animate-pulse shrink-0">
-                                            <ActionIcon className="w-3 h-3" />
-                                        </div>
-                                        <span className="text-[10px] font-bold">{action.label}</span>
-                                        <ChevronRight className="w-3 h-3 ml-auto opacity-60" />
-                                    </div>
-                                );
-                            })()}
-
-                            {/* Horizontal Timeline */}
-                            <div className="pt-2.5 border-t border-slate-100">
-                                <div className="flex items-center justify-between gap-1">
-                                    {getTimelineSteps().map((step, idx) => {
-                                        const isRejected = item.status === 'Ditolak';
-                                        const Icon = isRejected && idx === 0 ? XCircle : step.icon;
-                                        const isLast = idx === getTimelineSteps().length - 1;
-
-                                        return (
-                                            <div key={step.status} className="flex items-center flex-1">
-                                                <div className="flex flex-col items-center">
-                                                    <div className={`w-6 h-6 rounded-full flex items-center justify-center ${getTimelineIconColor(item.status, step.status, isRejected)}`}>
-                                                        <Icon className="w-3 h-3" strokeWidth={2.5} />
-                                                    </div>
-                                                </div>
-                                                {!isLast && (
-                                                    <div className={`h-0.5 flex-1 mx-0.5 ${getTimelineLineColor(item.status, step.status, isRejected)}`}></div>
-                                                )}
+                                        {item.unit && (
+                                            <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                                                <Briefcase className="w-3 h-3" />
+                                                <span className="truncate max-w-[120px]">{item.unit}</span>
                                             </div>
-                                        );
-                                    })}
+                                        )}
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="text-[10px] text-slate-400 font-medium uppercase">Nominal</p>
+                                        <p className="text-sm font-bold text-indigo-600">{formatCurrency(item.jumlah_pembiayaan)}</p>
+                                    </div>
+                                </div>
+
+                                {/* Dicairkan Info Banner */}
+                                {isDicairkan && (
+                                    <div className="mb-2.5 bg-teal-50 border border-teal-200 rounded-lg px-3 py-2">
+                                        <p className="text-[10px] font-bold text-teal-700 mb-1">✓ Dana Berhasil Dicairkan</p>
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-[10px] text-teal-600">Nominal Diterima:</span>
+                                            <span className="text-xs font-bold text-teal-800">
+                                                {formatCurrency((item as any).nominal_terima || item.jumlah_pembiayaan)}
+                                            </span>
+                                        </div>
+                                        <p className="text-[9px] text-teal-500 mt-1">Tap untuk lihat bukti transfer →</p>
+                                    </div>
+                                )}
+
+                                {/* Action Banner for current user role */}
+                                {(() => {
+                                    const action = getActionInfo(item.status, user?.role || '');
+                                    if (!action) return null;
+                                    const ActionIcon = action.icon;
+                                    return (
+                                        <div className={`mb-2.5 flex items-center gap-2 border rounded-lg px-3 py-2 ${action.color}`}>
+                                            <div className="p-0.5 rounded-full bg-current/10 animate-pulse shrink-0">
+                                                <ActionIcon className="w-3 h-3" />
+                                            </div>
+                                            <span className="text-[10px] font-bold">{action.label}</span>
+                                            <ChevronRight className="w-3 h-3 ml-auto opacity-60" />
+                                        </div>
+                                    );
+                                })()}
+
+                                {/* Horizontal Timeline */}
+                                <div className="pt-2.5 border-t border-slate-100">
+                                    <div className="flex items-center justify-between gap-1">
+                                        {getTimelineSteps().map((step, idx) => {
+                                            const isRejected = item.status === 'Ditolak';
+                                            const Icon = isRejected && idx === 0 ? XCircle : step.icon;
+                                            const isLast = idx === getTimelineSteps().length - 1;
+
+                                            return (
+                                                <div key={step.status} className="flex items-center flex-1">
+                                                    <div className="flex flex-col items-center">
+                                                        <div className={`w-6 h-6 rounded-full flex items-center justify-center ${getTimelineIconColor(item.status, step.status, isRejected)}`}>
+                                                            <Icon className="w-3 h-3" strokeWidth={2.5} />
+                                                        </div>
+                                                    </div>
+                                                    {!isLast && (
+                                                        <div className={`h-0.5 flex-1 mx-0.5 ${getTimelineLineColor(item.status, step.status, isRejected)}`}></div>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
                                 </div>
                             </div>
-                        </div>
                         );
                     })
                 )}
@@ -490,10 +496,10 @@ const DesktopView = ({ data, search, setSearch, statusFilter, setStatusFilter, d
                     >
                         <option value="">
                             {user?.role === 'verifier' ? 'Default (Semua kecuali Selesai)' :
-                             user?.role === 'manager' ? 'Default (Menunggu Approval)' :
-                             user?.role === 'admin-unit' ? 'Default (Menunggu Verifikasi)' :
-                             user?.role === 'admin-pusat' ? 'Default (Menunggu Pencairan)' :
-                             'Semua Status'}
+                                user?.role === 'manager' ? 'Default (Menunggu Approval)' :
+                                    user?.role === 'admin-unit' ? 'Default (Menunggu Verifikasi)' :
+                                        user?.role === 'admin-pusat' ? 'Default (Menunggu Pencairan)' :
+                                            'Semua Status'}
                         </option>
                         {STATUS_OPTIONS.slice(1).map((opt) => (
                             <option key={opt.value} value={opt.value}>{opt.label}</option>

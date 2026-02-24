@@ -50,11 +50,11 @@ const calculateDuration = (start: string, end: string): string => {
     const startDate = new Date(start).getTime();
     const endDate = new Date(end).getTime();
     const diff = endDate - startDate;
-    
+
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
     const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
     const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-    
+
     if (days > 0) return `${days} hari ${hours} jam`;
     if (hours > 0) return `${hours} jam ${minutes} menit`;
     return `${minutes} menit`;
@@ -80,6 +80,7 @@ const getStatusBadgeColor = (status: string): string => {
         case 'Menunggu Verifikasi Admin Unit': return 'bg-purple-50 text-purple-700 border-purple-200';
         case 'Menunggu Pencairan': return 'bg-orange-50 text-orange-700 border-orange-200';
         case 'Dicairkan': return 'bg-teal-50 text-teal-700 border-teal-200';
+        case 'Menunggu Verifikasi Akhir': return 'bg-cyan-50 text-cyan-700 border-cyan-200';
         case 'Selesai': return 'bg-indigo-50 text-indigo-700 border-indigo-200';
         case 'Ditolak': return 'bg-rose-50 text-rose-700 border-rose-200';
         default: return 'bg-slate-50 text-slate-700 border-slate-200';
