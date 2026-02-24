@@ -2,6 +2,7 @@ export interface Setting {
     id: string;
     batas_usia_perhitungan_lunas: number;
     jasa_perbulan: number;
+    fee_pelayanan_pos: number;
     mikro_jangka_waktu: number; // NEW
     mikro_maksimal_pembiayaan: number; // NEW
     makro_jangka_waktu: number; // NEW
@@ -15,6 +16,7 @@ export interface Setting {
 export interface CreateSettingDTO {
     batas_usia_perhitungan_lunas: number;
     jasa_perbulan: number;
+    fee_pelayanan_pos: number;
     mikro_jangka_waktu: number; // NEW
     mikro_maksimal_pembiayaan: number; // NEW
     makro_jangka_waktu: number; // NEW
@@ -25,6 +27,7 @@ export interface CreateSettingDTO {
 export interface UpdateSettingDTO {
     batas_usia_perhitungan_lunas: number;
     jasa_perbulan: number;
+    fee_pelayanan_pos: number;
     mikro_jangka_waktu: number; // NEW
     mikro_maksimal_pembiayaan: number; // NEW
     makro_jangka_waktu: number; // NEW

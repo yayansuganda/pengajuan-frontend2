@@ -81,6 +81,26 @@ const MobileView = ({ formData, setFormData, handleSubmit, activeSetting, isLoad
                         </div>
 
                         <div>
+                            <label className="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wide flex items-center gap-2">
+                                <Percent className="w-4 h-4 text-slate-400" /> Fee Pelayanan Pos
+                            </label>
+                            <div className="relative">
+                                <input
+                                    type="number"
+                                    required
+                                    min="0"
+                                    max="100"
+                                    step="0.01"
+                                    value={formData.fee_pelayanan_pos}
+                                    onChange={(e) => setFormData({ ...formData, fee_pelayanan_pos: parseFloat(e.target.value) || 0 })}
+                                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 font-semibold"
+                                />
+                                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-500">%</span>
+                            </div>
+                            <p className="mt-1 text-[10px] text-slate-400">Default: 3%</p>
+                        </div>
+
+                        <div>
                             <label className="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wide">Catatan</label>
                             <textarea
                                 rows={3}
@@ -287,6 +307,29 @@ const DesktopView = ({ formData, setFormData, handleSubmit, activeSetting, isLoa
                                 </div>
                                 <p className="mt-2 text-xs text-gray-500">Persentase jasa charged per bulan</p>
                             </div>
+
+                            <div>
+                                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                    Fee Pelayanan Pos
+                                </label>
+                                <div className="relative group">
+                                    <input
+                                        type="number"
+                                        required
+                                        min="0"
+                                        max="100"
+                                        step="0.01"
+                                        value={formData.fee_pelayanan_pos}
+                                        onChange={(e) => setFormData({ ...formData, fee_pelayanan_pos: parseFloat(e.target.value) || 0 })}
+                                        className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all font-medium text-gray-900 group-hover:border-gray-300"
+                                        placeholder="Contoh: 3.00"
+                                    />
+                                    <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
+                                        <span className="text-sm font-bold text-gray-400 bg-gray-50 px-2 py-1 rounded">%</span>
+                                    </div>
+                                </div>
+                                <p className="mt-2 text-xs text-gray-500">Persentase fee pelayanan untuk Petugas Pos (default: 3%)</p>
+                            </div>
                         </div>
                     </div>
 
@@ -439,6 +482,7 @@ export const SettingsList: React.FC = () => {
     const [formData, setFormData] = useState({
         batas_usia_perhitungan_lunas: 90,
         jasa_perbulan: 2.00,
+        fee_pelayanan_pos: 3.00,
         mikro_jangka_waktu: 0,
         mikro_maksimal_pembiayaan: 0,
         makro_jangka_waktu: 0,
@@ -460,6 +504,7 @@ export const SettingsList: React.FC = () => {
             setFormData({
                 batas_usia_perhitungan_lunas: active.batas_usia_perhitungan_lunas,
                 jasa_perbulan: active.jasa_perbulan,
+                fee_pelayanan_pos: active.fee_pelayanan_pos ?? 3.00,
                 mikro_jangka_waktu: active.mikro_jangka_waktu || 0,
                 mikro_maksimal_pembiayaan: active.mikro_maksimal_pembiayaan || 0,
                 makro_jangka_waktu: active.makro_jangka_waktu || 0,
