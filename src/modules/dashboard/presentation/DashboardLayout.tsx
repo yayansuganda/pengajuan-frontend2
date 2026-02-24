@@ -26,7 +26,8 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
     // Redirect admin-pos to /rekonsiliasi if trying to access other pages
     useEffect(() => {
         if (!loading && user && user.role === 'admin-pos') {
-            if (pathname !== '/rekonsiliasi' && pathname !== '/profile') {
+            const adminPosAllowed = ['/rekonsiliasi', '/rekonsiliasi/dashboard', '/profile'];
+            if (!adminPosAllowed.includes(pathname)) {
                 router.push('/rekonsiliasi');
             }
         }
