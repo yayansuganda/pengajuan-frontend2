@@ -70,6 +70,7 @@ export interface Pengajuan {
     besar_angsuran?: number;
     total_potongan?: number;
     nominal_terima?: number;
+    fee_pelayanan_pos?: number;
     kantor_pos_petugas?: string;
 
     // Data Petugas POS (from fronting_user)
