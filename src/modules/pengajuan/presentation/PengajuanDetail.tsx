@@ -13,6 +13,7 @@ import { Pengajuan } from '../core/PengajuanEntity';
 import { PengajuanRepositoryImpl } from '../data/PengajuanRepositoryImpl';
 import { MobileLayoutWrapper } from './components/MobileLayoutWrapper';
 import { useAuth } from '@/modules/auth/presentation/useAuth';
+import { downloadFile } from '@/shared/utils/downloadFile';
 import axios from 'axios';
 import { showLoading, hideLoading, showSuccess, showError, showConfirm } from '@/shared/utils/sweetAlert';
 import Swal from 'sweetalert2';
@@ -1148,13 +1149,17 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
 
                                                         {/* Download Template Button for PDF docs */}
                                                         {isPdfDoc && templateUrls[docKey] && (
-                                                            <a
-                                                                href={templateUrls[docKey]}
-                                                                download
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    const url = templateUrls[docKey];
+                                                                    const filename = url.split('/').pop() || 'template.pdf';
+                                                                    downloadFile(url, filename);
+                                                                }}
                                                                 className="block w-full text-center py-1.5 text-[10px] font-medium rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors"
                                                             >
                                                                 📥 Download Template
-                                                            </a>
+                                                            </button>
                                                         )}
 
                                                         {/* Upload Button */}
@@ -1707,7 +1712,7 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                                     <Field label="Besar Angsuran" value={money(pengajuan.besar_angsuran)} />
                                     <Field label="Total Potongan" value={money(pengajuan.total_potongan)} />
                                     <Field label="Nominal Diterima" value={money(pengajuan.nominal_terima)} />
-                                    <Field label="Petugas Kantor Pos" value={d(pengajuan.kantor_pos_petugas)} />
+                                    <Field label="Kantor Bayar Pensiun" value={d(pengajuan.kantor_pos_petugas)} />
                                 </Section>
 
                                 {/* Data Petugas POS - Section */}
@@ -2043,9 +2048,13 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
                                         <div className="flex flex-col items-center justify-center h-full p-6 text-center bg-slate-50">
                                             <FileText className="w-12 h-12 text-slate-400 mb-3" />
                                             <p className="text-sm text-slate-600 mb-3">Gagal memuat preview.</p>
-                                            <a href={previewDoc.url} target="_blank" download className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium">
+                                            <button
+                                                type="button"
+                                                onClick={() => downloadFile(previewDoc.url, previewDoc.url.split('/').pop() || 'document.pdf')}
+                                                className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium"
+                                            >
                                                 Download PDF
-                                            </a>
+                                            </button>
                                         </div>
                                     </object>
                                 ) : (

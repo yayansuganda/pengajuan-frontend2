@@ -2,6 +2,7 @@
 
 import { MobileLayoutWrapper } from '@/modules/pengajuan/presentation/components/MobileLayoutWrapper';
 import { Book, Phone, Download } from 'lucide-react';
+import { downloadFile } from '@/shared/utils/downloadFile';
 
 export default function HelpPage() {
     return (
@@ -69,10 +70,9 @@ export default function HelpPage() {
                     {/* Additional Help Section */}
                     <div className="mt-6 flex flex-col gap-4">
                         {/* Guide Book Download */}
-                        <a
-                            href="/templates/pedoman-siapimm.pdf"
-                            download
-                            className="bg-white rounded-xl p-4 shadow-sm border border-slate-200 flex items-center justify-between hover:bg-slate-50 transition-colors"
+                        <div
+                            onClick={() => downloadFile('/templates/pedoman-siapimm.pdf', 'pedoman-siapimm.pdf')}
+                            className="bg-white rounded-xl p-4 shadow-sm border border-slate-200 flex items-center justify-between hover:bg-slate-50 transition-colors cursor-pointer"
                         >
                             <div className="flex items-center gap-3">
                                 <div className="w-10 h-10 bg-indigo-50 rounded-lg flex items-center justify-center">
@@ -84,7 +84,7 @@ export default function HelpPage() {
                                 </div>
                             </div>
                             <span className="text-indigo-600 font-medium text-sm">Unduh</span>
-                        </a>
+                        </div>
 
                         {/* WhatsApp Call Center */}
                         <a
