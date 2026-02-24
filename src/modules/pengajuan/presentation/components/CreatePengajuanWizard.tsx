@@ -2611,23 +2611,24 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
                     {/* Upload Box with Preview */}
                     <div className="relative group">
                         {/* Input Hidden - File Upload */}
+                        {/* NOTE: Use absolute+opacity instead of display:none so Flutter WebView can trigger .click() */}
                         <input
                             ref={(el) => { fileInputRefs.current[field.name] = el; }}
                             type="file"
-                            className="hidden"
+                            style={{ position: 'absolute', opacity: 0, width: 0, height: 0, pointerEvents: 'none' }}
                             accept={acceptType}
                             multiple={isMultiple}
                             disabled={isUploading}
                             onChange={(e) => handleFileChange(e, field.name, isMultiple)}
                         />
 
-                        {/* Input Hidden - Camera */}
+                        {/* Input Camera - capture="environment" for documents, "user" for selfie */}
                         <input
                             ref={(el) => { fileInputRefs.current[`${field.name}_camera`] = el; }}
                             type="file"
-                            className="hidden"
+                            style={{ position: 'absolute', opacity: 0, width: 0, height: 0, pointerEvents: 'none' }}
                             accept="image/*"
-                            capture
+                            capture={field.name === 'upload_borrower_photos' ? 'user' : 'environment'}
                             multiple={isMultiple}
                             disabled={isUploading}
                             onChange={(e) => handleFileChange(e, field.name, isMultiple)}
