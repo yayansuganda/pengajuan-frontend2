@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
+import type ExcelJS from 'exceljs';
 import { useAuth } from '@/modules/auth/presentation/useAuth';
 import { PengajuanRepositoryImpl } from '@/modules/pengajuan/data/PengajuanRepositoryImpl';
 import { Pengajuan } from '@/modules/pengajuan/core/PengajuanEntity';
