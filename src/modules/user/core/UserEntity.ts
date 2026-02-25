@@ -5,6 +5,9 @@ export interface User {
     unit: string;
     unit_id?: string;
     name: string;
+    regional_kode?: string;
+    kcu_kode?: string;
+    kc_kode?: string;
     created_at: string;
     updated_at: string;
 }
@@ -16,6 +19,9 @@ export interface CreateUserDTO {
     unit: string;
     unit_id?: string;
     name: string;
+    regional_kode?: string;
+    kcu_kode?: string;
+    kc_kode?: string;
 }
 
 export interface UpdateUserDTO {
@@ -25,4 +31,7 @@ export interface UpdateUserDTO {
     unit?: string;
     unit_id?: string;
     name?: string;
+    regional_kode?: string;
+    kcu_kode?: string;
+    kc_kode?: string;
 }
