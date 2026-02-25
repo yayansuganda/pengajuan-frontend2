@@ -51,4 +51,6 @@ export interface RekonsiliasiStats {
 export interface RekonsiliasiFilterOptions {
     regionals: string[];
     kcu_list: string[];
+    kc_list: string[];
+    kcu_regional_map: Record<string, string>; // KCU nama → Regional nama
 }

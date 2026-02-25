@@ -22,11 +22,20 @@ export const RekonsiliasiPage: React.FC = () => {
     const [filterStatus, setFilterStatus] = useState('');
     const [filterRegional, setFilterRegional] = useState('');
     const [filterKcu, setFilterKcu] = useState('');
+    const [filterKc, setFilterKc] = useState('');
     const [dateFrom, setDateFrom] = useState('');
     const [dateTo, setDateTo] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [total, setTotal] = useState(0);
     const [filterOptions, setFilterOptions] = useState<RekonsiliasiFilterOptions | null>(null);
+    const [kcuListForRegional, setKcuListForRegional] = useState<string[]>([]);
+    const [kcuRegionalMap, setKcuRegionalMap] = useState<Record<string, string>>({});
+
+    // Helper: resolve Regional name from KCU name via the map
+    const resolveRegional = (kcuName?: string) => {
+        if (!kcuName) return '-';
+        return kcuRegionalMap[kcuName] || '-';
+    };
 
     // Daftar status untuk dropdown filter
     const STATUS_OPTIONS = [
@@ -46,8 +55,11 @@ export const RekonsiliasiPage: React.FC = () => {
     }, [filterOptions]);
 
     const kcuOptions = useMemo(() => {
-        // Jika regional dipilih, filter KCU berdasarkan data yang tersedia
         return filterOptions?.kcu_list || [];
+    }, [filterOptions]);
+
+    const kcOptions = useMemo(() => {
+        return filterOptions?.kc_list || [];
     }, [filterOptions]);
 
     // Hitung jumlah filter aktif
@@ -57,16 +69,18 @@ export const RekonsiliasiPage: React.FC = () => {
         if (filterStatus) count++;
         if (filterRegional) count++;
         if (filterKcu) count++;
+        if (filterKc) count++;
         if (dateFrom) count++;
         if (dateTo) count++;
         return count;
-    }, [searchQuery, filterStatus, filterRegional, filterKcu, dateFrom, dateTo]);
+    }, [searchQuery, filterStatus, filterRegional, filterKcu, filterKc, dateFrom, dateTo]);
 
     const resetFilters = () => {
         setSearchQuery('');
         setFilterStatus('');
         setFilterRegional('');
         setFilterKcu('');
+        setFilterKc('');
         setDateFrom('');
         setDateTo('');
     };
@@ -109,25 +123,36 @@ export const RekonsiliasiPage: React.FC = () => {
         }
     }, [user]);
 
+    // Fetch filter options with cascading support
+    const fetchFilterOptions = async (regional?: string, kcu?: string) => {
+        try {
+            const options = await rekonsiliasiRepo.getFilterOptions(regional || undefined, kcu || undefined);
+            setFilterOptions(options);
+            // Always update the kcu→regional map when we get new filter options
+            if (options?.kcu_regional_map) {
+                setKcuRegionalMap(prev => ({ ...prev, ...options.kcu_regional_map }));
+            }
+            return options;
+        } catch {
+            // silently fail filter options
+            return null;
+        }
+    };
+
     // Fetch data
     const fetchData = async () => {
         try {
             setIsLoading(true);
             showLoading('Memuat data rekonsiliasi POS...');
 
-            // Fetch filter options dan data secara parallel
-            const [allData, options] = await Promise.all([
+            // Fetch data dan filter options (hanya regional) secara parallel
+            const [allData] = await Promise.all([
                 pengajuanRepo.getPengajuanList({
                     limit: 9999,
                     page: 1,
                 }),
-                rekonsiliasiRepo.getFilterOptions().catch(() => null),
+                fetchFilterOptions(),
             ]);
-
-            // Set filter options from API
-            if (options) {
-                setFilterOptions(options);
-            }
 
             // Filter hanya yang jenis pelayanan POS
             const posPengajuan = allData.filter(
@@ -148,9 +173,43 @@ export const RekonsiliasiPage: React.FC = () => {
 
     useEffect(() => {
         fetchData();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    // Filter: search + status + range tanggal
+    // Cascading filter: when Regional changes, fetch KCU list for that regional
+    useEffect(() => {
+        if (filterRegional) {
+            setFilterKcu('');
+            setFilterKc('');
+            // Fetch KCU options filtered by regional
+            fetchFilterOptions(filterRegional, '').then((opts) => {
+                // Simpan daftar KCU milik regional ini untuk filtering data
+                setKcuListForRegional(opts?.kcu_list || []);
+            });
+        } else {
+            setFilterKcu('');
+            setFilterKc('');
+            setKcuListForRegional([]);
+            // Reset to initial options (only regionals)
+            fetchFilterOptions('', '');
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [filterRegional]);
+
+    // Cascading filter: when KCU changes, fetch KC list for that KCU
+    useEffect(() => {
+        if (filterKcu) {
+            setFilterKc('');
+            fetchFilterOptions(filterRegional, filterKcu);
+        } else if (filterRegional) {
+            setFilterKc('');
+            // Tetap di regional, kosongkan KC
+            fetchFilterOptions(filterRegional, '');
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [filterKcu]);
+
+    // Filter: search + status + range tanggal + regional + kcu + kc
     useEffect(() => {
         let filtered = pengajuanList;
 
@@ -172,14 +231,26 @@ export const RekonsiliasiPage: React.FC = () => {
             filtered = filtered.filter((item) => item.status === filterStatus);
         }
 
-        // Filter by kantor regional (petugas KC)
-        if (filterRegional) {
-            filtered = filtered.filter((item) => (item.petugas_kc_name || '') === filterRegional);
+        // Filter by Regional — loans tidak menyimpan regional langsung,
+        // jadi kita filter berdasarkan KCU list yang termasuk dalam regional tsb
+        if (filterRegional && !filterKcu) {
+            // Hanya filter by regional jika KCU belum dipilih
+            // Gunakan kcuListForRegional yang sudah di-fetch dari API
+            if (kcuListForRegional.length > 0) {
+                filtered = filtered.filter((item) =>
+                    kcuListForRegional.includes(item.petugas_kcu_name || '')
+                );
+            }
         }
 
         // Filter by kantor KCU
         if (filterKcu) {
             filtered = filtered.filter((item) => (item.petugas_kcu_name || '') === filterKcu);
+        }
+
+        // Filter by kantor KC
+        if (filterKc) {
+            filtered = filtered.filter((item) => (item.petugas_kc_name || '') === filterKc);
         }
 
         // Filter by date range (created_at)
@@ -201,7 +272,7 @@ export const RekonsiliasiPage: React.FC = () => {
         }
 
         setFilteredList(filtered);
-    }, [searchQuery, filterStatus, filterRegional, filterKcu, dateFrom, dateTo, pengajuanList]);
+    }, [searchQuery, filterStatus, filterRegional, filterKcu, filterKc, dateFrom, dateTo, pengajuanList, kcuListForRegional]);
 
     // Export to Excel
     const handleExportExcel = async () => {
@@ -352,7 +423,7 @@ export const RekonsiliasiPage: React.FC = () => {
                     petugas_nama: item.petugas_name || '-',
                     petugas_rekening: item.petugas_account_no || '-',
                     petugas_telepon: item.petugas_phone || '-',
-                    petugas_regional: item.petugas_kc_name || '-',
+                    petugas_regional: resolveRegional(item.petugas_kcu_name) || '-',
                     petugas_kcu: item.petugas_kcu_name || '-',
                     petugas_kc: item.petugas_kc_name || '-',
                     petugas_kcp: item.petugas_kcp_name || '-',
@@ -507,19 +578,48 @@ export const RekonsiliasiPage: React.FC = () => {
                                 <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
                             </div>
 
-                            {/* Filter Kantor KCU */}
-                            <div className="relative min-w-0 w-full sm:w-auto sm:flex-1 sm:max-w-64">
+                            {/* Filter Kantor KCU (disabled jika belum pilih Regional) */}
+                            <div className="relative min-w-0 w-full sm:w-auto sm:flex-1 sm:max-w-56">
                                 <select
                                     value={filterKcu}
                                     onChange={(e) => setFilterKcu(e.target.value)}
-                                    className="w-full py-2 pl-3 pr-8 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white appearance-none"
+                                    disabled={!filterRegional}
+                                    className={`w-full py-2 pl-3 pr-8 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none appearance-none ${!filterRegional
+                                        ? 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed'
+                                        : 'bg-white border-slate-300'
+                                        }`}
                                 >
-                                    <option value="">Semua Kantor KCU ({kcuOptions.length})</option>
+                                    <option value="">
+                                        {!filterRegional ? '← Pilih Regional dulu' : `Semua KCU (${kcuOptions.length})`}
+                                    </option>
                                     {kcuOptions.map((kcu) => (
                                         <option key={kcu} value={kcu}>{kcu}</option>
                                     ))}
                                 </select>
-                                <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+                                <ChevronDown className={`absolute right-2.5 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none ${!filterRegional ? 'text-slate-300' : 'text-slate-400'
+                                    }`} />
+                            </div>
+
+                            {/* Filter Kantor KC (disabled jika belum pilih KCU) */}
+                            <div className="relative min-w-0 w-full sm:w-auto sm:flex-1 sm:max-w-56">
+                                <select
+                                    value={filterKc}
+                                    onChange={(e) => setFilterKc(e.target.value)}
+                                    disabled={!filterKcu}
+                                    className={`w-full py-2 pl-3 pr-8 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none appearance-none ${!filterKcu
+                                        ? 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed'
+                                        : 'bg-white border-slate-300'
+                                        }`}
+                                >
+                                    <option value="">
+                                        {!filterKcu ? '← Pilih KCU dulu' : `Semua KC (${kcOptions.length})`}
+                                    </option>
+                                    {kcOptions.map((kc) => (
+                                        <option key={kc} value={kc}>{kc}</option>
+                                    ))}
+                                </select>
+                                <ChevronDown className={`absolute right-2.5 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none ${!filterKcu ? 'text-slate-300' : 'text-slate-400'
+                                    }`} />
                             </div>
 
                             {/* Reset Filter */}
@@ -601,6 +701,7 @@ export const RekonsiliasiPage: React.FC = () => {
                                 <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">NIPPOS</th>
                                 <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">Petugas POS</th>
                                 <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">Rekening Petugas</th>
+                                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">Regional</th>
                                 <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">KC</th>
                                 <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">KCU</th>
                                 <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">KCP</th>
@@ -610,7 +711,7 @@ export const RekonsiliasiPage: React.FC = () => {
                         <tbody className="divide-y divide-slate-200">
                             {filteredList.length === 0 ? (
                                 <tr>
-                                    <td colSpan={20} className="px-4 py-12 text-center">
+                                    <td colSpan={21} className="px-4 py-12 text-center">
                                         <FileSpreadsheet className="h-12 w-12 text-slate-300 mx-auto mb-3" />
                                         <p className="text-slate-500 font-medium">
                                             {activeFilterCount > 0 ? `Tidak ada data yang cocok dengan ${activeFilterCount} filter aktif` : 'Tidak ada data rekonsiliasi'}
@@ -644,6 +745,7 @@ export const RekonsiliasiPage: React.FC = () => {
                                         <td className="px-4 py-3 text-slate-900 whitespace-nowrap font-mono text-xs">{item.petugas_nippos || '-'}</td>
                                         <td className="px-4 py-3 text-slate-900 whitespace-nowrap">{item.petugas_name || '-'}</td>
                                         <td className="px-4 py-3 text-slate-600 whitespace-nowrap font-mono text-xs">{item.petugas_account_no || '-'}</td>
+                                        <td className="px-4 py-3 text-slate-900 whitespace-nowrap font-medium text-indigo-700">{resolveRegional(item.petugas_kcu_name)}</td>
                                         <td className="px-4 py-3 text-slate-900 whitespace-nowrap">{item.petugas_kc_name || '-'}</td>
                                         <td className="px-4 py-3 text-slate-900 whitespace-nowrap">{item.petugas_kcu_name || '-'}</td>
                                         <td className="px-4 py-3 text-slate-900 whitespace-nowrap">{item.petugas_kcp_name || '-'}</td>

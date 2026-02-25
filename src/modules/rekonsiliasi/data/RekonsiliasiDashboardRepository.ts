@@ -11,8 +11,12 @@ export class RekonsiliasiDashboardRepository {
         return response.data;
     }
 
-    async getFilterOptions(): Promise<RekonsiliasiFilterOptions> {
-        const response = await httpClient.get<RekonsiliasiFilterOptions>('/dashboard/rekonsiliasi-filter-options');
+    async getFilterOptions(regional?: string, kcu?: string): Promise<RekonsiliasiFilterOptions> {
+        const params: Record<string, string> = {};
+        if (regional) params.regional = regional;
+        if (kcu) params.kcu = kcu;
+
+        const response = await httpClient.get<RekonsiliasiFilterOptions>('/dashboard/rekonsiliasi-filter-options', { params });
         return response.data;
     }
 }
