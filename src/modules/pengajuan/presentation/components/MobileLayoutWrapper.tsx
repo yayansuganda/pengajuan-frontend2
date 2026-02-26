@@ -11,7 +11,8 @@ interface MobileLayoutWrapperProps {
     moduleName?: 'default' | 'fronting';
 }
 
-export const MobileLayoutWrapper: React.FC<MobileLayoutWrapperProps & { forceVisible?: boolean }> = ({ children, showBackground = true, forceVisible = false, moduleName = 'default' }) => {
+export const MobileLayoutWrapper: React.FC<MobileLayoutWrapperProps & { forceVisible?: boolean }> = ({ children, showBackground = true, forceVisible: initialForceVisible = false, moduleName = 'default' }) => {
+    const forceVisible = initialForceVisible || moduleName === 'fronting';
     // Make useAuth optional - for fronting module, auth is not required
     let user = null;
     try {

@@ -418,13 +418,15 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
         { title: 'Resi Pengiriman Berkas', desc: 'Bukti Pengiriman Fisik', url: pengajuan.shipping_receipt_url, key: 'shipping_receipt_url', uploadInfo: { type: 'shipping', label: 'Resi Pengiriman' } },
     ];
 
-    // Check if user is Petugas Pos or Admin Pos to use fronting navigation
+    // Check if user is Petugas Pos or Admin Pos, or if we are in fronting route
     const isPetugasPos = user?.role === 'petugas-pos' || user?.role === 'admin-pos';
+    const isFrontingRoute = typeof window !== 'undefined' && window.location.pathname.startsWith('/fronting');
+    const isFrontingModule = isPetugasPos || isFrontingRoute;
 
     return (
-        <MobileLayoutWrapper showBackground={true} moduleName={isPetugasPos ? 'fronting' : 'default'}>
+        <MobileLayoutWrapper showBackground={true} moduleName={isFrontingModule ? 'fronting' : 'default'}>
             {/* Mobile Layout */}
-            <div className="md:hidden">
+            <div className={isFrontingModule ? '' : 'md:hidden'}>
                 {/* Content */}
                 <div className="relative z-10 pt-10 px-4">
                     {/* Header Info */}
@@ -1372,749 +1374,752 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
             </div >
 
             {/* Desktop Layout - Original Design */}
-            < div className="hidden md:block max-w-5xl mx-auto space-y-6 pb-24" >
-                {/* Hero Header */}
-                < div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-900 p-6 text-white" >
-                    <div className="absolute top-0 right-0 w-72 h-72 bg-indigo-500/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+            {!isFrontingModule && (
+                <div className="hidden md:block max-w-5xl mx-auto space-y-6 pb-24">
+                    {/* Hero Header */}
+                    < div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-900 p-6 text-white" >
+                        <div className="absolute top-0 right-0 w-72 h-72 bg-indigo-500/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
 
-                    <div className="relative z-10">
-                        <div className="flex items-center justify-between gap-4 mb-3">
-                            <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-sm font-medium ${status.bg} ${status.color}`}>
-                                {status.icon}
-                                <span>{pengajuan.status}</span>
+                        <div className="relative z-10">
+                            <div className="flex items-center justify-between gap-4 mb-3">
+                                <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-sm font-medium ${status.bg} ${status.color}`}>
+                                    {status.icon}
+                                    <span>{pengajuan.status}</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <button onClick={() => router.back()} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white text-sm font-medium rounded-full border border-white/20 transition-all">
+                                        <ArrowLeft className="h-4 w-4" /> Kembali
+                                    </button>
+                                    {['Pending', 'Revisi', 'Menunggu Approval Manager'].includes(pengajuan.status) && (user?.role === 'officer' || user?.role === 'super-admin' || user?.role === 'petugas-pos') && (
+                                        <Link
+                                            href={isPetugasPos ? `/fronting/detail/${pengajuan.id}/edit` : `/pengajuan/${pengajuan.id}/edit`}
+                                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white text-sm font-medium rounded-full border border-white/20 transition-all"
+                                        >
+                                            Edit
+                                        </Link>
+                                    )}
+                                </div>
                             </div>
-                            <div className="flex items-center gap-2">
-                                <button onClick={() => router.back()} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white text-sm font-medium rounded-full border border-white/20 transition-all">
-                                    <ArrowLeft className="h-4 w-4" /> Kembali
-                                </button>
-                                {['Pending', 'Revisi', 'Menunggu Approval Manager'].includes(pengajuan.status) && (user?.role === 'officer' || user?.role === 'super-admin' || user?.role === 'petugas-pos') && (
-                                    <Link
-                                        href={isPetugasPos ? `/fronting/detail/${pengajuan.id}/edit` : `/pengajuan/${pengajuan.id}/edit`}
-                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white text-sm font-medium rounded-full border border-white/20 transition-all"
-                                    >
-                                        Edit
-                                    </Link>
-                                )}
+
+                            <div className="space-y-2">
+                                <h1 className="text-2xl sm:text-3xl font-bold">{pengajuan.nama_lengkap}</h1>
+                                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-white/70 text-sm">
+                                    <span className="flex items-center gap-1.5"><CreditCard className="h-3.5 w-3.5" /> {pengajuan.nik}</span>
+                                    <span className="flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5" /> {new Date(pengajuan.created_at).toLocaleDateString('id-ID', { dateStyle: 'long' })}</span>
+                                </div>
                             </div>
                         </div>
+                    </div >
 
-                        <div className="space-y-2">
-                            <h1 className="text-2xl sm:text-3xl font-bold">{pengajuan.nama_lengkap}</h1>
-                            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-white/70 text-sm">
-                                <span className="flex items-center gap-1.5"><CreditCard className="h-3.5 w-3.5" /> {pengajuan.nik}</span>
-                                <span className="flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5" /> {new Date(pengajuan.created_at).toLocaleDateString('id-ID', { dateStyle: 'long' })}</span>
+                    {/* Rejection Reason Alert - Desktop */}
+                    {
+                        pengajuan.status === 'Ditolak' && pengajuan.reject_reason && (
+                            <div className="bg-gradient-to-r from-rose-50 to-rose-100 border-2 border-rose-400 rounded-2xl p-6 shadow-lg animate-in fade-in slide-in-from-top-4 duration-500">
+                                <div className="flex items-start gap-5">
+                                    <div className="flex-shrink-0">
+                                        <div className="w-14 h-14 bg-rose-500 rounded-full flex items-center justify-center shadow-lg">
+                                            <XCircle className="w-8 h-8 text-white" />
+                                        </div>
+                                    </div>
+                                    <div className="flex-1">
+                                        <h3 className="text-xl font-bold text-rose-900 mb-3 flex items-center gap-2">
+                                            ⚠️ Alasan Penolakan
+                                        </h3>
+                                        <div className="bg-white/70 rounded-xl p-4 border-2 border-rose-300">
+                                            <p className="text-base text-rose-900 leading-relaxed font-medium">{pengajuan.reject_reason}</p>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                    </div>
-                </div >
+                        )
+                    }
 
-                {/* Rejection Reason Alert - Desktop */}
-                {
-                    pengajuan.status === 'Ditolak' && pengajuan.reject_reason && (
-                        <div className="bg-gradient-to-r from-rose-50 to-rose-100 border-2 border-rose-400 rounded-2xl p-6 shadow-lg animate-in fade-in slide-in-from-top-4 duration-500">
+                    {/* Revision Note Alert - Desktop */}
+                    {
+                        pengajuan.revision_note && (['Revisi', 'Pending'].includes(pengajuan.status)) && (
+                            <div className="bg-gradient-to-r from-amber-50 to-amber-100 border-2 border-amber-400 rounded-2xl p-6 shadow-lg animate-in fade-in slide-in-from-top-4 duration-500">
+                                <div className="flex items-start gap-5">
+                                    <div className="flex-shrink-0">
+                                        <div className="w-14 h-14 bg-amber-500 rounded-full flex items-center justify-center shadow-lg">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-8 h-8 text-white"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                        </div>
+                                    </div>
+                                    <div className="flex-1">
+                                        <h3 className="text-xl font-bold text-amber-900 mb-3">
+                                            ✏️ Catatan Revisi
+                                        </h3>
+                                        <div className="bg-white/70 rounded-xl p-4 border-2 border-amber-300">
+                                            <p className="text-base text-amber-900 leading-relaxed font-medium">{pengajuan.revision_note}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )
+                    }
+
+                    {/* Manager - Menunggu Approval Banner - Desktop */}
+                    {user?.role === 'manager' && pengajuan.status === 'Menunggu Approval Manager' && (
+                        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-400 rounded-2xl p-6 shadow-lg animate-in fade-in slide-in-from-top-4 duration-500">
                             <div className="flex items-start gap-5">
                                 <div className="flex-shrink-0">
-                                    <div className="w-14 h-14 bg-rose-500 rounded-full flex items-center justify-center shadow-lg">
-                                        <XCircle className="w-8 h-8 text-white" />
+                                    <div className="w-14 h-14 bg-blue-500 rounded-full flex items-center justify-center shadow-lg">
+                                        <CheckCircle className="w-8 h-8 text-white" />
                                     </div>
                                 </div>
                                 <div className="flex-1">
-                                    <h3 className="text-xl font-bold text-rose-900 mb-3 flex items-center gap-2">
-                                        ⚠️ Alasan Penolakan
-                                    </h3>
-                                    <div className="bg-white/70 rounded-xl p-4 border-2 border-rose-300">
-                                        <p className="text-base text-rose-900 leading-relaxed font-medium">{pengajuan.reject_reason}</p>
+                                    <h3 className="text-xl font-bold text-blue-900 mb-3">📋 Menunggu Persetujuan Anda</h3>
+                                    <div className="grid grid-cols-3 gap-3 mb-3">
+                                        <div className="bg-white/70 rounded-xl p-3 border border-blue-200 text-center">
+                                            <p className="text-xs text-blue-600 mb-1">Jumlah Pembiayaan</p>
+                                            <p className="text-sm font-bold text-blue-900">{money(pengajuan.jumlah_pembiayaan)}</p>
+                                        </div>
+                                        <div className="bg-white/70 rounded-xl p-3 border border-blue-200 text-center">
+                                            <p className="text-xs text-blue-600 mb-1">Jangka Waktu</p>
+                                            <p className="text-sm font-bold text-blue-900">{pengajuan.jangka_waktu} Bulan</p>
+                                        </div>
+                                        <div className="bg-white/70 rounded-xl p-3 border border-blue-200 text-center">
+                                            <p className="text-xs text-blue-600 mb-1">Nominal Diterima</p>
+                                            <p className="text-sm font-bold text-blue-900">{money(pengajuan.nominal_terima)}</p>
+                                        </div>
                                     </div>
+                                    <p className="text-sm text-blue-700">Tinjau seluruh detail pengajuan lalu berikan keputusan persetujuan atau penolakan di bagian bawah halaman.</p>
                                 </div>
                             </div>
                         </div>
-                    )
-                }
+                    )}
 
-                {/* Revision Note Alert - Desktop */}
-                {
-                    pengajuan.revision_note && (['Revisi', 'Pending'].includes(pengajuan.status)) && (
-                        <div className="bg-gradient-to-r from-amber-50 to-amber-100 border-2 border-amber-400 rounded-2xl p-6 shadow-lg animate-in fade-in slide-in-from-top-4 duration-500">
+                    {/* Officer/PetugasPos - Disetujui Manager Banner + Upload Progress - Desktop */}
+                    {(user?.role === 'officer' || user?.role === 'petugas-pos') && pengajuan.status === 'Disetujui' && (
+                        <div className="bg-gradient-to-r from-amber-50 to-emerald-50 border-2 border-amber-400 rounded-2xl p-6 shadow-lg animate-in fade-in slide-in-from-top-4 duration-500">
                             <div className="flex items-start gap-5">
                                 <div className="flex-shrink-0">
                                     <div className="w-14 h-14 bg-amber-500 rounded-full flex items-center justify-center shadow-lg">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-8 h-8 text-white"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                        <Upload className="w-8 h-8 text-white" />
                                     </div>
                                 </div>
                                 <div className="flex-1">
-                                    <h3 className="text-xl font-bold text-amber-900 mb-3">
-                                        ✏️ Catatan Revisi
-                                    </h3>
-                                    <div className="bg-white/70 rounded-xl p-4 border-2 border-amber-300">
-                                        <p className="text-base text-amber-900 leading-relaxed font-medium">{pengajuan.revision_note}</p>
+                                    <h3 className="text-xl font-bold text-amber-900 mb-2">✅ Disetujui Manager — Lengkapi Dokumen Persetujuan</h3>
+                                    <p className="text-sm text-amber-700 mb-4">Pengajuan ini telah disetujui oleh Manager. Upload semua dokumen persetujuan di tab <strong>Dokumen → Persetujuan</strong>, kemudian klik <strong>Kirim ke Admin Unit</strong> untuk melanjutkan proses verifikasi.</p>
+                                    {/* Upload Progress Checklist - Desktop Grid */}
+                                    <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 mb-4">
+                                        {[
+                                            { label: 'Pengajuan Permohonan', key: 'pengajuan_permohonan_url' },
+                                            { label: 'Dokumen Akad', key: 'dokumen_akad_url' },
+                                            { label: 'Flagging', key: 'flagging_url' },
+                                            ...(user?.role !== 'petugas-pos' ? [{ label: 'Surat Pernyataan Beda Penerima', key: 'surat_pernyataan_beda_url' }] : []),
+                                            { label: 'Surat Pemotongan Angsuran', key: 'surat_pernyataan_pemotongan_angsuran_url' },
+                                            { label: 'Foto Penandatanganan Akad', key: 'foto_penandatanganan_url' },
+                                        ].map(({ label, key }) => {
+                                            const uploaded = !!(approvalDocs[key as keyof typeof approvalDocs]);
+                                            const isOptional = key === 'foto_penandatanganan_url';
+                                            return (
+                                                <div key={key} className={`flex items-center gap-2 p-2.5 rounded-lg border ${uploaded ? 'bg-emerald-50 border-emerald-200' : 'bg-white/70 border-amber-200'}`}>
+                                                    {uploaded ? (
+                                                        <CheckCircle className="w-4 h-4 text-emerald-500 shrink-0" />
+                                                    ) : (
+                                                        <div className="w-4 h-4 rounded-full border-2 border-amber-400 shrink-0" />
+                                                    )}
+                                                    <span className={`text-xs font-medium ${uploaded ? 'text-emerald-700 line-through opacity-70' : 'text-amber-800'}`}>
+                                                        {label}{isOptional ? ' (Opsional)' : ' *'}
+                                                    </span>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-sm font-semibold text-amber-700">
+                                            {user?.role === 'petugas-pos'
+                                                ? `${[approvalDocs.pengajuan_permohonan_url, approvalDocs.dokumen_akad_url, approvalDocs.flagging_url, approvalDocs.surat_pernyataan_pemotongan_angsuran_url].filter(Boolean).length} / 4 dokumen wajib selesai`
+                                                : `${[approvalDocs.pengajuan_permohonan_url, approvalDocs.dokumen_akad_url, approvalDocs.flagging_url, approvalDocs.surat_pernyataan_beda_url, approvalDocs.surat_pernyataan_pemotongan_angsuran_url].filter(Boolean).length} / 5 dokumen wajib selesai`
+                                            }
+                                        </span>
+                                        {!isAllApprovalDocsUploaded() && (
+                                            <button
+                                                onClick={() => { setActiveTab('dokumen'); setActiveDocTab('persetujuan'); }}
+                                                className="text-sm font-bold text-amber-700 bg-amber-100 px-3 py-1.5 rounded-lg border border-amber-300 hover:bg-amber-200 transition-colors"
+                                            >
+                                                Buka Tab Dokumen →
+                                            </button>
+                                        )}
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    )
-                }
+                    )}
 
-                {/* Manager - Menunggu Approval Banner - Desktop */}
-                {user?.role === 'manager' && pengajuan.status === 'Menunggu Approval Manager' && (
-                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-400 rounded-2xl p-6 shadow-lg animate-in fade-in slide-in-from-top-4 duration-500">
-                        <div className="flex items-start gap-5">
-                            <div className="flex-shrink-0">
-                                <div className="w-14 h-14 bg-blue-500 rounded-full flex items-center justify-center shadow-lg">
-                                    <CheckCircle className="w-8 h-8 text-white" />
-                                </div>
-                            </div>
-                            <div className="flex-1">
-                                <h3 className="text-xl font-bold text-blue-900 mb-3">📋 Menunggu Persetujuan Anda</h3>
-                                <div className="grid grid-cols-3 gap-3 mb-3">
-                                    <div className="bg-white/70 rounded-xl p-3 border border-blue-200 text-center">
-                                        <p className="text-xs text-blue-600 mb-1">Jumlah Pembiayaan</p>
-                                        <p className="text-sm font-bold text-blue-900">{money(pengajuan.jumlah_pembiayaan)}</p>
-                                    </div>
-                                    <div className="bg-white/70 rounded-xl p-3 border border-blue-200 text-center">
-                                        <p className="text-xs text-blue-600 mb-1">Jangka Waktu</p>
-                                        <p className="text-sm font-bold text-blue-900">{pengajuan.jangka_waktu} Bulan</p>
-                                    </div>
-                                    <div className="bg-white/70 rounded-xl p-3 border border-blue-200 text-center">
-                                        <p className="text-xs text-blue-600 mb-1">Nominal Diterima</p>
-                                        <p className="text-sm font-bold text-blue-900">{money(pengajuan.nominal_terima)}</p>
+                    {/* Admin Unit - Menunggu Verifikasi Banner - Desktop */}
+                    {user?.role === 'admin-unit' && ['Menunggu Verifikasi Admin Unit', 'Disetujui'].includes(pengajuan.status) && (
+                        <div className="bg-gradient-to-r from-purple-50 to-violet-50 border-2 border-purple-400 rounded-2xl p-6 shadow-lg animate-in fade-in slide-in-from-top-4 duration-500">
+                            <div className="flex items-start gap-5">
+                                <div className="flex-shrink-0">
+                                    <div className="w-14 h-14 bg-purple-500 rounded-full flex items-center justify-center shadow-lg">
+                                        <CheckCircle className="w-8 h-8 text-white" />
                                     </div>
                                 </div>
-                                <p className="text-sm text-blue-700">Tinjau seluruh detail pengajuan lalu berikan keputusan persetujuan atau penolakan di bagian bawah halaman.</p>
+                                <div className="flex-1">
+                                    <h3 className="text-xl font-bold text-purple-900 mb-3">🔍 Menunggu Verifikasi Anda</h3>
+                                    <div className="grid grid-cols-3 gap-3 mb-3">
+                                        <div className="bg-white/70 rounded-xl p-3 border border-purple-200 text-center">
+                                            <p className="text-xs text-purple-600 mb-1">Jumlah Pembiayaan</p>
+                                            <p className="text-sm font-bold text-purple-900">{money(pengajuan.jumlah_pembiayaan)}</p>
+                                        </div>
+                                        <div className="bg-white/70 rounded-xl p-3 border border-purple-200 text-center">
+                                            <p className="text-xs text-purple-600 mb-1">Nominal Diterima</p>
+                                            <p className="text-sm font-bold text-purple-900">{money(pengajuan.nominal_terima)}</p>
+                                        </div>
+                                        <div className="bg-white/70 rounded-xl p-3 border border-purple-200 text-center">
+                                            <p className="text-xs text-purple-600 mb-1">Jangka Waktu</p>
+                                            <p className="text-sm font-bold text-purple-900">{pengajuan.jangka_waktu} Bulan</p>
+                                        </div>
+                                    </div>
+                                    <p className="text-sm text-purple-700">Verifikasi kelengkapan dokumen pengajuan dan kirim ke Admin Pusat untuk proses pencairan dana.</p>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                )}
+                    )}
 
-                {/* Officer/PetugasPos - Disetujui Manager Banner + Upload Progress - Desktop */}
-                {(user?.role === 'officer' || user?.role === 'petugas-pos') && pengajuan.status === 'Disetujui' && (
-                    <div className="bg-gradient-to-r from-amber-50 to-emerald-50 border-2 border-amber-400 rounded-2xl p-6 shadow-lg animate-in fade-in slide-in-from-top-4 duration-500">
-                        <div className="flex items-start gap-5">
-                            <div className="flex-shrink-0">
-                                <div className="w-14 h-14 bg-amber-500 rounded-full flex items-center justify-center shadow-lg">
-                                    <Upload className="w-8 h-8 text-white" />
+                    {/* Admin Pusat - Menunggu Pencairan Banner - Desktop */}
+                    {user?.role === 'admin-pusat' && pengajuan.status === 'Menunggu Pencairan' && (
+                        <div className="bg-gradient-to-r from-orange-50 to-amber-50 border-2 border-orange-400 rounded-2xl p-6 shadow-lg animate-in fade-in slide-in-from-top-4 duration-500">
+                            <div className="flex items-start gap-5">
+                                <div className="flex-shrink-0">
+                                    <div className="w-14 h-14 bg-orange-500 rounded-full flex items-center justify-center shadow-lg">
+                                        <Upload className="w-8 h-8 text-white" />
+                                    </div>
                                 </div>
-                            </div>
-                            <div className="flex-1">
-                                <h3 className="text-xl font-bold text-amber-900 mb-2">✅ Disetujui Manager — Lengkapi Dokumen Persetujuan</h3>
-                                <p className="text-sm text-amber-700 mb-4">Pengajuan ini telah disetujui oleh Manager. Upload semua dokumen persetujuan di tab <strong>Dokumen → Persetujuan</strong>, kemudian klik <strong>Kirim ke Admin Unit</strong> untuk melanjutkan proses verifikasi.</p>
-                                {/* Upload Progress Checklist - Desktop Grid */}
-                                <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 mb-4">
-                                    {[
-                                        { label: 'Pengajuan Permohonan', key: 'pengajuan_permohonan_url' },
-                                        { label: 'Dokumen Akad', key: 'dokumen_akad_url' },
-                                        { label: 'Flagging', key: 'flagging_url' },
-                                        ...(user?.role !== 'petugas-pos' ? [{ label: 'Surat Pernyataan Beda Penerima', key: 'surat_pernyataan_beda_url' }] : []),
-                                        { label: 'Surat Pemotongan Angsuran', key: 'surat_pernyataan_pemotongan_angsuran_url' },
-                                        { label: 'Foto Penandatanganan Akad', key: 'foto_penandatanganan_url' },
-                                    ].map(({ label, key }) => {
-                                        const uploaded = !!(approvalDocs[key as keyof typeof approvalDocs]);
-                                        const isOptional = key === 'foto_penandatanganan_url';
-                                        return (
-                                            <div key={key} className={`flex items-center gap-2 p-2.5 rounded-lg border ${uploaded ? 'bg-emerald-50 border-emerald-200' : 'bg-white/70 border-amber-200'}`}>
-                                                {uploaded ? (
-                                                    <CheckCircle className="w-4 h-4 text-emerald-500 shrink-0" />
-                                                ) : (
-                                                    <div className="w-4 h-4 rounded-full border-2 border-amber-400 shrink-0" />
-                                                )}
-                                                <span className={`text-xs font-medium ${uploaded ? 'text-emerald-700 line-through opacity-70' : 'text-amber-800'}`}>
-                                                    {label}{isOptional ? ' (Opsional)' : ' *'}
+                                <div className="flex-1">
+                                    <h3 className="text-xl font-bold text-orange-900 mb-1">💸 Perlu Upload Bukti Transfer</h3>
+                                    <p className="text-sm text-orange-700 mb-4">Upload bukti transfer pencairan di tab <strong>Dokumen → Persetujuan</strong>, lalu klik tombol <strong>Cairkan</strong> di bawah untuk menyelesaikan proses.</p>
+                                    {/* Upload Checklist */}
+                                    <div className="bg-white/70 rounded-xl border border-orange-200 p-4 mb-4">
+                                        <div className="flex items-center gap-3">
+                                            {approvalDocs.disbursement_proof_url ? (
+                                                <CheckCircle className="w-5 h-5 text-emerald-500 shrink-0" />
+                                            ) : (
+                                                <div className="w-5 h-5 rounded-full border-2 border-orange-400 shrink-0" />
+                                            )}
+                                            <div className="flex-1">
+                                                <span className={`text-sm font-semibold ${approvalDocs.disbursement_proof_url ? 'text-emerald-700 line-through' : 'text-orange-900'}`}>
+                                                    Bukti Transfer Pencairan <span className="text-orange-500 no-underline">*</span>
                                                 </span>
+                                                <p className="text-xs text-orange-600 mt-0.5">
+                                                    {approvalDocs.disbursement_proof_url
+                                                        ? 'Sudah diupload. Tombol Cairkan sekarang aktif.'
+                                                        : 'Wajib diupload sebelum bisa mengklik Cairkan.'}
+                                                </p>
                                             </div>
-                                        );
-                                    })}
-                                </div>
-                                <div className="flex items-center justify-between">
-                                    <span className="text-sm font-semibold text-amber-700">
-                                        {user?.role === 'petugas-pos'
-                                            ? `${[approvalDocs.pengajuan_permohonan_url, approvalDocs.dokumen_akad_url, approvalDocs.flagging_url, approvalDocs.surat_pernyataan_pemotongan_angsuran_url].filter(Boolean).length} / 4 dokumen wajib selesai`
-                                            : `${[approvalDocs.pengajuan_permohonan_url, approvalDocs.dokumen_akad_url, approvalDocs.flagging_url, approvalDocs.surat_pernyataan_beda_url, approvalDocs.surat_pernyataan_pemotongan_angsuran_url].filter(Boolean).length} / 5 dokumen wajib selesai`
-                                        }
-                                    </span>
-                                    {!isAllApprovalDocsUploaded() && (
+                                            {approvalDocs.disbursement_proof_url ? (
+                                                <span className="text-xs font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-1 rounded-lg">✓ Terupload</span>
+                                            ) : (
+                                                <span className="text-xs font-bold text-orange-600 bg-orange-100 border border-orange-300 px-2 py-1 rounded-lg">Belum Upload</span>
+                                            )}
+                                        </div>
+                                    </div>
+                                    {!approvalDocs.disbursement_proof_url && (
                                         <button
                                             onClick={() => { setActiveTab('dokumen'); setActiveDocTab('persetujuan'); }}
-                                            className="text-sm font-bold text-amber-700 bg-amber-100 px-3 py-1.5 rounded-lg border border-amber-300 hover:bg-amber-200 transition-colors"
+                                            className="inline-flex items-center gap-2 px-4 py-2 bg-orange-500 text-white text-sm font-bold rounded-xl hover:bg-orange-600 transition-colors"
                                         >
-                                            Buka Tab Dokumen →
+                                            <Upload className="w-4 h-4" />
+                                            Buka Tab Dokumen untuk Upload
                                         </button>
                                     )}
                                 </div>
                             </div>
                         </div>
-                    </div>
-                )}
+                    )}
 
-                {/* Admin Unit - Menunggu Verifikasi Banner - Desktop */}
-                {user?.role === 'admin-unit' && ['Menunggu Verifikasi Admin Unit', 'Disetujui'].includes(pengajuan.status) && (
-                    <div className="bg-gradient-to-r from-purple-50 to-violet-50 border-2 border-purple-400 rounded-2xl p-6 shadow-lg animate-in fade-in slide-in-from-top-4 duration-500">
-                        <div className="flex items-start gap-5">
-                            <div className="flex-shrink-0">
-                                <div className="w-14 h-14 bg-purple-500 rounded-full flex items-center justify-center shadow-lg">
-                                    <CheckCircle className="w-8 h-8 text-white" />
-                                </div>
-                            </div>
-                            <div className="flex-1">
-                                <h3 className="text-xl font-bold text-purple-900 mb-3">🔍 Menunggu Verifikasi Anda</h3>
-                                <div className="grid grid-cols-3 gap-3 mb-3">
-                                    <div className="bg-white/70 rounded-xl p-3 border border-purple-200 text-center">
-                                        <p className="text-xs text-purple-600 mb-1">Jumlah Pembiayaan</p>
-                                        <p className="text-sm font-bold text-purple-900">{money(pengajuan.jumlah_pembiayaan)}</p>
-                                    </div>
-                                    <div className="bg-white/70 rounded-xl p-3 border border-purple-200 text-center">
-                                        <p className="text-xs text-purple-600 mb-1">Nominal Diterima</p>
-                                        <p className="text-sm font-bold text-purple-900">{money(pengajuan.nominal_terima)}</p>
-                                    </div>
-                                    <div className="bg-white/70 rounded-xl p-3 border border-purple-200 text-center">
-                                        <p className="text-xs text-purple-600 mb-1">Jangka Waktu</p>
-                                        <p className="text-sm font-bold text-purple-900">{pengajuan.jangka_waktu} Bulan</p>
+                    {/* Dicairkan Info Banner - Desktop */}
+                    {pengajuan.status === 'Dicairkan' && (
+                        <div className="bg-gradient-to-r from-teal-50 to-emerald-50 border-2 border-teal-400 rounded-2xl p-6 shadow-lg animate-in fade-in slide-in-from-top-4 duration-500">
+                            <div className="flex items-start gap-5">
+                                <div className="flex-shrink-0">
+                                    <div className="w-14 h-14 bg-teal-500 rounded-full flex items-center justify-center shadow-lg">
+                                        <CheckCircle className="w-8 h-8 text-white" />
                                     </div>
                                 </div>
-                                <p className="text-sm text-purple-700">Verifikasi kelengkapan dokumen pengajuan dan kirim ke Admin Pusat untuk proses pencairan dana.</p>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* Admin Pusat - Menunggu Pencairan Banner - Desktop */}
-                {user?.role === 'admin-pusat' && pengajuan.status === 'Menunggu Pencairan' && (
-                    <div className="bg-gradient-to-r from-orange-50 to-amber-50 border-2 border-orange-400 rounded-2xl p-6 shadow-lg animate-in fade-in slide-in-from-top-4 duration-500">
-                        <div className="flex items-start gap-5">
-                            <div className="flex-shrink-0">
-                                <div className="w-14 h-14 bg-orange-500 rounded-full flex items-center justify-center shadow-lg">
-                                    <Upload className="w-8 h-8 text-white" />
-                                </div>
-                            </div>
-                            <div className="flex-1">
-                                <h3 className="text-xl font-bold text-orange-900 mb-1">💸 Perlu Upload Bukti Transfer</h3>
-                                <p className="text-sm text-orange-700 mb-4">Upload bukti transfer pencairan di tab <strong>Dokumen → Persetujuan</strong>, lalu klik tombol <strong>Cairkan</strong> di bawah untuk menyelesaikan proses.</p>
-                                {/* Upload Checklist */}
-                                <div className="bg-white/70 rounded-xl border border-orange-200 p-4 mb-4">
-                                    <div className="flex items-center gap-3">
-                                        {approvalDocs.disbursement_proof_url ? (
-                                            <CheckCircle className="w-5 h-5 text-emerald-500 shrink-0" />
-                                        ) : (
-                                            <div className="w-5 h-5 rounded-full border-2 border-orange-400 shrink-0" />
-                                        )}
-                                        <div className="flex-1">
-                                            <span className={`text-sm font-semibold ${approvalDocs.disbursement_proof_url ? 'text-emerald-700 line-through' : 'text-orange-900'}`}>
-                                                Bukti Transfer Pencairan <span className="text-orange-500 no-underline">*</span>
-                                            </span>
-                                            <p className="text-xs text-orange-600 mt-0.5">
-                                                {approvalDocs.disbursement_proof_url
-                                                    ? 'Sudah diupload. Tombol Cairkan sekarang aktif.'
-                                                    : 'Wajib diupload sebelum bisa mengklik Cairkan.'}
-                                            </p>
-                                        </div>
-                                        {approvalDocs.disbursement_proof_url ? (
-                                            <span className="text-xs font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-1 rounded-lg">✓ Terupload</span>
-                                        ) : (
-                                            <span className="text-xs font-bold text-orange-600 bg-orange-100 border border-orange-300 px-2 py-1 rounded-lg">Belum Upload</span>
-                                        )}
-                                    </div>
-                                </div>
-                                {!approvalDocs.disbursement_proof_url && (
-                                    <button
-                                        onClick={() => { setActiveTab('dokumen'); setActiveDocTab('persetujuan'); }}
-                                        className="inline-flex items-center gap-2 px-4 py-2 bg-orange-500 text-white text-sm font-bold rounded-xl hover:bg-orange-600 transition-colors"
-                                    >
-                                        <Upload className="w-4 h-4" />
-                                        Buka Tab Dokumen untuk Upload
-                                    </button>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* Dicairkan Info Banner - Desktop */}
-                {pengajuan.status === 'Dicairkan' && (
-                    <div className="bg-gradient-to-r from-teal-50 to-emerald-50 border-2 border-teal-400 rounded-2xl p-6 shadow-lg animate-in fade-in slide-in-from-top-4 duration-500">
-                        <div className="flex items-start gap-5">
-                            <div className="flex-shrink-0">
-                                <div className="w-14 h-14 bg-teal-500 rounded-full flex items-center justify-center shadow-lg">
-                                    <CheckCircle className="w-8 h-8 text-white" />
-                                </div>
-                            </div>
-                            <div className="flex-1">
-                                <h3 className="text-xl font-bold text-teal-900 mb-1">✅ Dana Berhasil Dicairkan</h3>
-                                <p className="text-sm text-teal-700 mb-4">Dana telah berhasil dicairkan ke rekening pemohon.</p>
-                                {(user?.role === 'officer' || user?.role === 'petugas-pos') && (
-                                    <>
-                                        <p className="text-sm font-semibold text-indigo-800 mb-3">📦 Langkah selanjutnya — Upload Resi Pengiriman Berkas:</p>
-                                        {/* Resi Upload Checklist */}
-                                        <div className="bg-white/70 rounded-xl border border-indigo-200 p-4 mb-4">
-                                            <div className="flex items-center gap-3">
-                                                {approvalDocs.shipping_receipt_url ? (
-                                                    <CheckCircle className="w-5 h-5 text-emerald-500 shrink-0" />
-                                                ) : (
-                                                    <div className="w-5 h-5 rounded-full border-2 border-indigo-400 shrink-0 animate-pulse" />
-                                                )}
-                                                <div className="flex-1">
-                                                    <span className={`text-sm font-semibold ${approvalDocs.shipping_receipt_url ? 'text-emerald-700 line-through' : 'text-indigo-900'}`}>
-                                                        Resi Pengiriman Berkas <span className="text-rose-500 no-underline">*</span>
-                                                    </span>
-                                                    <p className="text-xs text-indigo-600 mt-0.5">
-                                                        {approvalDocs.shipping_receipt_url
-                                                            ? 'Sudah diupload. Tombol Kirim Ke Verifikator sekarang aktif.'
-                                                            : 'Wajib diupload di tab Dokumen → Persetujuan sebelum bisa Kirim Ke Verifikator.'}
-                                                    </p>
+                                <div className="flex-1">
+                                    <h3 className="text-xl font-bold text-teal-900 mb-1">✅ Dana Berhasil Dicairkan</h3>
+                                    <p className="text-sm text-teal-700 mb-4">Dana telah berhasil dicairkan ke rekening pemohon.</p>
+                                    {(user?.role === 'officer' || user?.role === 'petugas-pos') && (
+                                        <>
+                                            <p className="text-sm font-semibold text-indigo-800 mb-3">📦 Langkah selanjutnya — Upload Resi Pengiriman Berkas:</p>
+                                            {/* Resi Upload Checklist */}
+                                            <div className="bg-white/70 rounded-xl border border-indigo-200 p-4 mb-4">
+                                                <div className="flex items-center gap-3">
+                                                    {approvalDocs.shipping_receipt_url ? (
+                                                        <CheckCircle className="w-5 h-5 text-emerald-500 shrink-0" />
+                                                    ) : (
+                                                        <div className="w-5 h-5 rounded-full border-2 border-indigo-400 shrink-0 animate-pulse" />
+                                                    )}
+                                                    <div className="flex-1">
+                                                        <span className={`text-sm font-semibold ${approvalDocs.shipping_receipt_url ? 'text-emerald-700 line-through' : 'text-indigo-900'}`}>
+                                                            Resi Pengiriman Berkas <span className="text-rose-500 no-underline">*</span>
+                                                        </span>
+                                                        <p className="text-xs text-indigo-600 mt-0.5">
+                                                            {approvalDocs.shipping_receipt_url
+                                                                ? 'Sudah diupload. Tombol Kirim Ke Verifikator sekarang aktif.'
+                                                                : 'Wajib diupload di tab Dokumen → Persetujuan sebelum bisa Kirim Ke Verifikator.'}
+                                                        </p>
+                                                    </div>
+                                                    {approvalDocs.shipping_receipt_url ? (
+                                                        <span className="text-xs font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-1 rounded-lg">✓ Terupload</span>
+                                                    ) : (
+                                                        <span className="text-xs font-bold text-rose-600 bg-rose-50 border border-rose-200 px-2 py-1 rounded-lg">Belum Upload</span>
+                                                    )}
                                                 </div>
-                                                {approvalDocs.shipping_receipt_url ? (
-                                                    <span className="text-xs font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-1 rounded-lg">✓ Terupload</span>
-                                                ) : (
-                                                    <span className="text-xs font-bold text-rose-600 bg-rose-50 border border-rose-200 px-2 py-1 rounded-lg">Belum Upload</span>
-                                                )}
                                             </div>
-                                        </div>
-                                        {!approvalDocs.shipping_receipt_url && (
-                                            <button
-                                                onClick={() => { setActiveTab('dokumen'); setActiveDocTab('persetujuan'); }}
-                                                className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-bold rounded-xl hover:bg-indigo-700 transition-colors"
-                                            >
-                                                <Upload className="w-4 h-4" />
-                                                Buka Tab Dokumen untuk Upload
-                                            </button>
-                                        )}
-                                    </>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* Verifier - Menunggu Verifikasi Akhir Banner - Desktop */}
-                {user?.role === 'verifier' && pengajuan.status === 'Menunggu Verifikasi Akhir' && (
-                    <div className="bg-gradient-to-r from-cyan-50 to-blue-50 border-2 border-cyan-400 rounded-2xl p-6 shadow-lg animate-in fade-in slide-in-from-top-4 duration-500">
-                        <div className="flex items-start gap-5">
-                            <div className="flex-shrink-0">
-                                <div className="w-14 h-14 bg-cyan-500 rounded-full flex items-center justify-center shadow-lg">
-                                    <CheckCircle className="w-8 h-8 text-white" />
-                                </div>
-                            </div>
-                            <div className="flex-1">
-                                <h3 className="text-xl font-bold text-cyan-900 mb-1">📋 Menunggu Verifikasi Akhir Anda</h3>
-                                <p className="text-sm text-cyan-700 mb-4">Dana sudah dicairkan dan berkas sudah dikirimkan oleh petugas. Tinjau kelengkapan data dan dokumen.</p>
-                                <div className="bg-white/70 rounded-xl border border-cyan-200 p-4 mb-4">
-                                    <div className="grid grid-cols-3 gap-4">
-                                        <div>
-                                            <span className="text-xs text-cyan-600">Jumlah Pembiayaan</span>
-                                            <p className="text-sm font-bold text-cyan-900">{money(pengajuan.jumlah_pembiayaan)}</p>
-                                        </div>
-                                        <div>
-                                            <span className="text-xs text-cyan-600">Nominal Diterima</span>
-                                            <p className="text-sm font-bold text-cyan-900">{money(pengajuan.nominal_terima)}</p>
-                                        </div>
-                                        <div>
-                                            <span className="text-xs text-cyan-600">Jangka Waktu</span>
-                                            <p className="text-sm font-bold text-cyan-900">{pengajuan.jangka_waktu} Bulan</p>
-                                        </div>
-                                    </div>
-                                </div>
-                                <p className="text-sm text-cyan-700">Klik tombol <strong>Selesai</strong> di bawah untuk menyelesaikan proses pengajuan ini.</p>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* Financial Summary */}
-                < div className="grid grid-cols-2 lg:grid-cols-4 gap-3" >
-                    <SummaryCard icon={<Banknote className="h-4 w-4" />} label="Plafond" value={money(pengajuan.jumlah_pembiayaan)} accent />
-                    <SummaryCard icon={<Calendar className="h-4 w-4" />} label="Tenor" value={`${d(pengajuan.jangka_waktu)} Bulan`} />
-                    <SummaryCard icon={<Receipt className="h-4 w-4" />} label="Angsuran" value={money(pengajuan.besar_angsuran)} />
-                    <SummaryCard icon={<Wallet className="h-4 w-4" />} label="Diterima" value={money(pengajuan.nominal_terima)} />
-                </div >
-
-                {/* Tab Navigation */}
-                < div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden" >
-                    <div className="flex border-b border-slate-100">
-                        <TabBtn active={activeTab === 'detail'} onClick={() => setActiveTab('detail')} icon={<User className="h-4 w-4" />} label="Data Lengkap" />
-                        <TabBtn active={activeTab === 'dokumen'} onClick={() => setActiveTab('dokumen')} icon={<FolderOpen className="h-4 w-4" />} label="Dokumen" />
-                    </div>
-
-                    <div className="p-5 sm:p-6">
-                        {activeTab === 'detail' && (
-                            <div className="space-y-8">
-                                {/* Personal Info */}
-                                <Section title="Informasi Pribadi" icon={<User className="h-5 w-5 text-indigo-600" />}>
-                                    <Field label="Nama Lengkap" value={pengajuan.nama_lengkap} />
-                                    <Field label="NIK" value={pengajuan.nik} />
-                                    <Field label="Jenis Kelamin" value={d(pengajuan.jenis_kelamin)} />
-                                    <Field label="Tempat Lahir" value={d(pengajuan.tempat_lahir)} />
-                                    <Field label="Tanggal Lahir" value={pengajuan.tanggal_lahir ? new Date(pengajuan.tanggal_lahir).toLocaleDateString('id-ID') : '-'} />
-                                    <Field label="Usia" value={pengajuan.usia ? `${pengajuan.usia} Tahun` : '-'} />
-                                    <Field label="No. Telepon" value={d(pengajuan.nomor_telephone)} />
-                                    <Field label="Nama Ibu Kandung" value={d(pengajuan.nama_ibu_kandung)} />
-                                    <Field label="Pendidikan Terakhir" value={d(pengajuan.pendidikan_terakhir)} />
-                                </Section>
-
-                                {/* Address */}
-                                <Section title="Alamat" icon={<MapPin className="h-5 w-5 text-emerald-600" />}>
-                                    <Field label="Alamat Lengkap" value={d(pengajuan.alamat)} wide />
-                                    <Field label="RT / RW" value={`${d(pengajuan.rt)} / ${d(pengajuan.rw)}`} />
-                                    <Field label="Kelurahan" value={d(pengajuan.kelurahan)} />
-                                    <Field label="Kecamatan" value={d(pengajuan.kecamatan)} />
-                                    <Field label="Kabupaten" value={d(pengajuan.kabupaten)} />
-                                    <Field label="Provinsi" value={d(pengajuan.provinsi)} />
-                                    <Field label="Kode Pos" value={d(pengajuan.kode_pos)} />
-                                </Section>
-
-                                {/* Pension */}
-                                <Section title="Data Pensiun" icon={<Briefcase className="h-5 w-5 text-amber-600" />}>
-                                    <Field label="Nomor Pensiun (Nopen)" value={d(pengajuan.nopen)} />
-                                    <Field label="Mitra" value={d(pengajuan.mitra)} />
-                                    <Field label="Jenis Pensiun" value={d(pengajuan.jenis_pensiun)} />
-                                    <Field label="Kantor Bayar" value={d(pengajuan.kantor_bayar)} />
-                                    <Field label="Nama Bank" value={d(pengajuan.nama_bank)} />
-                                    <Field label="No. Rekening Bank" value={d(pengajuan.no_rekening)} />
-                                    <Field label="No. Giropos" value={d(pengajuan.nomor_rekening_giro_pos)} />
-                                </Section>
-
-                                {/* Financial */}
-                                <Section title="Data Keuangan" icon={<Wallet className="h-5 w-5 text-teal-600" />}>
-                                    <Field label="Gaji Bersih" value={money(pengajuan.gaji_bersih)} />
-                                    <Field label="Gaji Tersedia" value={money(pengajuan.gaji_tersedia)} />
-                                    <Field label="Jenis Dapem" value={d(pengajuan.jenis_dapem)} />
-                                    <Field label="Bulan Dapem" value={d(pengajuan.bulan_dapem)} />
-                                    <Field label="Status Dapem" value={d(pengajuan.status_dapem)} />
-                                </Section>
-
-                                {/* Loan Details */}
-                                <Section title="Detail Pengajuan" icon={<FileText className="h-5 w-5 text-violet-600" />}>
-                                    <Field label="Jenis Pelayanan" value={d(pengajuan.jenis_pelayanan?.name)} highlight />
-                                    <Field label="Jenis Pembiayaan" value={d(pengajuan.jenis_pembiayaan?.name)} highlight />
-                                    <Field label="Kategori Pembiayaan" value={d(pengajuan.kategori_pembiayaan)} />
-                                    <Field label="Maks. Jangka Waktu" value={pengajuan.maksimal_jangka_waktu_usia ? `${pengajuan.maksimal_jangka_waktu_usia} Tahun` : '-'} />
-                                    <Field label="Jangka Waktu" value={pengajuan.jangka_waktu ? `${pengajuan.jangka_waktu} Bulan` : '-'} />
-                                    <Field label="Maksimal Plafond" value={money(pengajuan.maksimal_pembiayaan)} />
-                                    <Field label="Jumlah Diajukan" value={money(pengajuan.jumlah_pembiayaan)} />
-                                    <Field label="Besar Angsuran" value={money(pengajuan.besar_angsuran)} />
-                                    <Field label="Total Potongan" value={money(pengajuan.total_potongan)} />
-                                    <Field label="Nominal Diterima" value={money(pengajuan.nominal_terima)} />
-                                    <Field label="Kantor Bayar Pensiun" value={d(pengajuan.kantor_pos_petugas)} />
-                                </Section>
-
-                                {/* Data Petugas POS - Section */}
-                                {pengajuan.petugas_nippos && user?.role !== 'officer' && user?.role !== 'petugas-pos' && (
-                                    <Section title="Data Petugas POS" icon={<UserCheck className="h-5 w-5 text-indigo-600" />}>
-                                        <Field label="NIPPOS" value={d(pengajuan.petugas_nippos)} />
-                                        <Field label="Nama Petugas" value={d(pengajuan.petugas_name)} />
-                                        <Field label="No. Handphone" value={
-                                            pengajuan.petugas_phone ? (
+                                            {!approvalDocs.shipping_receipt_url && (
                                                 <button
-                                                    onClick={() => handleContact(pengajuan.petugas_phone!, d(pengajuan.petugas_name))}
-                                                    className="text-indigo-600 hover:text-indigo-800 hover:underline inline-flex items-center gap-1"
+                                                    onClick={() => { setActiveTab('dokumen'); setActiveDocTab('persetujuan'); }}
+                                                    className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-bold rounded-xl hover:bg-indigo-700 transition-colors"
                                                 >
-                                                    {pengajuan.petugas_phone}
-                                                    <div className="flex items-center gap-0.5 ml-1 bg-indigo-50 rounded-full px-1.5 py-0.5 border border-indigo-100">
-                                                        <MessageCircle className="h-3 w-3 text-emerald-500" />
-                                                        <span className="text-[10px] text-slate-300">|</span>
-                                                        <Phone className="h-3 w-3 text-blue-500" />
-                                                    </div>
+                                                    <Upload className="w-4 h-4" />
+                                                    Buka Tab Dokumen untuk Upload
                                                 </button>
-                                            ) : '-'
-                                        } />
-                                        <Field label="Unit KCU" value={pengajuan.petugas_kcu_code ? `${pengajuan.petugas_kcu_code} - ${pengajuan.petugas_kcu_name || ''}` : '-'} />
-                                        <Field label="Unit KC" value={pengajuan.petugas_kc_code ? `${pengajuan.petugas_kc_code} - ${pengajuan.petugas_kc_name || ''}` : '-'} />
-                                        <Field label="Unit KCP" value={pengajuan.petugas_kcp_code ? `${pengajuan.petugas_kcp_code} - ${pengajuan.petugas_kcp_name || ''}` : '-'} />
-                                    </Section>
-                                )}
-
-                                {/* Potongan Detail - Section */}
-                                {(() => {
-                                    if (!pengajuan.potongan_detail) return null;
-                                    try {
-                                        const details = JSON.parse(pengajuan.potongan_detail);
-                                        if (!Array.isArray(details) || details.length === 0) return null;
-
-                                        return (
-                                            <Section title="Rincian Potongan" icon={<Calculator className="h-5 w-5 text-rose-600" />}>
-                                                {details.map((item: any, idx: number) => {
-                                                    const label = item.kategori === 'persentase'
-                                                        ? `${item.nama} (${item.persentase_nominal}%)`
-                                                        : item.nama;
-                                                    return (
-                                                        <Field
-                                                            key={idx}
-                                                            label={label}
-                                                            value={money(item.nilai)}
-                                                        />
-                                                    );
-                                                })}
-                                            </Section>
-                                        );
-                                    } catch (e) { return null; }
-                                })()}
-
-                                {/* Notes & Rejection Reason */}
-                                {(pengajuan.notes || pengajuan.reject_reason) && (
-                                    <div className="space-y-4">
-                                        {pengajuan.reject_reason && (
-                                            <div className="p-5 bg-gradient-to-r from-rose-50 to-rose-100 rounded-xl border-2 border-rose-400 shadow-md">
-                                                <div className="flex items-start gap-3">
-                                                    <div className="flex-shrink-0 mt-0.5">
-                                                        <div className="w-7 h-7 bg-rose-500 rounded-full flex items-center justify-center">
-                                                            <XCircle className="w-4 h-4 text-white" />
-                                                        </div>
-                                                    </div>
-                                                    <div className="flex-1">
-                                                        <p className="text-sm font-bold text-rose-900 mb-2">⚠️ Alasan Penolakan</p>
-                                                        <div className="bg-white/60 rounded-lg p-3 border border-rose-200">
-                                                            <p className="text-sm text-rose-900 leading-relaxed font-medium">{pengajuan.reject_reason}</p>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        )}
-                                        {pengajuan.revision_note && (
-                                            <div className="p-5 bg-gradient-to-r from-amber-50 to-amber-100 rounded-xl border-2 border-amber-400 shadow-md">
-                                                <div className="flex items-start gap-3">
-                                                    <div className="flex-shrink-0 mt-0.5">
-                                                        <div className="w-7 h-7 bg-amber-500 rounded-full flex items-center justify-center">
-                                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-white"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-                                                        </div>
-                                                    </div>
-                                                    <div className="flex-1">
-                                                        <p className="text-sm font-bold text-amber-900 mb-2">✏️ Catatan Revisi</p>
-                                                        <div className="bg-white/60 rounded-lg p-3 border border-amber-200">
-                                                            <p className="text-sm text-amber-900 leading-relaxed font-medium">{pengajuan.revision_note}</p>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        )}
-                                        {pengajuan.notes && (
-                                            <div className="p-4 bg-amber-50 rounded-xl border border-amber-200">
-                                                <p className="text-sm font-semibold text-amber-800 mb-1">📝 Catatan</p>
-                                                <p className="text-sm text-amber-700">{pengajuan.notes}</p>
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
-                            </div>
-                        )}
-
-                        {activeTab === 'dokumen' && (
-                            <div className="space-y-6">
-                                {/* Sub-tabs for Documents */}
-                                <div className="flex gap-2 p-1 bg-slate-100 rounded-xl">
-                                    <button
-                                        onClick={() => setActiveDocTab('pengajuan')}
-                                        className={`flex-1 px-4 py-2.5 text-sm font-medium rounded-lg transition-all ${activeDocTab === 'pengajuan'
-                                            ? 'bg-white text-indigo-600 shadow-sm'
-                                            : 'text-slate-600 hover:text-slate-900'
-                                            }`}
-                                    >
-                                        <div className="flex items-center justify-center gap-2">
-                                            <Upload className="h-4 w-4" />
-                                            <span>Dokumen Pengajuan</span>
-                                        </div>
-                                    </button>
-                                    <button
-                                        onClick={() => setActiveDocTab('persetujuan')}
-                                        className={`flex-1 px-4 py-2.5 text-sm font-medium rounded-lg transition-all ${activeDocTab === 'persetujuan'
-                                            ? 'bg-white text-emerald-600 shadow-sm'
-                                            : 'text-slate-600 hover:text-slate-900'
-                                            }`}
-                                    >
-                                        <div className="flex items-center justify-center gap-2">
-                                            <CheckCircle className="h-4 w-4" />
-                                            <span>Dokumen Persetujuan</span>
-                                        </div>
-                                    </button>
+                                            )}
+                                        </>
+                                    )}
                                 </div>
+                            </div>
+                        </div>
+                    )}
 
-                                {/* Tab Content */}
-                                {activeDocTab === 'pengajuan' && (
-                                    <div className="space-y-6">
-                                        <div className="flex items-start gap-2 p-4 bg-blue-50 rounded-xl border border-blue-100">
-                                            <FileText className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                    {/* Verifier - Menunggu Verifikasi Akhir Banner - Desktop */}
+                    {user?.role === 'verifier' && pengajuan.status === 'Menunggu Verifikasi Akhir' && (
+                        <div className="bg-gradient-to-r from-cyan-50 to-blue-50 border-2 border-cyan-400 rounded-2xl p-6 shadow-lg animate-in fade-in slide-in-from-top-4 duration-500">
+                            <div className="flex items-start gap-5">
+                                <div className="flex-shrink-0">
+                                    <div className="w-14 h-14 bg-cyan-500 rounded-full flex items-center justify-center shadow-lg">
+                                        <CheckCircle className="w-8 h-8 text-white" />
+                                    </div>
+                                </div>
+                                <div className="flex-1">
+                                    <h3 className="text-xl font-bold text-cyan-900 mb-1">📋 Menunggu Verifikasi Akhir Anda</h3>
+                                    <p className="text-sm text-cyan-700 mb-4">Dana sudah dicairkan dan berkas sudah dikirimkan oleh petugas. Tinjau kelengkapan data dan dokumen.</p>
+                                    <div className="bg-white/70 rounded-xl border border-cyan-200 p-4 mb-4">
+                                        <div className="grid grid-cols-3 gap-4">
                                             <div>
-                                                <p className="text-sm font-medium text-blue-900">Dokumen Pengajuan</p>
-                                                <p className="text-xs text-blue-700 mt-0.5">Dokumen yang diupload saat pengajuan awal</p>
+                                                <span className="text-xs text-cyan-600">Jumlah Pembiayaan</span>
+                                                <p className="text-sm font-bold text-cyan-900">{money(pengajuan.jumlah_pembiayaan)}</p>
+                                            </div>
+                                            <div>
+                                                <span className="text-xs text-cyan-600">Nominal Diterima</span>
+                                                <p className="text-sm font-bold text-cyan-900">{money(pengajuan.nominal_terima)}</p>
+                                            </div>
+                                            <div>
+                                                <span className="text-xs text-cyan-600">Jangka Waktu</span>
+                                                <p className="text-sm font-bold text-cyan-900">{pengajuan.jangka_waktu} Bulan</p>
                                             </div>
                                         </div>
+                                    </div>
+                                    <p className="text-sm text-cyan-700">Klik tombol <strong>Selesai</strong> di bawah untuk menyelesaikan proses pengajuan ini.</p>
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                                            {dokumenPengajuan.map((doc, idx) => (
-                                                <DocCard
-                                                    key={idx}
-                                                    title={doc.title}
-                                                    desc={doc.desc}
-                                                    url={doc.url}
-                                                />
-                                            ))}
-                                        </div>
+                    {/* Financial Summary */}
+                    < div className="grid grid-cols-2 lg:grid-cols-4 gap-3" >
+                        <SummaryCard icon={<Banknote className="h-4 w-4" />} label="Plafond" value={money(pengajuan.jumlah_pembiayaan)} accent />
+                        <SummaryCard icon={<Calendar className="h-4 w-4" />} label="Tenor" value={`${d(pengajuan.jangka_waktu)} Bulan`} />
+                        <SummaryCard icon={<Receipt className="h-4 w-4" />} label="Angsuran" value={money(pengajuan.besar_angsuran)} />
+                        <SummaryCard icon={<Wallet className="h-4 w-4" />} label="Diterima" value={money(pengajuan.nominal_terima)} />
+                    </div >
 
-                                        {/* Borrower Photos */}
-                                        <div className="pt-4 border-t border-slate-100">
-                                            <div className="flex items-center gap-2 mb-4">
-                                                <Camera className="h-5 w-5 text-slate-400" />
-                                                <div>
-                                                    <h4 className="text-sm font-semibold text-slate-900">Foto Nasabah</h4>
-                                                    <p className="text-xs text-slate-500">Dokumentasi foto pemohon</p>
-                                                </div>
-                                            </div>
+                    {/* Tab Navigation */}
+                    < div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden" >
+                        <div className="flex border-b border-slate-100">
+                            <TabBtn active={activeTab === 'detail'} onClick={() => setActiveTab('detail')} icon={<User className="h-4 w-4" />} label="Data Lengkap" />
+                            <TabBtn active={activeTab === 'dokumen'} onClick={() => setActiveTab('dokumen')} icon={<FolderOpen className="h-4 w-4" />} label="Dokumen" />
+                        </div>
 
-                                            {borrowerPhotos.length > 0 ? (
-                                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                                                    {borrowerPhotos.map((photo, i) => (
-                                                        <a key={i} href={photo} target="_blank" className="group relative aspect-square rounded-xl overflow-hidden border border-slate-200 hover:shadow-lg transition-all">
-                                                            <img src={photo} alt={`Foto ${i + 1}`} className="w-full h-full object-cover" />
-                                                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
-                                                                <Eye className="h-5 w-5 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <div className="p-5 sm:p-6">
+                            {activeTab === 'detail' && (
+                                <div className="space-y-8">
+                                    {/* Personal Info */}
+                                    <Section title="Informasi Pribadi" icon={<User className="h-5 w-5 text-indigo-600" />}>
+                                        <Field label="Nama Lengkap" value={pengajuan.nama_lengkap} />
+                                        <Field label="NIK" value={pengajuan.nik} />
+                                        <Field label="Jenis Kelamin" value={d(pengajuan.jenis_kelamin)} />
+                                        <Field label="Tempat Lahir" value={d(pengajuan.tempat_lahir)} />
+                                        <Field label="Tanggal Lahir" value={pengajuan.tanggal_lahir ? new Date(pengajuan.tanggal_lahir).toLocaleDateString('id-ID') : '-'} />
+                                        <Field label="Usia" value={pengajuan.usia ? `${pengajuan.usia} Tahun` : '-'} />
+                                        <Field label="No. Telepon" value={d(pengajuan.nomor_telephone)} />
+                                        <Field label="Nama Ibu Kandung" value={d(pengajuan.nama_ibu_kandung)} />
+                                        <Field label="Pendidikan Terakhir" value={d(pengajuan.pendidikan_terakhir)} />
+                                    </Section>
+
+                                    {/* Address */}
+                                    <Section title="Alamat" icon={<MapPin className="h-5 w-5 text-emerald-600" />}>
+                                        <Field label="Alamat Lengkap" value={d(pengajuan.alamat)} wide />
+                                        <Field label="RT / RW" value={`${d(pengajuan.rt)} / ${d(pengajuan.rw)}`} />
+                                        <Field label="Kelurahan" value={d(pengajuan.kelurahan)} />
+                                        <Field label="Kecamatan" value={d(pengajuan.kecamatan)} />
+                                        <Field label="Kabupaten" value={d(pengajuan.kabupaten)} />
+                                        <Field label="Provinsi" value={d(pengajuan.provinsi)} />
+                                        <Field label="Kode Pos" value={d(pengajuan.kode_pos)} />
+                                    </Section>
+
+                                    {/* Pension */}
+                                    <Section title="Data Pensiun" icon={<Briefcase className="h-5 w-5 text-amber-600" />}>
+                                        <Field label="Nomor Pensiun (Nopen)" value={d(pengajuan.nopen)} />
+                                        <Field label="Mitra" value={d(pengajuan.mitra)} />
+                                        <Field label="Jenis Pensiun" value={d(pengajuan.jenis_pensiun)} />
+                                        <Field label="Kantor Bayar" value={d(pengajuan.kantor_bayar)} />
+                                        <Field label="Nama Bank" value={d(pengajuan.nama_bank)} />
+                                        <Field label="No. Rekening Bank" value={d(pengajuan.no_rekening)} />
+                                        <Field label="No. Giropos" value={d(pengajuan.nomor_rekening_giro_pos)} />
+                                    </Section>
+
+                                    {/* Financial */}
+                                    <Section title="Data Keuangan" icon={<Wallet className="h-5 w-5 text-teal-600" />}>
+                                        <Field label="Gaji Bersih" value={money(pengajuan.gaji_bersih)} />
+                                        <Field label="Gaji Tersedia" value={money(pengajuan.gaji_tersedia)} />
+                                        <Field label="Jenis Dapem" value={d(pengajuan.jenis_dapem)} />
+                                        <Field label="Bulan Dapem" value={d(pengajuan.bulan_dapem)} />
+                                        <Field label="Status Dapem" value={d(pengajuan.status_dapem)} />
+                                    </Section>
+
+                                    {/* Loan Details */}
+                                    <Section title="Detail Pengajuan" icon={<FileText className="h-5 w-5 text-violet-600" />}>
+                                        <Field label="Jenis Pelayanan" value={d(pengajuan.jenis_pelayanan?.name)} highlight />
+                                        <Field label="Jenis Pembiayaan" value={d(pengajuan.jenis_pembiayaan?.name)} highlight />
+                                        <Field label="Kategori Pembiayaan" value={d(pengajuan.kategori_pembiayaan)} />
+                                        <Field label="Maks. Jangka Waktu" value={pengajuan.maksimal_jangka_waktu_usia ? `${pengajuan.maksimal_jangka_waktu_usia} Tahun` : '-'} />
+                                        <Field label="Jangka Waktu" value={pengajuan.jangka_waktu ? `${pengajuan.jangka_waktu} Bulan` : '-'} />
+                                        <Field label="Maksimal Plafond" value={money(pengajuan.maksimal_pembiayaan)} />
+                                        <Field label="Jumlah Diajukan" value={money(pengajuan.jumlah_pembiayaan)} />
+                                        <Field label="Besar Angsuran" value={money(pengajuan.besar_angsuran)} />
+                                        <Field label="Total Potongan" value={money(pengajuan.total_potongan)} />
+                                        <Field label="Nominal Diterima" value={money(pengajuan.nominal_terima)} />
+                                        <Field label="Kantor Bayar Pensiun" value={d(pengajuan.kantor_pos_petugas)} />
+                                    </Section>
+
+                                    {/* Data Petugas POS - Section */}
+                                    {pengajuan.petugas_nippos && user?.role !== 'officer' && user?.role !== 'petugas-pos' && (
+                                        <Section title="Data Petugas POS" icon={<UserCheck className="h-5 w-5 text-indigo-600" />}>
+                                            <Field label="NIPPOS" value={d(pengajuan.petugas_nippos)} />
+                                            <Field label="Nama Petugas" value={d(pengajuan.petugas_name)} />
+                                            <Field label="No. Handphone" value={
+                                                pengajuan.petugas_phone ? (
+                                                    <button
+                                                        onClick={() => handleContact(pengajuan.petugas_phone!, d(pengajuan.petugas_name))}
+                                                        className="text-indigo-600 hover:text-indigo-800 hover:underline inline-flex items-center gap-1"
+                                                    >
+                                                        {pengajuan.petugas_phone}
+                                                        <div className="flex items-center gap-0.5 ml-1 bg-indigo-50 rounded-full px-1.5 py-0.5 border border-indigo-100">
+                                                            <MessageCircle className="h-3 w-3 text-emerald-500" />
+                                                            <span className="text-[10px] text-slate-300">|</span>
+                                                            <Phone className="h-3 w-3 text-blue-500" />
+                                                        </div>
+                                                    </button>
+                                                ) : '-'
+                                            } />
+                                            <Field label="Unit KCU" value={pengajuan.petugas_kcu_code ? `${pengajuan.petugas_kcu_code} - ${pengajuan.petugas_kcu_name || ''}` : '-'} />
+                                            <Field label="Unit KC" value={pengajuan.petugas_kc_code ? `${pengajuan.petugas_kc_code} - ${pengajuan.petugas_kc_name || ''}` : '-'} />
+                                            <Field label="Unit KCP" value={pengajuan.petugas_kcp_code ? `${pengajuan.petugas_kcp_code} - ${pengajuan.petugas_kcp_name || ''}` : '-'} />
+                                        </Section>
+                                    )}
+
+                                    {/* Potongan Detail - Section */}
+                                    {(() => {
+                                        if (!pengajuan.potongan_detail) return null;
+                                        try {
+                                            const details = JSON.parse(pengajuan.potongan_detail);
+                                            if (!Array.isArray(details) || details.length === 0) return null;
+
+                                            return (
+                                                <Section title="Rincian Potongan" icon={<Calculator className="h-5 w-5 text-rose-600" />}>
+                                                    {details.map((item: any, idx: number) => {
+                                                        const label = item.kategori === 'persentase'
+                                                            ? `${item.nama} (${item.persentase_nominal}%)`
+                                                            : item.nama;
+                                                        return (
+                                                            <Field
+                                                                key={idx}
+                                                                label={label}
+                                                                value={money(item.nilai)}
+                                                            />
+                                                        );
+                                                    })}
+                                                </Section>
+                                            );
+                                        } catch (e) { return null; }
+                                    })()}
+
+                                    {/* Notes & Rejection Reason */}
+                                    {(pengajuan.notes || pengajuan.reject_reason) && (
+                                        <div className="space-y-4">
+                                            {pengajuan.reject_reason && (
+                                                <div className="p-5 bg-gradient-to-r from-rose-50 to-rose-100 rounded-xl border-2 border-rose-400 shadow-md">
+                                                    <div className="flex items-start gap-3">
+                                                        <div className="flex-shrink-0 mt-0.5">
+                                                            <div className="w-7 h-7 bg-rose-500 rounded-full flex items-center justify-center">
+                                                                <XCircle className="w-4 h-4 text-white" />
                                                             </div>
-                                                        </a>
-                                                    ))}
+                                                        </div>
+                                                        <div className="flex-1">
+                                                            <p className="text-sm font-bold text-rose-900 mb-2">⚠️ Alasan Penolakan</p>
+                                                            <div className="bg-white/60 rounded-lg p-3 border border-rose-200">
+                                                                <p className="text-sm text-rose-900 leading-relaxed font-medium">{pengajuan.reject_reason}</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
                                                 </div>
-                                            ) : (
-                                                <div className="flex flex-col items-center justify-center py-10 text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200">
-                                                    <Camera className="h-10 w-10 mb-2 opacity-40" />
-                                                    <span className="text-sm">Belum ada foto</span>
+                                            )}
+                                            {pengajuan.revision_note && (
+                                                <div className="p-5 bg-gradient-to-r from-amber-50 to-amber-100 rounded-xl border-2 border-amber-400 shadow-md">
+                                                    <div className="flex items-start gap-3">
+                                                        <div className="flex-shrink-0 mt-0.5">
+                                                            <div className="w-7 h-7 bg-amber-500 rounded-full flex items-center justify-center">
+                                                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-white"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex-1">
+                                                            <p className="text-sm font-bold text-amber-900 mb-2">✏️ Catatan Revisi</p>
+                                                            <div className="bg-white/60 rounded-lg p-3 border border-amber-200">
+                                                                <p className="text-sm text-amber-900 leading-relaxed font-medium">{pengajuan.revision_note}</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+                                            {pengajuan.notes && (
+                                                <div className="p-4 bg-amber-50 rounded-xl border border-amber-200">
+                                                    <p className="text-sm font-semibold text-amber-800 mb-1">📝 Catatan</p>
+                                                    <p className="text-sm text-amber-700">{pengajuan.notes}</p>
                                                 </div>
                                             )}
                                         </div>
-                                    </div>
-                                )}
+                                    )}
+                                </div>
+                            )}
 
-                                {activeDocTab === 'persetujuan' && (
-                                    <div className="space-y-6">
-                                        <div className="flex items-start gap-2 p-4 bg-emerald-50 rounded-xl border border-emerald-100">
-                                            <CheckCircle className="h-5 w-5 text-emerald-600 mt-0.5 flex-shrink-0" />
-                                            <div>
-                                                <p className="text-sm font-medium text-emerald-900">Dokumen Persetujuan</p>
-                                                <p className="text-xs text-emerald-700 mt-0.5">Dokumen yang diupload setelah pengajuan disetujui</p>
+                            {activeTab === 'dokumen' && (
+                                <div className="space-y-6">
+                                    {/* Sub-tabs for Documents */}
+                                    <div className="flex gap-2 p-1 bg-slate-100 rounded-xl">
+                                        <button
+                                            onClick={() => setActiveDocTab('pengajuan')}
+                                            className={`flex-1 px-4 py-2.5 text-sm font-medium rounded-lg transition-all ${activeDocTab === 'pengajuan'
+                                                ? 'bg-white text-indigo-600 shadow-sm'
+                                                : 'text-slate-600 hover:text-slate-900'
+                                                }`}
+                                        >
+                                            <div className="flex items-center justify-center gap-2">
+                                                <Upload className="h-4 w-4" />
+                                                <span>Dokumen Pengajuan</span>
+                                            </div>
+                                        </button>
+                                        <button
+                                            onClick={() => setActiveDocTab('persetujuan')}
+                                            className={`flex-1 px-4 py-2.5 text-sm font-medium rounded-lg transition-all ${activeDocTab === 'persetujuan'
+                                                ? 'bg-white text-emerald-600 shadow-sm'
+                                                : 'text-slate-600 hover:text-slate-900'
+                                                }`}
+                                        >
+                                            <div className="flex items-center justify-center gap-2">
+                                                <CheckCircle className="h-4 w-4" />
+                                                <span>Dokumen Persetujuan</span>
+                                            </div>
+                                        </button>
+                                    </div>
+
+                                    {/* Tab Content */}
+                                    {activeDocTab === 'pengajuan' && (
+                                        <div className="space-y-6">
+                                            <div className="flex items-start gap-2 p-4 bg-blue-50 rounded-xl border border-blue-100">
+                                                <FileText className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                                                <div>
+                                                    <p className="text-sm font-medium text-blue-900">Dokumen Pengajuan</p>
+                                                    <p className="text-xs text-blue-700 mt-0.5">Dokumen yang diupload saat pengajuan awal</p>
+                                                </div>
+                                            </div>
+
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                                {dokumenPengajuan.map((doc, idx) => (
+                                                    <DocCard
+                                                        key={idx}
+                                                        title={doc.title}
+                                                        desc={doc.desc}
+                                                        url={doc.url}
+                                                    />
+                                                ))}
+                                            </div>
+
+                                            {/* Borrower Photos */}
+                                            <div className="pt-4 border-t border-slate-100">
+                                                <div className="flex items-center gap-2 mb-4">
+                                                    <Camera className="h-5 w-5 text-slate-400" />
+                                                    <div>
+                                                        <h4 className="text-sm font-semibold text-slate-900">Foto Nasabah</h4>
+                                                        <p className="text-xs text-slate-500">Dokumentasi foto pemohon</p>
+                                                    </div>
+                                                </div>
+
+                                                {borrowerPhotos.length > 0 ? (
+                                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                                        {borrowerPhotos.map((photo, i) => (
+                                                            <a key={i} href={photo} target="_blank" className="group relative aspect-square rounded-xl overflow-hidden border border-slate-200 hover:shadow-lg transition-all">
+                                                                <img src={photo} alt={`Foto ${i + 1}`} className="w-full h-full object-cover" />
+                                                                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
+                                                                    <Eye className="h-5 w-5 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                                </div>
+                                                            </a>
+                                                        ))}
+                                                    </div>
+                                                ) : (
+                                                    <div className="flex flex-col items-center justify-center py-10 text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                                                        <Camera className="h-10 w-10 mb-2 opacity-40" />
+                                                        <span className="text-sm">Belum ada foto</span>
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
+                                    )}
 
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                                            {dokumenPersetujuan.map((doc, idx) => (
-                                                <DocCard
-                                                    key={idx}
-                                                    title={doc.title}
-                                                    desc={doc.desc}
-                                                    url={doc.url}
-                                                    action={
-                                                        doc.uploadInfo && ((doc.uploadInfo.type === 'disbursement' && (user?.role === 'admin-pusat' || user?.role === 'super-admin')) || (doc.uploadInfo.type === 'shipping' && (user?.role === 'officer' || user?.role === 'petugas-pos' || user?.role === 'super-admin'))) ? (
-                                                            <button onClick={() => { setUploadTarget(doc.uploadInfo!.type as any); setIsUploadModalOpen(true); }} className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 flex items-center gap-1">
-                                                                <Upload className="h-3 w-3" /> {doc.url ? 'Update' : 'Upload'}
-                                                            </button>
-                                                        ) : null
-                                                    }
-                                                />
-                                            ))}
+                                    {activeDocTab === 'persetujuan' && (
+                                        <div className="space-y-6">
+                                            <div className="flex items-start gap-2 p-4 bg-emerald-50 rounded-xl border border-emerald-100">
+                                                <CheckCircle className="h-5 w-5 text-emerald-600 mt-0.5 flex-shrink-0" />
+                                                <div>
+                                                    <p className="text-sm font-medium text-emerald-900">Dokumen Persetujuan</p>
+                                                    <p className="text-xs text-emerald-700 mt-0.5">Dokumen yang diupload setelah pengajuan disetujui</p>
+                                                </div>
+                                            </div>
+
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                                {dokumenPersetujuan.map((doc, idx) => (
+                                                    <DocCard
+                                                        key={idx}
+                                                        title={doc.title}
+                                                        desc={doc.desc}
+                                                        url={doc.url}
+                                                        action={
+                                                            doc.uploadInfo && ((doc.uploadInfo.type === 'disbursement' && (user?.role === 'admin-pusat' || user?.role === 'super-admin')) || (doc.uploadInfo.type === 'shipping' && (user?.role === 'officer' || user?.role === 'petugas-pos' || user?.role === 'super-admin'))) ? (
+                                                                <button onClick={() => { setUploadTarget(doc.uploadInfo!.type as any); setIsUploadModalOpen(true); }} className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 flex items-center gap-1">
+                                                                    <Upload className="h-3 w-3" /> {doc.url ? 'Update' : 'Upload'}
+                                                                </button>
+                                                            ) : null
+                                                        }
+                                                    />
+                                                ))}
+                                            </div>
                                         </div>
-                                    </div>
-                                )}
-                            </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    </div >
+
+                    {/* Desktop Action Buttons (Bottom) */}
+                    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex items-center justify-end gap-3">
+                        {user?.role === 'verifier' && ['Pending', 'Revisi'].includes(pengajuan.status) && (
+                            <>
+                                <button
+                                    onClick={() => handleUpdateStatus('Revisi', 'Kirim memo revisi?')}
+                                    className="px-6 py-2.5 bg-amber-600 text-white text-sm font-medium rounded-xl hover:bg-amber-700 transition-colors shadow-sm"
+                                >
+                                    Revisi
+                                </button>
+                                <button
+                                    onClick={() => handleUpdateStatus('Menunggu Approval Manager', 'Kirim ke Manager?')}
+                                    className="px-6 py-2.5 bg-indigo-600 text-white text-sm font-medium rounded-xl hover:bg-indigo-700 transition-colors shadow-sm"
+                                >
+                                    Verifikasi
+                                </button>
+                            </>
+                        )}
+                        {user?.role === 'manager' && pengajuan.status === 'Menunggu Approval Manager' && (
+                            <>
+                                <button
+                                    onClick={() => handleUpdateStatus('Ditolak', 'Tolak?')}
+                                    className="px-6 py-2.5 bg-rose-600 text-white text-sm font-medium rounded-xl hover:bg-rose-700 transition-colors shadow-sm"
+                                >
+                                    Tolak
+                                </button>
+                                <button
+                                    onClick={() => handleUpdateStatus('Disetujui', 'Setujui?')}
+                                    className="px-6 py-2.5 bg-emerald-600 text-white text-sm font-medium rounded-xl hover:bg-emerald-700 transition-colors shadow-sm"
+                                >
+                                    Setujui
+                                </button>
+                            </>
+                        )}
+                        {(user?.role === 'officer' || user?.role === 'petugas-pos') && pengajuan.status === 'Disetujui' && isAllApprovalDocsUploaded() && (
+                            <button
+                                onClick={() => handleUpdateStatus('Menunggu Verifikasi Admin Unit', 'Kirim ke Admin Unit untuk verifikasi dokumen?')}
+                                className="px-6 py-2.5 bg-purple-600 text-white text-sm font-medium rounded-xl hover:bg-purple-700 transition-colors shadow-sm flex items-center gap-2"
+                            >
+                                <CheckCircle className="w-4 h-4" />
+                                Kirim ke Admin Unit
+                            </button>
+                        )}
+                        {user?.role === 'admin-unit' && ['Menunggu Verifikasi Admin Unit', 'Disetujui'].includes(pengajuan.status) && (
+                            <button
+                                onClick={() => handleUpdateStatus('Menunggu Pencairan', 'Kirim ke Admin Pusat untuk Pencairan?')}
+                                className="px-6 py-2.5 bg-orange-600 text-white text-sm font-medium rounded-xl hover:bg-orange-700 transition-colors shadow-sm"
+                            >
+                                Verifikasi & Kirim ke Admin Pusat
+                            </button>
+                        )}
+                        {user?.role === 'admin-pusat' && pengajuan.status === 'Menunggu Pencairan' && approvalDocs.disbursement_proof_url && (
+                            <button
+                                onClick={() => handleUpdateStatus('Dicairkan', 'Cairkan?')}
+                                className="px-6 py-2.5 bg-teal-600 text-white text-sm font-medium rounded-xl hover:bg-teal-700 transition-colors shadow-sm"
+                            >
+                                Cairkan
+                            </button>
+                        )}
+                        {(user?.role === 'officer' || user?.role === 'petugas-pos') && pengajuan.status === 'Dicairkan' && approvalDocs.shipping_receipt_url && (
+                            <button
+                                onClick={() => handleUpdateStatus('Menunggu Verifikasi Akhir', 'Kirim ke Verifikator untuk penyelesaian?')}
+                                className="px-6 py-2.5 bg-cyan-600 text-white text-sm font-medium rounded-xl hover:bg-cyan-700 transition-colors shadow-sm flex items-center gap-2"
+                            >
+                                <CheckCircle className="w-4 h-4" />
+                                Kirim Ke Verifikator
+                            </button>
+                        )}
+                        {user?.role === 'verifier' && pengajuan.status === 'Menunggu Verifikasi Akhir' && (
+                            <button
+                                onClick={() => handleUpdateStatus('Selesai', 'Selesaikan pengajuan ini?')}
+                                className="px-6 py-2.5 bg-indigo-600 text-white text-sm font-medium rounded-xl hover:bg-indigo-700 transition-colors shadow-sm flex items-center gap-2"
+                            >
+                                <CheckCircle className="w-4 h-4" />
+                                Selesai
+                            </button>
                         )}
                     </div>
-                </div >
-
-                {/* Desktop Action Buttons (Bottom) */}
-                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex items-center justify-end gap-3">
-                    {user?.role === 'verifier' && ['Pending', 'Revisi'].includes(pengajuan.status) && (
-                        <>
-                            <button
-                                onClick={() => handleUpdateStatus('Revisi', 'Kirim memo revisi?')}
-                                className="px-6 py-2.5 bg-amber-600 text-white text-sm font-medium rounded-xl hover:bg-amber-700 transition-colors shadow-sm"
-                            >
-                                Revisi
-                            </button>
-                            <button
-                                onClick={() => handleUpdateStatus('Menunggu Approval Manager', 'Kirim ke Manager?')}
-                                className="px-6 py-2.5 bg-indigo-600 text-white text-sm font-medium rounded-xl hover:bg-indigo-700 transition-colors shadow-sm"
-                            >
-                                Verifikasi
-                            </button>
-                        </>
-                    )}
-                    {user?.role === 'manager' && pengajuan.status === 'Menunggu Approval Manager' && (
-                        <>
-                            <button
-                                onClick={() => handleUpdateStatus('Ditolak', 'Tolak?')}
-                                className="px-6 py-2.5 bg-rose-600 text-white text-sm font-medium rounded-xl hover:bg-rose-700 transition-colors shadow-sm"
-                            >
-                                Tolak
-                            </button>
-                            <button
-                                onClick={() => handleUpdateStatus('Disetujui', 'Setujui?')}
-                                className="px-6 py-2.5 bg-emerald-600 text-white text-sm font-medium rounded-xl hover:bg-emerald-700 transition-colors shadow-sm"
-                            >
-                                Setujui
-                            </button>
-                        </>
-                    )}
-                    {(user?.role === 'officer' || user?.role === 'petugas-pos') && pengajuan.status === 'Disetujui' && isAllApprovalDocsUploaded() && (
-                        <button
-                            onClick={() => handleUpdateStatus('Menunggu Verifikasi Admin Unit', 'Kirim ke Admin Unit untuk verifikasi dokumen?')}
-                            className="px-6 py-2.5 bg-purple-600 text-white text-sm font-medium rounded-xl hover:bg-purple-700 transition-colors shadow-sm flex items-center gap-2"
-                        >
-                            <CheckCircle className="w-4 h-4" />
-                            Kirim ke Admin Unit
-                        </button>
-                    )}
-                    {user?.role === 'admin-unit' && ['Menunggu Verifikasi Admin Unit', 'Disetujui'].includes(pengajuan.status) && (
-                        <button
-                            onClick={() => handleUpdateStatus('Menunggu Pencairan', 'Kirim ke Admin Pusat untuk Pencairan?')}
-                            className="px-6 py-2.5 bg-orange-600 text-white text-sm font-medium rounded-xl hover:bg-orange-700 transition-colors shadow-sm"
-                        >
-                            Verifikasi & Kirim ke Admin Pusat
-                        </button>
-                    )}
-                    {user?.role === 'admin-pusat' && pengajuan.status === 'Menunggu Pencairan' && approvalDocs.disbursement_proof_url && (
-                        <button
-                            onClick={() => handleUpdateStatus('Dicairkan', 'Cairkan?')}
-                            className="px-6 py-2.5 bg-teal-600 text-white text-sm font-medium rounded-xl hover:bg-teal-700 transition-colors shadow-sm"
-                        >
-                            Cairkan
-                        </button>
-                    )}
-                    {(user?.role === 'officer' || user?.role === 'petugas-pos') && pengajuan.status === 'Dicairkan' && approvalDocs.shipping_receipt_url && (
-                        <button
-                            onClick={() => handleUpdateStatus('Menunggu Verifikasi Akhir', 'Kirim ke Verifikator untuk penyelesaian?')}
-                            className="px-6 py-2.5 bg-cyan-600 text-white text-sm font-medium rounded-xl hover:bg-cyan-700 transition-colors shadow-sm flex items-center gap-2"
-                        >
-                            <CheckCircle className="w-4 h-4" />
-                            Kirim Ke Verifikator
-                        </button>
-                    )}
-                    {user?.role === 'verifier' && pengajuan.status === 'Menunggu Verifikasi Akhir' && (
-                        <button
-                            onClick={() => handleUpdateStatus('Selesai', 'Selesaikan pengajuan ini?')}
-                            className="px-6 py-2.5 bg-indigo-600 text-white text-sm font-medium rounded-xl hover:bg-indigo-700 transition-colors shadow-sm flex items-center gap-2"
-                        >
-                            <CheckCircle className="w-4 h-4" />
-                            Selesai
-                        </button>
-                    )}
                 </div>
+            )}
 
-                {/* Upload Modal */}
-                {
-                    isUploadModalOpen && (
-                        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-                            <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
-                                <h3 className="text-lg font-bold text-slate-900 mb-1">Upload Bukti Transfer</h3>
-                                <p className="text-sm text-slate-500 mb-5">Upload gambar bukti pencairan dana</p>
-                                <form onSubmit={handleUploadProof} className="space-y-4">
-                                    <div>
-                                        <label className="block text-sm font-medium text-slate-700 mb-1.5">File Gambar</label>
-                                        <input type="file" accept="image/*" onChange={(e) => setProofForm({ ...proofForm, file: e.target.files?.[0] || null })} className="block w-full text-sm text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-slate-700 mb-1.5">Catatan</label>
-                                        <textarea rows={3} className="block w-full rounded-xl border-slate-200 text-sm focus:border-indigo-500 focus:ring-indigo-500" value={proofForm.notes} onChange={(e) => setProofForm({ ...proofForm, notes: e.target.value })} placeholder="Catatan tambahan..." />
-                                    </div>
-                                    <div className="flex gap-3 pt-2">
-                                        <button type="button" onClick={() => setIsUploadModalOpen(false)} className="flex-1 px-4 py-2.5 text-sm font-medium text-slate-700 bg-slate-100 rounded-xl hover:bg-slate-200 transition-colors">Batal</button>
-                                        <button type="submit" className="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-indigo-600 rounded-xl hover:bg-indigo-700 transition-colors">Upload</button>
-                                    </div>
-                                </form>
-                            </div>
+            {/* Upload Modal */}
+            {
+                isUploadModalOpen && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                        <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+                            <h3 className="text-lg font-bold text-slate-900 mb-1">Upload Bukti Transfer</h3>
+                            <p className="text-sm text-slate-500 mb-5">Upload gambar bukti pencairan dana</p>
+                            <form onSubmit={handleUploadProof} className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-1.5">File Gambar</label>
+                                    <input type="file" accept="image/*" onChange={(e) => setProofForm({ ...proofForm, file: e.target.files?.[0] || null })} className="block w-full text-sm text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-1.5">Catatan</label>
+                                    <textarea rows={3} className="block w-full rounded-xl border-slate-200 text-sm focus:border-indigo-500 focus:ring-indigo-500" value={proofForm.notes} onChange={(e) => setProofForm({ ...proofForm, notes: e.target.value })} placeholder="Catatan tambahan..." />
+                                </div>
+                                <div className="flex gap-3 pt-2">
+                                    <button type="button" onClick={() => setIsUploadModalOpen(false)} className="flex-1 px-4 py-2.5 text-sm font-medium text-slate-700 bg-slate-100 rounded-xl hover:bg-slate-200 transition-colors">Batal</button>
+                                    <button type="submit" className="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-indigo-600 rounded-xl hover:bg-indigo-700 transition-colors">Upload</button>
+                                </div>
+                            </form>
                         </div>
-                    )
-                }
-            </div >
+                    </div>
+                )
+            }
+            {/* End of Upload Modal */}
             {/* Image/PDF Preview Modal */}
             {
                 previewDoc && (

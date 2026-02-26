@@ -180,13 +180,13 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
     const [currentStatus, setCurrentStatus] = useState<string>('');
 
     // ─── Wilayah dropdown state ────────────────────────────────────────────────
-    const [provinsiList, setProvinsiList]     = useState<WilayahItem[]>([]);
-    const [kabupatenList, setKabupatenList]   = useState<WilayahItem[]>([]);
-    const [kecamatanList, setKecamatanList]   = useState<WilayahItem[]>([]);
-    const [kelurahanList, setKelurahanList]   = useState<WilayahItem[]>([]);
+    const [provinsiList, setProvinsiList] = useState<WilayahItem[]>([]);
+    const [kabupatenList, setKabupatenList] = useState<WilayahItem[]>([]);
+    const [kecamatanList, setKecamatanList] = useState<WilayahItem[]>([]);
+    const [kelurahanList, setKelurahanList] = useState<WilayahItem[]>([]);
     const [loadingWilayah, setLoadingWilayah] = useState<{ [k: string]: boolean }>({});
     // kode values (numbers) selected in each level — drive cascade
-    const [selectedProvinsiKode, setSelectedProvinsiKode]   = useState<number | null>(null);
+    const [selectedProvinsiKode, setSelectedProvinsiKode] = useState<number | null>(null);
     const [selectedKabupatenKode, setSelectedKabupatenKode] = useState<number | null>(null);
     const [selectedKecamatanKode, setSelectedKecamatanKode] = useState<number | null>(null);
     const [selectedKelurahanKode, setSelectedKelurahanKode] = useState<string>('');
@@ -687,7 +687,7 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
                     // ── Eagerly set wilayah kodes from saved data (fast path) ──
                     // This triggers the cascade fetch effects immediately.
                     // If kodes are 0/null (old data), the name-based fallback effects below handle it.
-                    if (data.kode_provinsi)  setSelectedProvinsiKode(data.kode_provinsi);
+                    if (data.kode_provinsi) setSelectedProvinsiKode(data.kode_provinsi);
                     if (data.kode_kabupaten) setSelectedKabupatenKode(data.kode_kabupaten);
                     if (data.kode_kecamatan) setSelectedKecamatanKode(data.kode_kecamatan);
                     if (data.kode_kelurahan) setSelectedKelurahanKode(data.kode_kelurahan);
@@ -2059,11 +2059,10 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
                         id="nik"
                         required
                         maxLength={16}
-                        className={`block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 text-gray-900 bg-white placeholder-gray-400 border pr-9 ${
-                            fieldErrors.nik ? 'border-red-500 focus:border-red-500 focus:ring-red-500' :
+                        className={`block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 text-gray-900 bg-white placeholder-gray-400 border pr-9 ${fieldErrors.nik ? 'border-red-500 focus:border-red-500 focus:ring-red-500' :
                             nikCheckState === 'duplicate' ? 'border-red-400 focus:border-red-500 focus:ring-red-500' :
-                            nikCheckState === 'available' ? 'border-green-400 focus:border-green-500 focus:ring-green-500' : ''
-                        }`}
+                                nikCheckState === 'available' ? 'border-green-400 focus:border-green-500 focus:ring-green-500' : ''
+                            }`}
                         placeholder="16 nomor identitas"
                         value={formData.nik}
                         onChange={handleChange}
@@ -2198,8 +2197,8 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
                         {!selectedProvinsiKode
                             ? '-- Pilih Provinsi dahulu --'
                             : loadingWilayah.kabupaten
-                            ? 'Memuat...'
-                            : '-- Pilih Kabupaten/Kota --'}
+                                ? 'Memuat...'
+                                : '-- Pilih Kabupaten/Kota --'}
                     </option>
                     {kabupatenList.map(k => (
                         <option key={k.kode} value={k.nama}>{k.nama}</option>
@@ -2233,8 +2232,8 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
                         {!selectedKabupatenKode
                             ? '-- Pilih Kabupaten/Kota dahulu --'
                             : loadingWilayah.kecamatan
-                            ? 'Memuat...'
-                            : '-- Pilih Kecamatan --'}
+                                ? 'Memuat...'
+                                : '-- Pilih Kecamatan --'}
                     </option>
                     {kecamatanList.map(k => (
                         <option key={k.kode} value={k.nama}>{k.nama}</option>
@@ -2261,8 +2260,8 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
                         {!selectedKecamatanKode
                             ? '-- Pilih Kecamatan dahulu --'
                             : loadingWilayah.kelurahan
-                            ? 'Memuat...'
-                            : '-- Pilih Desa/Kelurahan --'}
+                                ? 'Memuat...'
+                                : '-- Pilih Desa/Kelurahan --'}
                     </option>
                     {kelurahanList.map(k => (
                         <option key={k.kode} value={k.nama}>{k.nama}</option>
@@ -3144,10 +3143,13 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
         );
     };
 
+    const isFrontingRoute = typeof window !== 'undefined' && window.location.pathname.startsWith('/fronting');
+    const isFrontingModule = isPetugasPos || isFrontingRoute;
+
     return (
         <>
             {/* Mobile Layout */}
-            <div className="md:hidden min-h-screen bg-slate-100 pb-28">
+            <div className={`${isFrontingModule ? '' : 'md:hidden'} min-h-screen bg-slate-100 pb-28`}>
                 {/* Layer 1: Full Page Background */}
                 <div className="fixed inset-0 z-0 pointer-events-none">
                     <img src="/images/loan_header_bg.png" alt="bg-full" className="w-full h-full object-cover" />
@@ -3236,70 +3238,72 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
             </div>
 
             {/* Desktop Layout - Original Design */}
-            <div className="hidden md:block mx-1 md:mx-3 lg:mx-auto lg:max-w-7xl pt-2 md:pt-4 pb-24 md:pb-0">
-                <div className="bg-white rounded-xl md:rounded-2xl shadow-md md:shadow-lg overflow-hidden">
+            {!isFrontingModule && (
+                <div className="hidden md:block mx-1 md:mx-3 lg:mx-auto lg:max-w-7xl pt-2 md:pt-4 pb-24 md:pb-0">
+                    <div className="bg-white rounded-xl md:rounded-2xl shadow-md md:shadow-lg overflow-hidden">
 
-                    {/* Card Header with Stepper */}
-                    <div className="bg-gradient-to-r from-indigo-600 via-indigo-700 to-blue-700 px-4 py-5 md:px-8 md:py-6 relative overflow-hidden">
-                        {/* Background Image */}
-                        <img
-                            src="/images/pengajuan-header-bg.png"
-                            alt=""
-                            className="absolute inset-0 w-full h-full object-cover opacity-30 mix-blend-overlay"
-                        />
+                        {/* Card Header with Stepper */}
+                        <div className="bg-gradient-to-r from-indigo-600 via-indigo-700 to-blue-700 px-4 py-5 md:px-8 md:py-6 relative overflow-hidden">
+                            {/* Background Image */}
+                            <img
+                                src="/images/pengajuan-header-bg.png"
+                                alt=""
+                                className="absolute inset-0 w-full h-full object-cover opacity-30 mix-blend-overlay"
+                            />
 
-                        {/* Decorative Elements */}
-                        <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-white/10 to-transparent rounded-full -translate-y-1/2 translate-x-1/3"></div>
-                        <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-blue-400/20 to-transparent rounded-full translate-y-1/2 -translate-x-1/3"></div>
+                            {/* Decorative Elements */}
+                            <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-white/10 to-transparent rounded-full -translate-y-1/2 translate-x-1/3"></div>
+                            <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-blue-400/20 to-transparent rounded-full translate-y-1/2 -translate-x-1/3"></div>
 
-                        {/* Stepper */}
-                        <div className="relative z-10 w-full max-w-4xl mx-auto">
-                            {renderStepper()}
+                            {/* Stepper */}
+                            <div className="relative z-10 w-full max-w-4xl mx-auto">
+                                {renderStepper()}
+                            </div>
+
+                            {/* Step Info */}
+                            <div className="relative z-10 text-center mt-4">
+                                <h2 className="text-lg md:text-xl font-bold text-white">{STEPS[currentStep - 1].title}</h2>
+                                <p className="text-xs md:text-sm text-indigo-100 mt-0.5">{STEPS[currentStep - 1].description}</p>
+                            </div>
                         </div>
 
-                        {/* Step Info */}
-                        <div className="relative z-10 text-center mt-4">
-                            <h2 className="text-lg md:text-xl font-bold text-white">{STEPS[currentStep - 1].title}</h2>
-                            <p className="text-xs md:text-sm text-indigo-100 mt-0.5">{STEPS[currentStep - 1].description}</p>
-                        </div>
-                    </div>
+                        {/* Form Content */}
+                        <main className="px-4 py-5 md:px-8 md:py-8 lg:px-10 lg:py-10">
+                            {currentStep === 1 && renderStep2()}
+                            {currentStep === 2 && renderStep1()}
+                            {currentStep === 3 && renderStep3()}
+                            {currentStep === 4 && renderStep4()}
+                            {currentStep === 5 && renderStep5()}
+                        </main>
 
-                    {/* Form Content */}
-                    <main className="px-4 py-5 md:px-8 md:py-8 lg:px-10 lg:py-10">
-                        {currentStep === 1 && renderStep2()}
-                        {currentStep === 2 && renderStep1()}
-                        {currentStep === 3 && renderStep3()}
-                        {currentStep === 4 && renderStep4()}
-                        {currentStep === 5 && renderStep5()}
-                    </main>
-
-                    {/* Desktop Footer */}
-                    <div className="hidden md:flex bg-gray-50/80 px-8 lg:px-10 py-5 justify-between items-center border-t border-gray-100">
-                        <button
-                            type="button"
-                            onClick={prevStep}
-                            disabled={currentStep === 1 || submitting}
-                            className={`inline-flex items-center px-5 py-2.5 border border-gray-300 shadow-sm text-sm font-semibold rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition-all active:scale-95 ${currentStep === 1 ? 'opacity-0 cursor-default' : ''}`}
-                        >
-                            <ChevronLeft className="-ml-1 mr-1.5 h-4 w-4" />
-                            Kembali
-                        </button>
-
-                        {shouldShowNextButton && (
+                        {/* Desktop Footer */}
+                        <div className="hidden md:flex bg-gray-50/80 px-8 lg:px-10 py-5 justify-between items-center border-t border-gray-100">
                             <button
                                 type="button"
-                                onClick={currentStep === STEPS.length ? handleSubmit : nextStep}
-                                disabled={submitting}
-                                className="inline-flex items-center px-6 py-2.5 border border-transparent shadow-md text-sm font-semibold rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed"
+                                onClick={prevStep}
+                                disabled={currentStep === 1 || submitting}
+                                className={`inline-flex items-center px-5 py-2.5 border border-gray-300 shadow-sm text-sm font-semibold rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition-all active:scale-95 ${currentStep === 1 ? 'opacity-0 cursor-default' : ''}`}
                             >
-                                {submitting ? 'Menyimpan...' : currentStep === STEPS.length ? 'Submit Pengajuan' : 'Selanjutnya'}
-                                {!submitting && currentStep !== STEPS.length && <ChevronRight className="ml-1.5 -mr-1 h-4 w-4" />}
-                                {!submitting && currentStep === STEPS.length && <Save className="ml-1.5 -mr-1 h-4 w-4" />}
+                                <ChevronLeft className="-ml-1 mr-1.5 h-4 w-4" />
+                                Kembali
                             </button>
-                        )}
+
+                            {shouldShowNextButton && (
+                                <button
+                                    type="button"
+                                    onClick={currentStep === STEPS.length ? handleSubmit : nextStep}
+                                    disabled={submitting}
+                                    className="inline-flex items-center px-6 py-2.5 border border-transparent shadow-md text-sm font-semibold rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed"
+                                >
+                                    {submitting ? 'Menyimpan...' : currentStep === STEPS.length ? 'Submit Pengajuan' : 'Selanjutnya'}
+                                    {!submitting && currentStep !== STEPS.length && <ChevronRight className="ml-1.5 -mr-1 h-4 w-4" />}
+                                    {!submitting && currentStep === STEPS.length && <Save className="ml-1.5 -mr-1 h-4 w-4" />}
+                                </button>
+                            )}
+                        </div>
                     </div>
                 </div>
-            </div>
+            )}
         </>
     );
 };
