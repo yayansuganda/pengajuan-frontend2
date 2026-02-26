@@ -42,6 +42,7 @@ const STATUS_COLORS: Record<string, { bg: string; text: string; ring: string; do
     'Menunggu Approval Manager': { bg: 'bg-blue-50', text: 'text-blue-700', ring: 'ring-blue-200', dot: 'bg-blue-400', hex: '#3b82f6' },
     'Menunggu Verifikasi Admin Unit': { bg: 'bg-indigo-50', text: 'text-indigo-700', ring: 'ring-indigo-200', dot: 'bg-indigo-400', hex: '#6366f1' },
     'Menunggu Verifikasi Akhir': { bg: 'bg-fuchsia-50', text: 'text-fuchsia-700', ring: 'ring-fuchsia-200', dot: 'bg-fuchsia-400', hex: '#d946ef' },
+    'Berkas Dikirim': { bg: 'bg-fuchsia-50', text: 'text-fuchsia-700', ring: 'ring-fuchsia-200', dot: 'bg-fuchsia-400', hex: '#d946ef' },
     'Menunggu Pencairan': { bg: 'bg-purple-50', text: 'text-purple-700', ring: 'ring-purple-200', dot: 'bg-purple-400', hex: '#a855f7' },
     'Disetujui': { bg: 'bg-emerald-50', text: 'text-emerald-700', ring: 'ring-emerald-200', dot: 'bg-emerald-400', hex: '#10b981' },
     'Dicairkan': { bg: 'bg-green-50', text: 'text-green-700', ring: 'ring-green-200', dot: 'bg-green-500', hex: '#22c55e' },
@@ -60,6 +61,7 @@ const STATUS_ICONS: Record<string, React.ReactNode> = {
     'Menunggu Approval Manager': <Clock className="h-3.5 w-3.5" />,
     'Menunggu Verifikasi Admin Unit': <FileCheck className="h-3.5 w-3.5" />,
     'Menunggu Verifikasi Akhir': <FileUp className="h-3.5 w-3.5" />,
+    'Berkas Dikirim': <FileUp className="h-3.5 w-3.5" />,
     'Menunggu Pencairan': <DollarSign className="h-3.5 w-3.5" />,
     'Disetujui': <CheckCircle2 className="h-3.5 w-3.5" />,
     'Dicairkan': <CheckCircle2 className="h-3.5 w-3.5" />,
@@ -71,8 +73,21 @@ const STATUS_ICONS: Record<string, React.ReactNode> = {
     'Completed': <CheckCircle2 className="h-3.5 w-3.5" />,
 };
 
-const getStatusColor = (status: string) =>
-    STATUS_COLORS[status] || { bg: 'bg-slate-50', text: 'text-slate-700', ring: 'ring-slate-200', dot: 'bg-slate-400', hex: '#94a3b8' };
+const getStatusColor = (status: string) => {
+    const key = Object.keys(STATUS_COLORS).find(k => k.toLowerCase() === status.toLowerCase());
+    return key ? STATUS_COLORS[key] : { bg: 'bg-slate-50', text: 'text-slate-700', ring: 'ring-slate-200', dot: 'bg-slate-400', hex: '#94a3b8' };
+};
+
+const getStatusIcon = (status: string) => {
+    const key = Object.keys(STATUS_ICONS).find(k => k.toLowerCase() === status.toLowerCase());
+    return key ? STATUS_ICONS[key] : <FileCheck className="h-3.5 w-3.5" />;
+};
+
+const formatStatusName = (status: string) => {
+    if (status.toLowerCase() === 'menunggu verifikasi akhir') return 'Berkas Dikirim';
+    // Capitalize each word for other statuses
+    return status.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+};
 
 const formatCurrency = (value: number) => {
     if (value >= 1_000_000_000) return `Rp ${(value / 1_000_000_000).toFixed(1)}M`;
@@ -167,7 +182,7 @@ export const RekonsiliasiDashboardPage: React.FC = () => {
     const kpiDitolak = useMemo(() => getStatusData(['Ditolak', 'Rejected']), [stats]);
     const kpiPencairan = useMemo(() => getStatusData(['Menunggu Pencairan', 'Dicairkan']), [stats]);
     const kpiVerifAdmin = useMemo(() => getStatusData(['Menunggu Verifikasi Admin Unit']), [stats]);
-    const kpiBerkasDikirim = useMemo(() => getStatusData(['Menunggu Verifikasi Akhir']), [stats]);
+    const kpiBerkasDikirim = useMemo(() => getStatusData(['Menunggu Verifikasi Akhir', 'Berkas Dikirim']), [stats]);
     const kpiSelesai = useMemo(() => getStatusData(['Selesai', 'Lunas', 'Completed']), [stats]);
 
     // ===== Derived =====
@@ -185,7 +200,7 @@ export const RekonsiliasiDashboardPage: React.FC = () => {
     const pieData = useMemo(() => {
         if (!stats) return [];
         return (stats.by_status || []).map(s => ({
-            name: s.status, value: s.count, amount: s.amount, total: stats.total_pos, color: getStatusColor(s.status).hex,
+            name: formatStatusName(s.status), value: s.count, amount: s.amount, total: stats.total_pos, color: getStatusColor(s.status).hex,
         }));
     }, [stats]);
 
@@ -320,8 +335,8 @@ export const RekonsiliasiDashboardPage: React.FC = () => {
                                         style={{ width: `${barW}%`, background: `linear-gradient(90deg, ${color.hex}44, transparent)` }} />
                                     <div className="relative flex items-center justify-between">
                                         <div className="flex items-center gap-2 min-w-0">
-                                            <span className={`${color.text} shrink-0`}>{STATUS_ICONS[item.status] || <FileCheck className="h-3.5 w-3.5" />}</span>
-                                            <span className={`text-xs font-medium ${color.text} truncate`}>{item.status}</span>
+                                            <span className={`${color.text} shrink-0`}>{getStatusIcon(item.status)}</span>
+                                            <span className={`text-xs font-medium ${color.text} truncate`}>{formatStatusName(item.status)}</span>
                                         </div>
                                         <div className="flex items-center gap-2 shrink-0">
                                             <span className="text-[10px] text-slate-500 hidden sm:inline">{formatCurrency(item.amount)}</span>
