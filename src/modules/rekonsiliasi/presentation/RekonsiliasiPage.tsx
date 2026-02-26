@@ -116,9 +116,12 @@ export const RekonsiliasiPage: React.FC = () => {
         };
     }, []);
 
+    // Roles allowed to access rekonsiliasi
+    const REKON_ALLOWED_ROLES = ['super-admin', 'admin-pos', 'regional-pos', 'kcu-pos', 'kc-pos'];
+
     // Check access
     useEffect(() => {
-        if (user && user.role !== 'super-admin' && user.role !== 'admin-pos') {
+        if (user && !REKON_ALLOWED_ROLES.includes(user.role)) {
             window.location.href = '/dashboard';
         }
     }, [user]);

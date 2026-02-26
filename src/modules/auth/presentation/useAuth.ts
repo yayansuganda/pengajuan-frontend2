@@ -28,7 +28,13 @@ export const useAuth = () => {
         try {
             const response = await loginUseCase.execute(username, password);
             setUser(response.user);
-            router.push('/dashboard');
+            // Roles that can only access Rekonsiliasi are redirected there directly
+            const rekonOnlyRoles = ['admin-pos', 'regional-pos', 'kcu-pos', 'kc-pos'];
+            if (rekonOnlyRoles.includes(response.user.role)) {
+                router.push('/rekonsiliasi/dashboard');
+            } else {
+                router.push('/dashboard');
+            }
         } catch (error) {
             console.error('Login failed', error);
             throw error;

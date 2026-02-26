@@ -36,20 +36,20 @@ import {
 
 // ===== Constants =====
 const STATUS_COLORS: Record<string, { bg: string; text: string; ring: string; dot: string; hex: string }> = {
-    'Pending':                        { bg: 'bg-amber-50',   text: 'text-amber-700',   ring: 'ring-amber-200',   dot: 'bg-amber-400',   hex: '#f59e0b' },
-    'Revisi':                         { bg: 'bg-orange-50',  text: 'text-orange-700',  ring: 'ring-orange-200',  dot: 'bg-orange-400',  hex: '#f97316' },
-    'Menunggu Approval Manager':      { bg: 'bg-blue-50',    text: 'text-blue-700',    ring: 'ring-blue-200',    dot: 'bg-blue-400',    hex: '#3b82f6' },
-    'Menunggu Verifikasi Admin Unit': { bg: 'bg-indigo-50',  text: 'text-indigo-700',  ring: 'ring-indigo-200',  dot: 'bg-indigo-400',  hex: '#6366f1' },
-    'Menunggu Pencairan':             { bg: 'bg-purple-50',  text: 'text-purple-700',  ring: 'ring-purple-200',  dot: 'bg-purple-400',  hex: '#a855f7' },
-    'Disetujui':                      { bg: 'bg-emerald-50', text: 'text-emerald-700', ring: 'ring-emerald-200', dot: 'bg-emerald-400', hex: '#10b981' },
-    'Dicairkan':                      { bg: 'bg-green-50',   text: 'text-green-700',   ring: 'ring-green-200',   dot: 'bg-green-500',   hex: '#22c55e' },
-    'Ditolak':                        { bg: 'bg-red-50',     text: 'text-red-700',     ring: 'ring-red-200',     dot: 'bg-red-400',     hex: '#ef4444' },
-    'Selesai':                        { bg: 'bg-teal-50',    text: 'text-teal-700',    ring: 'ring-teal-200',    dot: 'bg-teal-400',    hex: '#14b8a6' },
+    'Pending': { bg: 'bg-amber-50', text: 'text-amber-700', ring: 'ring-amber-200', dot: 'bg-amber-400', hex: '#f59e0b' },
+    'Revisi': { bg: 'bg-orange-50', text: 'text-orange-700', ring: 'ring-orange-200', dot: 'bg-orange-400', hex: '#f97316' },
+    'Menunggu Approval Manager': { bg: 'bg-blue-50', text: 'text-blue-700', ring: 'ring-blue-200', dot: 'bg-blue-400', hex: '#3b82f6' },
+    'Menunggu Verifikasi Admin Unit': { bg: 'bg-indigo-50', text: 'text-indigo-700', ring: 'ring-indigo-200', dot: 'bg-indigo-400', hex: '#6366f1' },
+    'Menunggu Pencairan': { bg: 'bg-purple-50', text: 'text-purple-700', ring: 'ring-purple-200', dot: 'bg-purple-400', hex: '#a855f7' },
+    'Disetujui': { bg: 'bg-emerald-50', text: 'text-emerald-700', ring: 'ring-emerald-200', dot: 'bg-emerald-400', hex: '#10b981' },
+    'Dicairkan': { bg: 'bg-green-50', text: 'text-green-700', ring: 'ring-green-200', dot: 'bg-green-500', hex: '#22c55e' },
+    'Ditolak': { bg: 'bg-red-50', text: 'text-red-700', ring: 'ring-red-200', dot: 'bg-red-400', hex: '#ef4444' },
+    'Selesai': { bg: 'bg-teal-50', text: 'text-teal-700', ring: 'ring-teal-200', dot: 'bg-teal-400', hex: '#14b8a6' },
     // Legacy statuses (backward-compatible)
-    'Approved':                       { bg: 'bg-emerald-50', text: 'text-emerald-700', ring: 'ring-emerald-200', dot: 'bg-emerald-400', hex: '#10b981' },
-    'Rejected':                       { bg: 'bg-red-50',     text: 'text-red-700',     ring: 'ring-red-200',     dot: 'bg-red-400',     hex: '#ef4444' },
-    'Lunas':                          { bg: 'bg-cyan-50',    text: 'text-cyan-700',    ring: 'ring-cyan-200',    dot: 'bg-cyan-400',    hex: '#06b6d4' },
-    'Completed':                      { bg: 'bg-teal-50',    text: 'text-teal-700',    ring: 'ring-teal-200',    dot: 'bg-teal-400',    hex: '#14b8a6' },
+    'Approved': { bg: 'bg-emerald-50', text: 'text-emerald-700', ring: 'ring-emerald-200', dot: 'bg-emerald-400', hex: '#10b981' },
+    'Rejected': { bg: 'bg-red-50', text: 'text-red-700', ring: 'ring-red-200', dot: 'bg-red-400', hex: '#ef4444' },
+    'Lunas': { bg: 'bg-cyan-50', text: 'text-cyan-700', ring: 'ring-cyan-200', dot: 'bg-cyan-400', hex: '#06b6d4' },
+    'Completed': { bg: 'bg-teal-50', text: 'text-teal-700', ring: 'ring-teal-200', dot: 'bg-teal-400', hex: '#14b8a6' },
 };
 
 const STATUS_ICONS: Record<string, React.ReactNode> = {
@@ -141,8 +141,11 @@ export const RekonsiliasiDashboardPage: React.FC = () => {
     const { user } = useAuth();
     const { stats, loading, dateFrom, dateTo, setDateFrom, setDateTo, refresh } = useRekonsiliasiDashboard();
 
+    // Roles allowed to access rekonsiliasi
+    const REKON_ALLOWED_ROLES = ['super-admin', 'admin-pos', 'regional-pos', 'kcu-pos', 'kc-pos'];
+
     React.useEffect(() => {
-        if (user && user.role !== 'super-admin' && user.role !== 'admin-pos') {
+        if (user && !REKON_ALLOWED_ROLES.includes(user.role)) {
             window.location.href = '/dashboard';
         }
     }, [user]);
