@@ -81,6 +81,7 @@ function FrontingPageContent() {
         const approved = filteredPengajuan.filter(item => ['disetujui', 'menunggu verifikasi admin unit', 'menunggu pencairan'].includes(normalizeStatus(item.status)));
         const pending = filteredPengajuan.filter(item => ['pending', 'revisi', 'menunggu approval manager'].includes(normalizeStatus(item.status)));
         const rejected = filteredPengajuan.filter(item => normalizeStatus(item.status) === 'ditolak');
+        const berkasDikirim = filteredPengajuan.filter(item => normalizeStatus(item.status) === 'menunggu verifikasi akhir');
         const disbursed = filteredPengajuan.filter(item => normalizeStatus(item.status) === 'dicairkan');
         const menungguPencairan = filteredPengajuan.filter(item => normalizeStatus(item.status) === 'menunggu pencairan');
         const completed = filteredPengajuan.filter(item => normalizeStatus(item.status) === 'selesai');
@@ -91,6 +92,7 @@ function FrontingPageContent() {
             approved: { count: approved.length, amount: calculateSum(approved) },
             pending: { count: pending.length, amount: calculateSum(pending) },
             rejected: { count: rejected.length, amount: calculateSum(rejected) },
+            berkasDikirim: { count: berkasDikirim.length, amount: calculateSum(berkasDikirim) },
             disbursed: { count: disbursed.length, amount: calculateSum(disbursed) },
             menungguPencairan: { count: menungguPencairan.length, amount: calculateSum(menungguPencairan) },
             completed: { count: completed.length, amount: calculateSum(completed) },
@@ -139,6 +141,13 @@ function FrontingPageContent() {
             amount: formatCurrency(stats.menungguPencairan.amount),
             icon: Truck,
             gradient: 'from-indigo-500 to-blue-500',
+        },
+        {
+            name: 'Berkas Dikirim',
+            value: stats.berkasDikirim.count.toString(),
+            amount: formatCurrency(stats.berkasDikirim.amount),
+            icon: FileUp,
+            gradient: 'from-fuchsia-500 to-pink-500',
         },
         {
             name: 'Selesai',
@@ -204,7 +213,7 @@ function FrontingPageContent() {
                 console.log('[FrontingPage] Waiting for user login...');
                 return;
             }
-            
+
             // Log current user role for debugging
             console.log('[FrontingPage] 👤 Current user role:', user.role);
             console.log('[FrontingPage] 👤 Current user ID:', user.id);
@@ -232,7 +241,7 @@ function FrontingPageContent() {
                 console.log('[FrontingPage] Kantor:', storedUser.kcu_name || storedUser.kc_name);
                 console.log('[FrontingPage] User Role:', user.role);
                 console.log('[FrontingPage] Filter object:', { petugas_nippos: storedUser.nippos });
-                
+
                 // Fetch dengan filter petugas_nippos dari localStorage
                 const data = await pengajuanRepository.getPengajuanList({
                     petugas_nippos: storedUser.nippos, // Ambil dari localStorage
@@ -240,10 +249,10 @@ function FrontingPageContent() {
                     page: 1,
                     limit: 1000,
                 });
-                
+
                 console.log('[FrontingPage] ✅ Raw response data:', data);
                 console.log('[FrontingPage] ✅ Pengajuan count:', data.length);
-                
+
                 // IMPORTANT: Verify that returned data actually has the correct NIPPOS
                 if (data.length > 0) {
                     console.log('[FrontingPage] 📋 Sample data (first 3 items):');
@@ -254,17 +263,17 @@ function FrontingPageContent() {
                         console.log(`      Expected: ${storedUser.nippos}`);
                         console.log(`      Match: ${item.petugas_nippos === storedUser.nippos ? '✅' : '❌ MISMATCH!'}`);
                     });
-                    
+
                     // Count how many items actually match the NIPPOS
                     const matchCount = data.filter((item: any) => item.petugas_nippos === storedUser.nippos).length;
                     const nullCount = data.filter((item: any) => !item.petugas_nippos).length;
-                    
+
                     console.log('[FrontingPage] 📊 Filter Verification:');
                     console.log(`  Total items: ${data.length}`);
                     console.log(`  Items with matching NIPPOS: ${matchCount}`);
                     console.log(`  Items with NULL NIPPOS: ${nullCount}`);
                     console.log(`  Items with different NIPPOS: ${data.length - matchCount - nullCount}`);
-                    
+
                     if (matchCount !== data.length) {
                         console.error('[FrontingPage] ❌❌❌ FILTER NOT WORKING! ❌❌❌');
                         console.error('[FrontingPage] Backend returned data that does NOT match the filter!');
@@ -274,7 +283,7 @@ function FrontingPageContent() {
                         console.log('[FrontingPage] ✅ All data matches the NIPPOS filter!');
                     }
                 }
-                
+
                 setPengajuanList(Array.isArray(data) ? data : []);
                 console.log('[FrontingPage] ========== FETCH COMPLETE ==========');
             } catch (err: any) {
@@ -303,11 +312,11 @@ function FrontingPageContent() {
                     console.log('[FrontingPage] ✅ Found data in localStorage');
                     setFrontingUser(storedUser);
                     setIsLoading(false); // Show page immediately
-                    
+
                     // Always auto-login to ensure a fresh valid token (stale/mismatched tokens cause 401)
                     console.log('[FrontingPage] Performing auto-login to ensure valid token...');
                     autoLoginPetugasPos(); // Don't await - run in background
-                    
+
                     return;
                 }
 
@@ -339,13 +348,13 @@ function FrontingPageContent() {
                     // Save to localStorage (NO VALIDATION)
                     storeFrontingUser(userData);
                     setFrontingUser(userData);
-                    
+
                     // Show page immediately - don't wait for auto-login
                     setIsLoading(false);
-                    
+
                     // Clean URL immediately (non-blocking)
                     router.replace('/fronting');
-                    
+
                     // AUTO-LOGIN in background (non-blocking)
                     console.log('[FrontingPage] Attempting auto-login in background...');
                     autoLoginPetugasPos().then(loginSuccess => {
@@ -636,7 +645,7 @@ function FrontingPageContent() {
                             <div className="flex items-center justify-between mb-2">
                                 <h2 className="text-sm font-bold text-slate-800">Statistik Pengajuan</h2>
                                 {isLoggedIn && !loadingPengajuan && (
-                                    <button 
+                                    <button
                                         onClick={refreshPengajuanData}
                                         className="text-xs font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-1"
                                     >

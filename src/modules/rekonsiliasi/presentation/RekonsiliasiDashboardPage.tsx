@@ -24,6 +24,7 @@ import {
     Wallet,
     FileText,
     Send,
+    FileUp,
 } from 'lucide-react';
 import {
     AreaChart, Area,
@@ -40,6 +41,7 @@ const STATUS_COLORS: Record<string, { bg: string; text: string; ring: string; do
     'Revisi': { bg: 'bg-orange-50', text: 'text-orange-700', ring: 'ring-orange-200', dot: 'bg-orange-400', hex: '#f97316' },
     'Menunggu Approval Manager': { bg: 'bg-blue-50', text: 'text-blue-700', ring: 'ring-blue-200', dot: 'bg-blue-400', hex: '#3b82f6' },
     'Menunggu Verifikasi Admin Unit': { bg: 'bg-indigo-50', text: 'text-indigo-700', ring: 'ring-indigo-200', dot: 'bg-indigo-400', hex: '#6366f1' },
+    'Menunggu Verifikasi Akhir': { bg: 'bg-fuchsia-50', text: 'text-fuchsia-700', ring: 'ring-fuchsia-200', dot: 'bg-fuchsia-400', hex: '#d946ef' },
     'Menunggu Pencairan': { bg: 'bg-purple-50', text: 'text-purple-700', ring: 'ring-purple-200', dot: 'bg-purple-400', hex: '#a855f7' },
     'Disetujui': { bg: 'bg-emerald-50', text: 'text-emerald-700', ring: 'ring-emerald-200', dot: 'bg-emerald-400', hex: '#10b981' },
     'Dicairkan': { bg: 'bg-green-50', text: 'text-green-700', ring: 'ring-green-200', dot: 'bg-green-500', hex: '#22c55e' },
@@ -57,6 +59,7 @@ const STATUS_ICONS: Record<string, React.ReactNode> = {
     'Revisi': <AlertCircle className="h-3.5 w-3.5" />,
     'Menunggu Approval Manager': <Clock className="h-3.5 w-3.5" />,
     'Menunggu Verifikasi Admin Unit': <FileCheck className="h-3.5 w-3.5" />,
+    'Menunggu Verifikasi Akhir': <FileUp className="h-3.5 w-3.5" />,
     'Menunggu Pencairan': <DollarSign className="h-3.5 w-3.5" />,
     'Disetujui': <CheckCircle2 className="h-3.5 w-3.5" />,
     'Dicairkan': <CheckCircle2 className="h-3.5 w-3.5" />,
@@ -164,6 +167,7 @@ export const RekonsiliasiDashboardPage: React.FC = () => {
     const kpiDitolak = useMemo(() => getStatusData(['Ditolak', 'Rejected']), [stats]);
     const kpiPencairan = useMemo(() => getStatusData(['Menunggu Pencairan', 'Dicairkan']), [stats]);
     const kpiVerifAdmin = useMemo(() => getStatusData(['Menunggu Verifikasi Admin Unit']), [stats]);
+    const kpiBerkasDikirim = useMemo(() => getStatusData(['Menunggu Verifikasi Akhir']), [stats]);
     const kpiSelesai = useMemo(() => getStatusData(['Selesai', 'Lunas', 'Completed']), [stats]);
 
     // ===== Derived =====
@@ -263,7 +267,7 @@ export const RekonsiliasiDashboardPage: React.FC = () => {
             </div>
 
             {/* ===== KPI Cards (sesuai status project) ===== */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-8 gap-3">
                 <KPICard label="Total Pengajuan" value={kpiTotal.count.toLocaleString('id-ID')} sub={formatCurrency(kpiTotal.amount)}
                     icon={<FileText className="h-3 w-3 text-blue-600" />} iconBg="bg-blue-100" />
                 <KPICard label="Disetujui" value={kpiDisetujui.count.toLocaleString('id-ID')} sub={formatCurrency(kpiDisetujui.amount)}
@@ -276,6 +280,8 @@ export const RekonsiliasiDashboardPage: React.FC = () => {
                     icon={<Wallet className="h-3 w-3 text-purple-600" />} iconBg="bg-purple-100" valueColor="text-purple-600" />
                 <KPICard label="Verifikasi Admin Unit" value={kpiVerifAdmin.count.toLocaleString('id-ID')} sub={formatCurrency(kpiVerifAdmin.amount)}
                     icon={<Send className="h-3 w-3 text-indigo-600" />} iconBg="bg-indigo-100" valueColor="text-indigo-600" />
+                <KPICard label="Berkas Dikirim" value={kpiBerkasDikirim.count.toLocaleString('id-ID')} sub={formatCurrency(kpiBerkasDikirim.amount)}
+                    icon={<FileUp className="h-3 w-3 text-fuchsia-600" />} iconBg="bg-fuchsia-100" valueColor="text-fuchsia-600" />
                 <KPICard label="Selesai" value={kpiSelesai.count.toLocaleString('id-ID')} sub={formatCurrency(kpiSelesai.amount)}
                     icon={<FileCheck className="h-3 w-3 text-teal-600" />} iconBg="bg-teal-100" valueColor="text-teal-600" />
             </div>

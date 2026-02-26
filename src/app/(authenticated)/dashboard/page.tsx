@@ -139,6 +139,7 @@ export default function DashboardPage() {
         const ditolak = filteredPengajuan.filter(item => normalizeStatus(item.status) === 'ditolak');
         const pencairan = filteredPengajuan.filter(item => ['menunggu pencairan', 'dicairkan'].includes(normalizeStatus(item.status)));
         const pengiriman = filteredPengajuan.filter(item => normalizeStatus(item.status) === 'menunggu verifikasi admin unit');
+        const berkasDikirim = filteredPengajuan.filter(item => normalizeStatus(item.status) === 'menunggu verifikasi akhir');
         const selesai = filteredPengajuan.filter(item => normalizeStatus(item.status) === 'selesai');
         const belumSelesai = filteredPengajuan.filter(item => normalizeStatus(item.status) !== 'selesai');
 
@@ -149,6 +150,7 @@ export default function DashboardPage() {
             rejected: { count: ditolak.length, amount: calculateSum(ditolak) },
             pencairan: { count: pencairan.length, amount: calculateSum(pencairan) },
             pengiriman: { count: pengiriman.length, amount: calculateSum(pengiriman) },
+            berkasDikirim: { count: berkasDikirim.length, amount: calculateSum(berkasDikirim) },
             selesai: { count: selesai.length, amount: calculateSum(selesai) },
         };
     }, [filteredPengajuan]);
@@ -212,6 +214,13 @@ export default function DashboardPage() {
             amount: formatCurrency(filteredStats.pengiriman.amount),
             icon: Truck,
             gradient: 'from-indigo-500 to-blue-500',
+        },
+        {
+            name: 'Berkas Dikirim',
+            value: filteredStats.berkasDikirim.count.toString(),
+            amount: formatCurrency(filteredStats.berkasDikirim.amount),
+            icon: FileUp,
+            gradient: 'from-fuchsia-500 to-pink-500',
         },
         {
             name: 'Selesai',
@@ -684,8 +693,8 @@ export default function DashboardPage() {
                                                                 <div className="flex items-center justify-between gap-2">
                                                                     <span className="text-[10px] font-bold text-slate-800 truncate">{item.nama_lengkap}</span>
                                                                     <span className={`px-1.5 py-0.5 rounded text-[8px] font-bold whitespace-nowrap ${item.status === 'Revisi'
-                                                                            ? 'bg-amber-100 text-amber-700'
-                                                                            : 'bg-slate-100 text-slate-700'
+                                                                        ? 'bg-amber-100 text-amber-700'
+                                                                        : 'bg-slate-100 text-slate-700'
                                                                         }`}>
                                                                         {item.status}
                                                                     </span>
@@ -1242,8 +1251,8 @@ export default function DashboardPage() {
                                                             </td>
                                                             <td className="px-6 py-4 whitespace-nowrap">
                                                                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${item.status === 'Revisi'
-                                                                        ? 'bg-amber-100 text-amber-800'
-                                                                        : 'bg-slate-100 text-slate-800'
+                                                                    ? 'bg-amber-100 text-amber-800'
+                                                                    : 'bg-slate-100 text-slate-800'
                                                                     }`}>
                                                                     {item.status}
                                                                 </span>

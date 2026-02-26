@@ -3,7 +3,7 @@
 import React, { useMemo, useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { FileText, Activity, CheckCircle, XCircle, Wallet, Truck, Flag } from 'lucide-react';
+import { FileText, Activity, CheckCircle, XCircle, Wallet, Truck, Flag, FileUp } from 'lucide-react';
 import { MobileLayoutWrapper } from '@/modules/pengajuan/presentation/components/MobileLayoutWrapper';
 import { usePengajuan } from '@/modules/pengajuan/presentation/usePengajuan';
 import {
@@ -44,25 +44,30 @@ export const FrontingPage = () => {
         }).format(amount);
     };
 
+    const normalizeStatus = (status?: string) => (status || '').trim().toLowerCase();
+
     // Calculate stats
     const stats = useMemo(() => {
         const calculateSum = (items: typeof pengajuanList) => items.reduce((sum, item) => sum + (Number(item.jumlah_pembiayaan) || 0), 0);
 
-        const approved = pengajuanList.filter(item => item.status === 'APPROVED');
-        const pending = pengajuanList.filter(item => item.status === 'PENDING');
-        const rejected = pengajuanList.filter(item => item.status === 'REJECTED');
-        const disbursed = pengajuanList.filter(item => item.status === 'DISBURSED');
-        const shipping = pengajuanList.filter(item => item.status === 'SHIPPING');
-        const completed = pengajuanList.filter(item => item.status === 'COMPLETED');
+        const disetujui = pengajuanList.filter(item => normalizeStatus(item.status) === 'disetujui');
+        const pending = pengajuanList.filter(item => normalizeStatus(item.status) === 'pending');
+        const ditolak = pengajuanList.filter(item => normalizeStatus(item.status) === 'ditolak');
+        const pencairan = pengajuanList.filter(item => ['menunggu pencairan', 'dicairkan'].includes(normalizeStatus(item.status)));
+        const verifikasiAdminUnit = pengajuanList.filter(item => normalizeStatus(item.status) === 'menunggu verifikasi admin unit');
+        const berkasDikirim = pengajuanList.filter(item => normalizeStatus(item.status) === 'menunggu verifikasi akhir');
+        const selesai = pengajuanList.filter(item => normalizeStatus(item.status) === 'selesai');
+        const belumSelesai = pengajuanList.filter(item => normalizeStatus(item.status) !== 'selesai');
 
         return {
-            total: { count: pengajuanList.length, amount: calculateSum(pengajuanList) },
-            approved: { count: approved.length, amount: calculateSum(approved) },
+            total: { count: belumSelesai.length, amount: calculateSum(belumSelesai) },
+            approved: { count: disetujui.length, amount: calculateSum(disetujui) },
             pending: { count: pending.length, amount: calculateSum(pending) },
-            rejected: { count: rejected.length, amount: calculateSum(rejected) },
-            disbursed: { count: disbursed.length, amount: calculateSum(disbursed) },
-            shipping: { count: shipping.length, amount: calculateSum(shipping) },
-            completed: { count: completed.length, amount: calculateSum(completed) },
+            rejected: { count: ditolak.length, amount: calculateSum(ditolak) },
+            disbursed: { count: pencairan.length, amount: calculateSum(pencairan) },
+            verifikasiAdminUnit: { count: verifikasiAdminUnit.length, amount: calculateSum(verifikasiAdminUnit) },
+            berkasDikirim: { count: berkasDikirim.length, amount: calculateSum(berkasDikirim) },
+            completed: { count: selesai.length, amount: calculateSum(selesai) },
         };
     }, [pengajuanList]);
 
@@ -103,11 +108,18 @@ export const FrontingPage = () => {
             gradient: 'from-violet-500 to-purple-500',
         },
         {
-            name: 'Proses Pengiriman',
-            value: stats.shipping.count.toString(),
-            amount: formatCurrency(stats.shipping.amount),
+            name: 'Verifikasi Admin Unit',
+            value: stats.verifikasiAdminUnit.count.toString(),
+            amount: formatCurrency(stats.verifikasiAdminUnit.amount),
             icon: Truck,
             gradient: 'from-indigo-500 to-blue-500',
+        },
+        {
+            name: 'Berkas Dikirim',
+            value: stats.berkasDikirim.count.toString(),
+            amount: formatCurrency(stats.berkasDikirim.amount),
+            icon: Flag,
+            gradient: 'from-fuchsia-500 to-pink-500',
         },
         {
             name: 'Selesai',
@@ -123,14 +135,14 @@ export const FrontingPage = () => {
         const checkAuth = async () => {
             try {
                 console.log('[FrontingPage] Starting authentication check...');
-                
+
                 // EXACT sama seperti test-decrypt
                 const encryptedData = searchParams?.get('data');
-                
+
                 if (!encryptedData) {
                     console.log('[FrontingPage] No data parameter, checking localStorage...');
                     const storedUser = getFrontingUser();
-                    
+
                     if (storedUser && isFrontingSessionValid()) {
                         console.log('[FrontingPage] ✅ Valid stored session');
                         setFrontingUser(storedUser);
@@ -142,26 +154,26 @@ export const FrontingPage = () => {
                     }
                     return;
                 }
-                
+
                 console.log('[FrontingPage] ✓ Got encrypted data: ' + encryptedData.substring(0, 50) + '...');
                 console.log('[FrontingPage] Data length: ' + encryptedData.length + ' chars');
-                
+
                 // Call decrypt - EXACT sama seperti test-decrypt
                 console.log('[FrontingPage] Calling decryptFrontingData (async)...');
                 const userData = await decryptFrontingData(encryptedData);
-                
+
                 if (userData) {
                     console.log('[FrontingPage] ✅ Decryption successful!');
                     console.log('[FrontingPage] User: ' + userData.name);
                     console.log('[FrontingPage] NIPPOS: ' + userData.nippos);
                     console.log('[FrontingPage] Account: ' + userData.account_no);
-                    
+
                     // Store and display (NO VALIDATION)
                     storeFrontingUser(userData);
                     setFrontingUser(userData);
                     setIsAuthChecking(false);
                     setDecryptError('');
-                    
+
                     // Clean URL
                     setTimeout(() => {
                         console.log('[FrontingPage] Cleaning URL...');
@@ -172,7 +184,7 @@ export const FrontingPage = () => {
                     setDecryptError('Decryption failed - returned null. Check browser console for details.');
                     setIsAuthChecking(false);
                 }
-                
+
             } catch (error: any) {
                 console.log('[FrontingPage] ❌ Error: ' + error.message);
                 console.log('[FrontingPage] Stack: ' + error.stack);
@@ -215,7 +227,7 @@ export const FrontingPage = () => {
                             <p className="text-red-900 font-semibold text-sm mb-2">Error Details:</p>
                             <p className="text-red-700 text-sm font-mono break-all">{decryptError}</p>
                         </div>
-                        
+
                         {/* Special message for JSON parse errors */}
                         {decryptError.includes('JSON') && (
                             <div className="bg-yellow-50 border border-yellow-300 rounded-lg p-4 text-left mb-4">
@@ -228,7 +240,7 @@ export const FrontingPage = () => {
                                 </p>
                             </div>
                         )}
-                        
+
                         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
                             <p className="text-blue-900 font-semibold text-sm mb-2">📋 How to Debug:</p>
                             <ol className="text-left text-blue-800 text-xs space-y-1 list-decimal list-inside">
@@ -239,7 +251,7 @@ export const FrontingPage = () => {
                                 <li>Copy the full decrypted text and share it</li>
                             </ol>
                         </div>
-                        
+
                         <p className="text-slate-600 text-sm mb-4">
                             The console contains detailed step-by-step decryption logs
                         </p>
@@ -369,7 +381,7 @@ export const FrontingPage = () => {
                             </h3>
                             <div className="bg-slate-900 rounded-lg p-3 overflow-x-auto">
                                 <pre className="text-xs text-green-400 font-mono">
-{JSON.stringify(frontingUser, null, 2)}
+                                    {JSON.stringify(frontingUser, null, 2)}
                                 </pre>
                             </div>
                         </div>
@@ -412,7 +424,7 @@ export const FrontingPage = () => {
 // Export with Suspense wrapper to avoid useSearchParams error
 export default function FrontingPageWrapper() {
     console.log('[FrontingPageWrapper] Component mounted');
-    
+
     return (
         <Suspense fallback={
             <div className="min-h-screen bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center">
