@@ -8,6 +8,9 @@ export interface User {
     regional_kode?: string;
     kcu_kode?: string;
     kc_kode?: string;
+    regional_nama?: string;
+    kcu_nama?: string;
+    kc_nama?: string;
     created_at: string;
     updated_at: string;
 }

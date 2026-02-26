@@ -148,15 +148,12 @@ export const UserList: React.FC = () => {
         } catch (error: unknown) { console.error('Failed to fetch units:', error); }
     };
 
-    // Fetch POS hierarchy options
+    // Fetch POS hierarchy options (kode+nama pairs from backend)
     const fetchRegionalOptions = async () => {
         try {
             const options = await rekonsiliasiRepo.getFilterOptions();
-            // We need kode+nama pairs. Since the filter options API returns names,
-            // we'll use the name as both kode and nama for now.
-            // For proper kode, we need a dedicated endpoint.
-            if (options?.regionals) {
-                setRegionalOptions(options.regionals.map(r => ({ kode: r, nama: r })));
+            if (options?.regional_options) {
+                setRegionalOptions(options.regional_options);
             }
         } catch { /* silently fail */ }
     };
@@ -164,8 +161,8 @@ export const UserList: React.FC = () => {
     const fetchKcuByRegional = async (regionalKode: string) => {
         try {
             const options = await rekonsiliasiRepo.getFilterOptions(regionalKode);
-            if (options?.kcu_list) {
-                setKcuOptions(options.kcu_list.map(k => ({ kode: k, nama: k })));
+            if (options?.kcu_options) {
+                setKcuOptions(options.kcu_options);
             }
         } catch { setKcuOptions([]); }
     };
@@ -173,8 +170,8 @@ export const UserList: React.FC = () => {
     const fetchKcByKcu = async (regionalKode: string, kcuKode: string) => {
         try {
             const options = await rekonsiliasiRepo.getFilterOptions(regionalKode, kcuKode);
-            if (options?.kc_list) {
-                setKcOptions(options.kc_list.map(k => ({ kode: k, nama: k })));
+            if (options?.kc_options) {
+                setKcOptions(options.kc_options);
             }
         } catch { setKcOptions([]); }
     };
@@ -400,7 +397,17 @@ export const UserList: React.FC = () => {
                                             )}
                                             {item.regional_kode && (
                                                 <div className="px-2 py-1 bg-indigo-50 text-indigo-600 rounded-md font-medium flex items-center gap-1">
-                                                    <MapPin className="w-3 h-3" />{item.regional_kode}
+                                                    <MapPin className="w-3 h-3" />{item.regional_nama || item.regional_kode}
+                                                </div>
+                                            )}
+                                            {item.kcu_kode && (
+                                                <div className="px-2 py-1 bg-blue-50 text-blue-600 rounded-md font-medium flex items-center gap-1">
+                                                    <Building2 className="w-3 h-3" />{item.kcu_nama || item.kcu_kode}
+                                                </div>
+                                            )}
+                                            {item.kc_kode && (
+                                                <div className="px-2 py-1 bg-green-50 text-green-600 rounded-md font-medium flex items-center gap-1">
+                                                    <Building2 className="w-3 h-3" />{item.kc_nama || item.kc_kode}
                                                 </div>
                                             )}
                                         </div>
@@ -497,9 +504,9 @@ export const UserList: React.FC = () => {
                                                 <td className="px-6 py-4 text-sm text-gray-500">
                                                     {POS_HIERARCHY_ROLES.includes(u.role) ? (
                                                         <div className="flex flex-col gap-0.5">
-                                                            {u.regional_kode && <span className="text-indigo-600 font-medium text-xs">📍 {u.regional_kode}</span>}
-                                                            {u.kcu_kode && <span className="text-blue-600 font-medium text-xs">🏢 {u.kcu_kode}</span>}
-                                                            {u.kc_kode && <span className="text-green-600 font-medium text-xs">🏠 {u.kc_kode}</span>}
+                                                            {u.regional_kode && <span className="text-indigo-600 font-medium text-xs">📍 {u.regional_nama || u.regional_kode}</span>}
+                                                            {u.kcu_kode && <span className="text-blue-600 font-medium text-xs">🏢 {u.kcu_nama || u.kcu_kode}</span>}
+                                                            {u.kc_kode && <span className="text-green-600 font-medium text-xs">🏠 {u.kc_nama || u.kc_kode}</span>}
                                                         </div>
                                                     ) : (
                                                         u.unit || '-'
@@ -604,7 +611,7 @@ export const UserList: React.FC = () => {
                                                 <select value={formData.regional_kode} onChange={(e) => handleRegionalChange(e.target.value)}
                                                     className="w-full px-3 py-2 text-sm text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500">
                                                     <option value="">Pilih Regional...</option>
-                                                    {regionalOptions.map((r) => <option key={r.kode} value={r.kode}>{r.nama}</option>)}
+                                                    {regionalOptions.map((r) => <option key={r.kode} value={r.kode}>{r.kode} - {r.nama}</option>)}
                                                 </select>
                                             </div>
 
@@ -616,7 +623,7 @@ export const UserList: React.FC = () => {
                                                         disabled={!formData.regional_kode}
                                                         className={`w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 ${!formData.regional_kode ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200' : 'text-gray-900 border-gray-300'}`}>
                                                         <option value="">{!formData.regional_kode ? '← Pilih Regional dulu' : 'Pilih KCU...'}</option>
-                                                        {kcuOptions.map((k) => <option key={k.kode} value={k.kode}>{k.nama}</option>)}
+                                                        {kcuOptions.map((k) => <option key={k.kode} value={k.kode}>{k.kode} - {k.nama}</option>)}
                                                     </select>
                                                 </div>
                                             )}
@@ -629,7 +636,7 @@ export const UserList: React.FC = () => {
                                                         disabled={!formData.kcu_kode}
                                                         className={`w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 ${!formData.kcu_kode ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200' : 'text-gray-900 border-gray-300'}`}>
                                                         <option value="">{!formData.kcu_kode ? '← Pilih KCU dulu' : 'Pilih KC...'}</option>
-                                                        {kcOptions.map((k) => <option key={k.kode} value={k.kode}>{k.nama}</option>)}
+                                                        {kcOptions.map((k) => <option key={k.kode} value={k.kode}>{k.kode} - {k.nama}</option>)}
                                                     </select>
                                                 </div>
                                             )}

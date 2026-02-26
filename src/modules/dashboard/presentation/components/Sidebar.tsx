@@ -29,8 +29,12 @@ interface SidebarProps {
     onClose: () => void;
 }
 
+// Roles that can ONLY access Rekonsiliasi menus
+const REKON_ONLY_ROLES = ['admin-pos', 'regional-pos', 'kcu-pos', 'kc-pos'];
+
 export const Sidebar: React.FC<SidebarProps> = ({ userRole, isOpen, onClose }) => {
     const pathname = usePathname();
+    const isRekonOnlyRole = REKON_ONLY_ROLES.includes(userRole || '');
     const [isDataMasterOpen, setIsDataMasterOpen] = useState(
         pathname.startsWith('/unit') ||
         pathname.startsWith('/users') ||
@@ -110,8 +114,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ userRole, isOpen, onClose }) =
 
                 {/* Navigation Section */}
                 <nav className="flex-1 space-y-1 px-3 py-6 overflow-y-auto max-h-[calc(100vh-4rem)]">
-                    {/* Admin POS - Only Rekonsiliasi Menu */}
-                    {userRole === 'admin-pos' ? (
+                    {/* Rekon-Only Roles (admin-pos, regional-pos, kcu-pos, kc-pos) - Only Rekonsiliasi Menu */}
+                    {isRekonOnlyRole ? (
                         <>
                             <div className="px-3 mb-2">
                                 <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">

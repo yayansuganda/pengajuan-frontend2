@@ -23,11 +23,14 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
         }
     }, [loading]);
 
-    // Redirect admin-pos to /rekonsiliasi if trying to access other pages
+    // Roles that can ONLY access Rekonsiliasi menus
+    const rekonOnlyRoles = ['admin-pos', 'regional-pos', 'kcu-pos', 'kc-pos'];
+
+    // Redirect rekon-only roles to /rekonsiliasi if trying to access other pages
     useEffect(() => {
-        if (!loading && user && user.role === 'admin-pos') {
-            const adminPosAllowed = ['/rekonsiliasi', '/rekonsiliasi/dashboard', '/profile'];
-            if (!adminPosAllowed.includes(pathname)) {
+        if (!loading && user && rekonOnlyRoles.includes(user.role)) {
+            const allowedPaths = ['/rekonsiliasi', '/rekonsiliasi/dashboard', '/profile'];
+            if (!allowedPaths.includes(pathname)) {
                 router.push('/rekonsiliasi');
             }
         }

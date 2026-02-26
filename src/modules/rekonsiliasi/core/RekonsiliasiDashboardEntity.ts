@@ -53,4 +53,13 @@ export interface RekonsiliasiFilterOptions {
     kcu_list: string[];
     kc_list: string[];
     kcu_regional_map: Record<string, string>; // KCU nama → Regional nama
+    // New kode+nama pairs for user form dropdowns
+    regional_options: PosKantorOption[];
+    kcu_options: PosKantorOption[];
+    kc_options: PosKantorOption[];
+}
+
+export interface PosKantorOption {
+    kode: string;
+    nama: string;
 }
