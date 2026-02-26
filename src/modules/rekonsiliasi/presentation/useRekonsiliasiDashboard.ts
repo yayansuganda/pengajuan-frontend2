@@ -11,11 +11,22 @@ export const useRekonsiliasiDashboard = () => {
     const [dateFrom, setDateFrom] = useState('');
     const [dateTo, setDateTo] = useState('');
 
+    // Additional filters for POS Hierarchy
+    const [filterRegional, setFilterRegional] = useState('');
+    const [filterKcu, setFilterKcu] = useState('');
+    const [filterKc, setFilterKc] = useState('');
+
     const fetchStats = useCallback(async () => {
         try {
             setLoading(true);
             setError('');
-            const data = await repo.getStats(dateFrom || undefined, dateTo || undefined);
+            const data = await repo.getStats(
+                dateFrom || undefined,
+                dateTo || undefined,
+                filterRegional || undefined,
+                filterKcu || undefined,
+                filterKc || undefined
+            );
             setStats(data);
         } catch (err: any) {
             const errorMessage = err.message || 'Gagal memuat data rekonsiliasi';
@@ -24,7 +35,7 @@ export const useRekonsiliasiDashboard = () => {
         } finally {
             setLoading(false);
         }
-    }, [dateFrom, dateTo]);
+    }, [dateFrom, dateTo, filterRegional, filterKcu, filterKc]);
 
     useEffect(() => {
         fetchStats();
@@ -36,8 +47,14 @@ export const useRekonsiliasiDashboard = () => {
         error,
         dateFrom,
         dateTo,
+        filterRegional,
+        filterKcu,
+        filterKc,
         setDateFrom,
         setDateTo,
+        setFilterRegional,
+        setFilterKcu,
+        setFilterKc,
         refresh: fetchStats,
     };
 };

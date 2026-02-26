@@ -1,7 +1,9 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useAuth } from '@/modules/auth/presentation/useAuth';
+import { RekonsiliasiDashboardRepository } from '../data/RekonsiliasiDashboardRepository';
+import { RekonsiliasiFilterOptions } from '../core/RekonsiliasiDashboardEntity';
 import { useRekonsiliasiDashboard } from './useRekonsiliasiDashboard';
 import {
     BarChart3,
@@ -25,6 +27,9 @@ import {
     FileText,
     Send,
     FileUp,
+    Filter,
+    ChevronDown,
+    X,
 } from 'lucide-react';
 import {
     AreaChart, Area,
@@ -157,16 +162,80 @@ const SectionCard: React.FC<{
 // ===== Main Component =====
 export const RekonsiliasiDashboardPage: React.FC = () => {
     const { user } = useAuth();
-    const { stats, loading, dateFrom, dateTo, setDateFrom, setDateTo, refresh } = useRekonsiliasiDashboard();
+    const {
+        stats, loading, error, refresh,
+        dateFrom, setDateFrom, dateTo, setDateTo,
+        filterRegional, setFilterRegional,
+        filterKcu, setFilterKcu,
+        filterKc, setFilterKc
+    } = useRekonsiliasiDashboard();
 
     // Roles allowed to access rekonsiliasi
     const REKON_ALLOWED_ROLES = ['super-admin', 'admin-pos', 'regional-pos', 'kcu-pos', 'kc-pos'];
+    const ALLOWED_FILTER_ROLES = ['super-admin', 'admin-pos', 'regional-pos', 'kcu-pos', 'kc-pos'];
 
-    React.useEffect(() => {
+    const [filterOptions, setFilterOptions] = useState<RekonsiliasiFilterOptions | null>(null);
+    const [kcuListForRegional, setKcuListForRegional] = useState<string[]>([]);
+    const repo = useMemo(() => new RekonsiliasiDashboardRepository(), []);
+
+    useEffect(() => {
         if (user && !REKON_ALLOWED_ROLES.includes(user.role)) {
             window.location.href = '/dashboard';
         }
+    }, [user, REKON_ALLOWED_ROLES]);
+
+    // Fetch filter options with cascading support
+    const fetchFilterOptions = async (regional?: string, kcu?: string) => {
+        try {
+            const options = await repo.getFilterOptions(regional || undefined, kcu || undefined);
+            setFilterOptions(options);
+            return options;
+        } catch {
+            return null;
+        }
+    };
+
+    // Initial filter options
+    useEffect(() => {
+        if (user && ALLOWED_FILTER_ROLES.includes(user.role)) {
+            fetchFilterOptions();
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [user]);
+
+    // Cascading filter: when Regional changes, fetch KCU list for that regional
+    useEffect(() => {
+        if (filterRegional) {
+            setFilterKcu('');
+            setFilterKc('');
+            fetchFilterOptions(filterRegional, '').then((opts) => {
+                setKcuListForRegional(opts?.kcu_list || []);
+            });
+        } else {
+            setFilterKcu('');
+            setFilterKc('');
+            setKcuListForRegional([]);
+            fetchFilterOptions('', '');
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [filterRegional]);
+
+    // Cascading filter: when KCU changes, fetch KC list
+    useEffect(() => {
+        if (filterKcu) {
+            setFilterKc('');
+            fetchFilterOptions(filterRegional, filterKcu);
+        } else if (filterRegional) {
+            setFilterKc('');
+            fetchFilterOptions(filterRegional, '');
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [filterKcu]);
+
+    const activeFilterCount = (filterRegional ? 1 : 0) + (filterKcu ? 1 : 0) + (filterKc ? 1 : 0);
+    const regionalOptions = filterOptions?.regionals || [];
+    const kcuOptions = filterOptions?.kcu_list || [];
+    const kcOptions = filterOptions?.kc_list || [];
 
     // ===== Derived: Helper to get count+amount from by_status =====
     const getStatusData = (statusNames: string[]) => {
@@ -280,6 +349,86 @@ export const RekonsiliasiDashboardPage: React.FC = () => {
                     </button>
                 </div>
             </div>
+
+            {/* ===== Role Based Regional/KCU/KC Filter Dropdowns ===== */}
+            {user && ALLOWED_FILTER_ROLES.includes(user.role) && (
+                <div className="p-3 bg-white rounded-xl border border-slate-200 space-y-3 shadow-sm">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                        <div className="flex items-center gap-2 text-slate-500 shrink-0">
+                            <Filter className="h-4 w-4" />
+                            <span className="text-sm font-medium text-slate-600">Filter Data:</span>
+                        </div>
+
+                        {/* Filter Kantor Regional */}
+                        <div className="relative min-w-0 w-full sm:w-auto sm:flex-1 sm:max-w-64">
+                            <select
+                                value={filterRegional}
+                                onChange={(e) => setFilterRegional(e.target.value)}
+                                className="w-full py-1.5 pl-3 pr-8 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white appearance-none"
+                            >
+                                <option value="">Semua Kantor Regional</option>
+                                {regionalOptions.map((regional) => (
+                                    <option key={regional} value={regional}>{regional}</option>
+                                ))}
+                            </select>
+                            <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+                        </div>
+
+                        {/* Filter Kantor KCU */}
+                        <div className="relative min-w-0 w-full sm:w-auto sm:flex-1 sm:max-w-56">
+                            <select
+                                value={filterKcu}
+                                onChange={(e) => setFilterKcu(e.target.value)}
+                                disabled={!filterRegional}
+                                className={`w-full py-1.5 pl-3 pr-8 border rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none appearance-none ${!filterRegional
+                                    ? 'bg-slate-50 border-slate-200 text-slate-400 cursor-not-allowed'
+                                    : 'bg-white border-slate-300'
+                                    }`}
+                            >
+                                <option value="">
+                                    {!filterRegional ? '← Pilih Regional dulu' : `Semua KCU`}
+                                </option>
+                                {kcuOptions.map((kcu) => (
+                                    <option key={kcu} value={kcu}>{kcu}</option>
+                                ))}
+                            </select>
+                            <ChevronDown className={`absolute right-2.5 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none ${!filterRegional ? 'text-slate-300' : 'text-slate-400'}`} />
+                        </div>
+
+                        {/* Filter Kantor KC */}
+                        <div className="relative min-w-0 w-full sm:w-auto sm:flex-1 sm:max-w-56">
+                            <select
+                                value={filterKc}
+                                onChange={(e) => setFilterKc(e.target.value)}
+                                disabled={!filterKcu}
+                                className={`w-full py-1.5 pl-3 pr-8 border rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none appearance-none ${!filterKcu
+                                    ? 'bg-slate-50 border-slate-200 text-slate-400 cursor-not-allowed'
+                                    : 'bg-white border-slate-300'
+                                    }`}
+                            >
+                                <option value="">
+                                    {!filterKcu ? '← Pilih KCU dulu' : `Semua KC`}
+                                </option>
+                                {kcOptions.map((kc) => (
+                                    <option key={kc} value={kc}>{kc}</option>
+                                ))}
+                            </select>
+                            <ChevronDown className={`absolute right-2.5 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none ${!filterKcu ? 'text-slate-300' : 'text-slate-400'}`} />
+                        </div>
+
+                        {/* Reset Filter */}
+                        {activeFilterCount > 0 && (
+                            <button
+                                onClick={() => { setFilterRegional(''); setFilterKcu(''); setFilterKc(''); }}
+                                className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-600 text-xs font-medium rounded-lg transition-colors shrink-0"
+                            >
+                                <X className="h-3 w-3" />
+                                Reset
+                            </button>
+                        )}
+                    </div>
+                </div>
+            )}
 
             {/* ===== KPI Cards (sesuai status project) ===== */}
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-8 gap-3">
