@@ -47,6 +47,7 @@ export const RekonsiliasiPage: React.FC = () => {
         'Dicairkan',
         'Disetujui',
         'Ditolak',
+        'Selesai',
     ];
 
     // Gunakan data dari API untuk dropdown options
@@ -153,6 +154,7 @@ export const RekonsiliasiPage: React.FC = () => {
                 pengajuanRepo.getPengajuanList({
                     limit: 9999,
                     page: 1,
+                    status: 'all',
                 }),
                 fetchFilterOptions(),
             ]);

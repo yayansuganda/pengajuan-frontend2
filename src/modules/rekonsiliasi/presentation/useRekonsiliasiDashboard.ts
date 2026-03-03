@@ -11,7 +11,7 @@ export const useRekonsiliasiDashboard = () => {
     const [dateFrom, setDateFrom] = useState('');
     const [dateTo, setDateTo] = useState('');
 
-    // Additional filters for POS Hierarchy
+    // New filter states for unit levels
     const [filterRegional, setFilterRegional] = useState('');
     const [filterKcu, setFilterKcu] = useState('');
     const [filterKc, setFilterKc] = useState('');
@@ -47,13 +47,13 @@ export const useRekonsiliasiDashboard = () => {
         error,
         dateFrom,
         dateTo,
-        filterRegional,
-        filterKcu,
-        filterKc,
         setDateFrom,
         setDateTo,
+        filterRegional,
         setFilterRegional,
+        filterKcu,
         setFilterKcu,
+        filterKc,
         setFilterKc,
         refresh: fetchStats,
     };
