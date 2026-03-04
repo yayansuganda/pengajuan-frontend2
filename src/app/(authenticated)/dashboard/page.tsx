@@ -346,15 +346,17 @@ export default function DashboardPage() {
                                 </div>
                             </div>
 
-                            <div className="mb-4">
-                                <button
-                                    onClick={() => router.push('/pengajuan/create')}
-                                    className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 text-white text-xs font-bold shadow-sm hover:bg-indigo-700 transition-colors"
-                                >
-                                    <FileText className="w-4 h-4" />
-                                    Tambah Pengajuan Baru
-                                </button>
-                            </div>
+                            {user?.role !== 'verifier' && (
+                                <div className="mb-4">
+                                    <button
+                                        onClick={() => router.push('/pengajuan/create')}
+                                        className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 text-white text-xs font-bold shadow-sm hover:bg-indigo-700 transition-colors"
+                                    >
+                                        <FileText className="w-4 h-4" />
+                                        Tambah Pengajuan Baru
+                                    </button>
+                                </div>
+                            )}
 
                             {/* Stats Grid - Compact */}
                             <div className="mb-4">
@@ -964,15 +966,17 @@ export default function DashboardPage() {
                                 </div>
                             </div>
 
-                            <div>
-                                <button
-                                    onClick={() => router.push('/pengajuan/create')}
-                                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-semibold shadow-sm hover:bg-indigo-700 transition-colors"
-                                >
-                                    <FileText className="w-4 h-4" />
-                                    Tambah Pengajuan Baru
-                                </button>
-                            </div>
+                            {user?.role !== 'verifier' && (
+                                <div>
+                                    <button
+                                        onClick={() => router.push('/pengajuan/create')}
+                                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-semibold shadow-sm hover:bg-indigo-700 transition-colors"
+                                    >
+                                        <FileText className="w-4 h-4" />
+                                        Tambah Pengajuan Baru
+                                    </button>
+                                </div>
+                            )}
 
                             {/* Stats Grid */}
                             <div>
