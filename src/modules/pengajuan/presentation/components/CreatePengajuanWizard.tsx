@@ -159,6 +159,9 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
     // Image preview URLs
     const [imagePreviews, setImagePreviews] = useState<{ [key: string]: string[] }>({});
 
+    // Pending files to upload on submit (deferred upload)
+    const [pendingFiles, setPendingFiles] = useState<{ [key: string]: File[] }>({});
+
     // Upload menu state
     const [showUploadMenu, setShowUploadMenu] = useState<string | null>(null);
 
@@ -399,16 +402,16 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
     }, []); // Only run once on mount
 
     // Check if selected jenis pelayanan is POS
+    // For petugas-pos/admin-pos, always true regardless of master data loading state
     const isPOS = useMemo(() => {
+        if (user?.role === 'petugas-pos' || user?.role === 'admin-pos') return true;
         const selected = jenisPelayananList.find(jp => jp.id.toString() === formData.jenis_pelayanan_id);
         return selected?.name?.toUpperCase() === 'POS';
-    }, [formData.jenis_pelayanan_id, jenisPelayananList]);
+    }, [formData.jenis_pelayanan_id, jenisPelayananList, user?.role]);
 
     const shouldShowNextButton = useMemo(() => {
-        const isPosRole = user?.role === 'petugas-pos' || user?.role === 'admin-pos';
-        const isStep1CreatePOS = currentStep === 1 && !pengajuanId && isPOS && isPosRole;
-        return !isStep1CreatePOS || nopenDataLoaded;
-    }, [user?.role, currentStep, pengajuanId, isPOS, nopenDataLoaded]);
+        return true;
+    }, []);
 
     // Fetch master data on mount
     useEffect(() => {
@@ -1332,191 +1335,53 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>, fieldName: string, isMultiple: boolean = false) => {
         if (isMultiple) {
-            // Handle multiple files - DIRECT PREVIEW APPROACH
             const files = Array.from(e.target.files || []);
             if (files.length > 0) {
-                console.log(`📸 ========================================`);
-                console.log(`📸 MULTIPLE FILES - NEW APPROACH`);
-                console.log(`📸 Field: ${fieldName}, Files: ${files.length}`);
-
                 const fileNamesArray = files.map(file => file.name);
                 const imageFiles = files.filter(file => file.type.startsWith('image/'));
 
-                // Set filenames
                 setFileNames(prev => ({ ...prev, [fieldName]: fileNamesArray.join(', ') }));
+                setPendingFiles(prev => ({ ...prev, [fieldName]: files }));
+                setFormData(prev => ({ ...prev, [fieldName]: '__pending__' }));
 
-                // Read all images as base64
                 if (imageFiles.length > 0) {
-                    console.log(`📸 Reading ${imageFiles.length} images as base64...`);
-
-                    const readers = imageFiles.map((file, idx) => {
+                    const readers = imageFiles.map((file) => {
                         return new Promise<string>((resolve) => {
                             const reader = new FileReader();
-                            reader.onloadend = () => {
-                                const base64 = reader.result as string;
-                                console.log(`📸 ✅ Image ${idx + 1} ready: ${base64.substring(0, 50)}...`);
-                                resolve(base64);
-                            };
-                            reader.onerror = () => {
-                                console.error(`📸 ❌ Image ${idx + 1} failed`);
-                                resolve('');
-                            };
+                            reader.onloadend = () => resolve(reader.result as string);
+                            reader.onerror = () => resolve('');
                             reader.readAsDataURL(file);
                         });
                     });
 
                     Promise.all(readers).then(base64Array => {
                         const validPreviews = base64Array.filter(b => b !== '');
-                        console.log(`📸 All ${validPreviews.length} images ready!`);
-
-                        setImagePreviews(prev => {
-                            const newState = { ...prev, [fieldName]: validPreviews };
-                            console.log(`📸 State updated with ${validPreviews.length} previews`);
-                            return newState;
-                        });
-
-                        console.log(`🖼️ ✅ ALL PREVIEWS READY!`);
+                        setImagePreviews(prev => ({ ...prev, [fieldName]: validPreviews }));
                     });
                 }
 
-                console.log(`📸 ========================================`);
-
-                // NOW start upload in background
-                setUploadingFiles(prev => ({ ...prev, [fieldName]: true }));
-                try {
-                    // Upload each file to server
-                    const uploadPromises = files.map(async (file) => {
-                        const uploadFormData = new FormData();
-                        uploadFormData.append('file', file);
-
-                        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/upload`, {
-                            method: 'POST',
-                            headers: {
-                                'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                            },
-                            body: uploadFormData,
-                        });
-
-                        if (!response.ok) {
-                            throw new Error(`Upload failed for ${file.name}`);
-                        }
-
-                        const data = await response.json();
-                        return data.url; // Backend returns { url: "/uploads/filename.jpg" }
-                    });
-
-                    const uploadedUrls = await Promise.all(uploadPromises);
-
-                    // Store server URLs as JSON array string
-                    setFormData(prev => ({ ...prev, [fieldName]: JSON.stringify(uploadedUrls) }));
-
-                    // File names and previews already set above, keep them
-                    console.log('✅ Upload successful, server URLs stored, previews kept');
-
-                    // Clear error when upload success
-                    if (fieldErrors[fieldName]) {
-                        setFieldErrors(prev => {
-                            const newErrors = { ...prev };
-                            delete newErrors[fieldName];
-                            return newErrors;
-                        });
-                    }
-                } catch (error) {
-                    console.error('Error uploading files:', error);
-                    setFieldErrors(prev => ({ ...prev, [fieldName]: 'Gagal mengupload file. Pastikan file tidak melebihi 5MB dan format sesuai.' }));
-                    // Clear preview on error
-                    setImagePreviews(prev => ({ ...prev, [fieldName]: [] }));
-                } finally {
-                    setUploadingFiles(prev => ({ ...prev, [fieldName]: false }));
+                if (fieldErrors[fieldName]) {
+                    setFieldErrors(prev => { const n = { ...prev }; delete n[fieldName]; return n; });
                 }
             }
         } else {
-            // Handle single file - DIRECT PREVIEW APPROACH
             const file = e.target.files?.[0];
             if (file) {
-                console.log(`📸 ========================================`);
-                console.log(`📸 SINGLE FILE - NEW APPROACH`);
-                console.log(`📸 Field: ${fieldName}`);
-                console.log(`📸 File:`, file.name, file.type, file.size);
-
-                // Set filename first
                 setFileNames(prev => ({ ...prev, [fieldName]: file.name }));
+                setPendingFiles(prev => ({ ...prev, [fieldName]: [file] }));
+                setFormData(prev => ({ ...prev, [fieldName]: '__pending__' }));
 
-                // For images: Use FileReader with base64 (most reliable)
                 if (file.type.startsWith('image/')) {
-                    console.log(`📸 Reading as base64...`);
-
                     const reader = new FileReader();
                     reader.onloadend = () => {
                         const base64String = reader.result as string;
-                        console.log(`📸 ✅ Base64 ready:`, base64String.substring(0, 50) + '...');
-                        console.log(`📸 Length:`, base64String.length);
-
-                        // Direct state update with base64
-                        setImagePreviews(prev => {
-                            const newState = { ...prev, [fieldName]: [base64String] };
-                            console.log(`📸 State updated:`, fieldName, 'has preview:', newState[fieldName]?.length > 0);
-                            return newState;
-                        });
-
-                        // Force a re-render by updating a timestamp
-                        console.log(`🖼️ ✅ PREVIEW READY! Base64 length: ${base64String.length}`);
+                        setImagePreviews(prev => ({ ...prev, [fieldName]: [base64String] }));
                     };
-
-                    reader.onerror = () => {
-                        console.error(`📸 ❌ FileReader failed!`);
-                    };
-
                     reader.readAsDataURL(file);
-                } else {
-                    console.log(`📸 Not an image`);
                 }
 
-                console.log(`📸 ========================================`)
-
-                // NOW start upload in background
-                setUploadingFiles(prev => ({ ...prev, [fieldName]: true }));
-                try {
-                    // Upload file to server
-                    const uploadFormData = new FormData();
-                    uploadFormData.append('file', file);
-
-                    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/upload`, {
-                        method: 'POST',
-                        headers: {
-                            'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                        },
-                        body: uploadFormData,
-                    });
-
-                    if (!response.ok) {
-                        throw new Error('Upload failed');
-                    }
-
-                    const data = await response.json();
-                    const fileUrl = data.url; // Backend returns { url: "/uploads/filename.jpg" }
-
-                    // Store server URL
-                    setFormData(prev => ({ ...prev, [fieldName]: fileUrl }));
-
-                    // File name and preview already set above, keep them
-                    console.log('✅ Upload successful, server URL stored, preview kept');
-
-                    // Clear error when upload success
-                    if (fieldErrors[fieldName]) {
-                        setFieldErrors(prev => {
-                            const newErrors = { ...prev };
-                            delete newErrors[fieldName];
-                            return newErrors;
-                        });
-                    }
-                } catch (error) {
-                    console.error('Error uploading file:', error);
-                    setFieldErrors(prev => ({ ...prev, [fieldName]: 'Gagal mengupload file. Pastikan file tidak melebihi 5MB dan format sesuai.' }));
-                    // Clear preview on error
-                    setImagePreviews(prev => ({ ...prev, [fieldName]: [] }));
-                } finally {
-                    setUploadingFiles(prev => ({ ...prev, [fieldName]: false }));
+                if (fieldErrors[fieldName]) {
+                    setFieldErrors(prev => { const n = { ...prev }; delete n[fieldName]; return n; });
                 }
             }
         }
@@ -1538,6 +1403,7 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
         setFormData(prev => ({ ...prev, [fieldName]: '' }));
         setFileNames(prev => ({ ...prev, [fieldName]: '' }));
         setImagePreviews(prev => ({ ...prev, [fieldName]: [] }));
+        setPendingFiles(prev => { const n = { ...prev }; delete n[fieldName]; return n; });
         if (fileInputRefs.current[fieldName]) {
             fileInputRefs.current[fieldName]!.value = '';
         }
@@ -1570,10 +1436,13 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
 
         // Step 1: Data Pensiun & Pelayanan
         if (currentStep === 1) {
-            if (!formData.jenis_pelayanan_id) errors.jenis_pelayanan_id = 'Jenis Pelayanan wajib dipilih';
-            if (!formData.jenis_pelayanan_id) errors.jenis_pelayanan_id = 'Jenis Pelayanan wajib dipilih';
+            const isPetugasPosRole = user?.role === 'petugas-pos' || user?.role === 'admin-pos';
 
-            const isPetugasPosRole = user?.role === 'petugas-pos';
+            // petugas-pos/admin-pos always use POS, jenis_pelayanan_id is auto-set when master data loads
+            if (!isPetugasPosRole && !formData.jenis_pelayanan_id) {
+                errors.jenis_pelayanan_id = 'Jenis Pelayanan wajib dipilih';
+            }
+
             if (isPetugasPosRole && isPOS && !pengajuanId) {
                 if (!formData.nopen.trim()) {
                     errors.nopen = 'NOPEN wajib diisi';
@@ -1795,6 +1664,75 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
                 });
             }
 
+            // Upload all pending files before saving
+            const uploadedFileUrls: { [key: string]: string } = {};
+            const pendingFieldNames = Object.keys(pendingFiles);
+            if (pendingFieldNames.length > 0) {
+                console.log(`📤 Uploading ${pendingFieldNames.length} pending file(s)...`);
+
+                for (const fieldName of pendingFieldNames) {
+                    const files = pendingFiles[fieldName];
+                    if (!files || files.length === 0) continue;
+
+                    setUploadingFiles(prev => ({ ...prev, [fieldName]: true }));
+
+                    try {
+                        const uploadPromises = files.map(async (file) => {
+                            const fd = new FormData();
+                            fd.append('file', file);
+
+                            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/upload`, {
+                                method: 'POST',
+                                headers: {
+                                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                                },
+                                body: fd,
+                            });
+
+                            if (!response.ok) {
+                                throw new Error(`Upload failed for ${file.name}`);
+                            }
+
+                            const data = await response.json();
+                            return data.url;
+                        });
+
+                        const urls = await Promise.all(uploadPromises);
+                        uploadedFileUrls[fieldName] = files.length > 1 ? JSON.stringify(urls) : urls[0];
+
+                        console.log(`✅ Upload successful for ${fieldName}:`, urls);
+                    } catch (error) {
+                        console.error(`❌ Upload failed for ${fieldName}:`, error);
+                        setFieldErrors(prev => ({
+                            ...prev,
+                            [fieldName]: 'Gagal mengupload file. Pastikan file tidak melebihi 5MB dan format sesuai.'
+                        }));
+                        setUploadingFiles(prev => ({ ...prev, [fieldName]: false }));
+                        setSubmitting(false);
+
+                        await Swal.fire({
+                            title: 'Upload Gagal',
+                            text: `Gagal mengupload file ${fileNames[fieldName] || fieldName}. Data pengajuan tidak disimpan.`,
+                            icon: 'error',
+                            confirmButtonText: 'Tutup',
+                            confirmButtonColor: '#dc2626',
+                        });
+                        return;
+                    } finally {
+                        setUploadingFiles(prev => ({ ...prev, [fieldName]: false }));
+                    }
+                }
+
+                setPendingFiles({});
+                console.log('✅ All files uploaded successfully');
+            }
+
+            const getFileUrl = (fieldName: string) => {
+                if (uploadedFileUrls[fieldName]) return uploadedFileUrls[fieldName];
+                const existing = formData[fieldName as keyof typeof formData];
+                return (existing && existing !== '__pending__') ? existing : '';
+            };
+
             // Build payload matching backend CreateLoanRequest structure
             const payload = {
                 // Data Diri
@@ -1863,16 +1801,16 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
                 petugas_kcp_name: formData.petugas_kcp_name || '',
 
                 // Files & Metadata
-                ktp_url: formData.upload_ktp_pemohon || '',
-                slip_gaji_url: formData.upload_slip_gaji_terakhir || '',
-                sk_pensiun_url: formData.upload_sk_pensiun || '',
-                borrower_photos: formData.upload_borrower_photos || '',
-                pengajuan_permohonan_url: formData.upload_pengajuan_permohonan || '',
-                dokumen_akad_url: formData.upload_dokumen_akad || '',
-                flagging_url: formData.upload_flagging || '',
-                surat_pernyataan_beda_url: formData.upload_surat_pernyataan_beda_penerima || '',
-                karip_buku_asabri_url: formData.upload_karip_buku_asabri || '',
-                surat_permohonan_anggota_url: formData.upload_surat_permohonan_anggota || '',
+                ktp_url: getFileUrl('upload_ktp_pemohon'),
+                slip_gaji_url: getFileUrl('upload_slip_gaji_terakhir'),
+                sk_pensiun_url: getFileUrl('upload_sk_pensiun'),
+                borrower_photos: getFileUrl('upload_borrower_photos'),
+                pengajuan_permohonan_url: getFileUrl('upload_pengajuan_permohonan'),
+                dokumen_akad_url: getFileUrl('upload_dokumen_akad'),
+                flagging_url: getFileUrl('upload_flagging'),
+                surat_pernyataan_beda_url: getFileUrl('upload_surat_pernyataan_beda_penerima'),
+                karip_buku_asabri_url: getFileUrl('upload_karip_buku_asabri'),
+                surat_permohonan_anggota_url: getFileUrl('upload_surat_permohonan_anggota'),
                 latitude: 0,
                 longitude: 0,
                 approval: 'Pending',
@@ -3230,7 +3168,7 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
                                 disabled={submitting}
                                 className="flex-1 py-2.5 rounded-lg font-medium text-white bg-emerald-600 shadow active:bg-emerald-700 text-xs"
                             >
-                                {submitting ? '...' : currentStep === STEPS.length ? 'Submit' : 'Lanjut'}
+                                {submitting ? (Object.values(uploadingFiles).some(v => v) ? 'Mengupload...' : 'Menyimpan...') : currentStep === STEPS.length ? 'Submit' : 'Lanjut'}
                             </button>
                         )}
                     </div>
@@ -3295,7 +3233,7 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
                                     disabled={submitting}
                                     className="inline-flex items-center px-6 py-2.5 border border-transparent shadow-md text-sm font-semibold rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed"
                                 >
-                                    {submitting ? 'Menyimpan...' : currentStep === STEPS.length ? 'Submit Pengajuan' : 'Selanjutnya'}
+                                    {submitting ? (Object.values(uploadingFiles).some(v => v) ? 'Mengupload file...' : 'Menyimpan...') : currentStep === STEPS.length ? 'Submit Pengajuan' : 'Selanjutnya'}
                                     {!submitting && currentStep !== STEPS.length && <ChevronRight className="ml-1.5 -mr-1 h-4 w-4" />}
                                     {!submitting && currentStep === STEPS.length && <Save className="ml-1.5 -mr-1 h-4 w-4" />}
                                 </button>
