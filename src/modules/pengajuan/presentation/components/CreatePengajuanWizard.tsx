@@ -1677,9 +1677,16 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
                     setUploadingFiles(prev => ({ ...prev, [fieldName]: true }));
 
                     try {
-                        const uploadPromises = files.map(async (file) => {
+                        const uploadNik = (formData.nik || '').replace(/\./g, '');
+                        const uploadTanggal = new Date().toISOString().split('T')[0];
+                        const uploadLabel = fieldName.replace(/^upload_/, '');
+
+                        const uploadPromises = files.map(async (file, fileIdx) => {
                             const fd = new FormData();
                             fd.append('file', file);
+                            if (uploadNik) fd.append('nik', uploadNik);
+                            fd.append('tanggal', uploadTanggal);
+                            fd.append('label', files.length > 1 ? `${uploadLabel}_${fileIdx + 1}` : uploadLabel);
 
                             const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/upload`, {
                                 method: 'POST',

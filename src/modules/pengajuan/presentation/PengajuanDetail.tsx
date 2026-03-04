@@ -166,6 +166,9 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
             if (proofForm.file) {
                 const formData = new FormData();
                 formData.append('file', proofForm.file);
+                if (pengajuan.nik) formData.append('nik', pengajuan.nik);
+                formData.append('tanggal', pengajuan.created_at ? new Date(pengajuan.created_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]);
+                formData.append('label', uploadTarget === 'disbursement' ? 'bukti_pencairan' : 'bukti_pengiriman');
                 const token = localStorage.getItem('token');
                 const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/upload`, formData, {
                     headers: { 'Content-Type': 'multipart/form-data', 'Authorization': `Bearer ${token}` }
@@ -207,6 +210,9 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
 
             const formData = new FormData();
             formData.append('file', file);
+            if (pengajuan.nik) formData.append('nik', pengajuan.nik);
+            formData.append('tanggal', pengajuan.created_at ? new Date(pengajuan.created_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]);
+            formData.append('label', docType.replace(/_url$/, ''));
             const token = localStorage.getItem('token');
             const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/upload`, formData, {
                 headers: { 'Content-Type': 'multipart/form-data', 'Authorization': `Bearer ${token}` }
@@ -216,7 +222,6 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
             const updateData: any = {};
             updateData[docType] = fileUrl;
 
-            // Use PATCH endpoint for partial document update
             await axios.patch(`${process.env.NEXT_PUBLIC_API_URL}/loans/${id}/documents`, updateData, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
