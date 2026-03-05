@@ -1333,10 +1333,79 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
     };
 
 
+    const MAX_FILE_SIZE = 1 * 1024 * 1024; // 1MB
+
+    const compressImage = (file: File): Promise<File> => {
+        return new Promise((resolve) => {
+            if (!file.type.startsWith('image/') || file.type === 'image/gif') {
+                resolve(file);
+                return;
+            }
+            if (file.size <= MAX_FILE_SIZE) {
+                resolve(file);
+                return;
+            }
+
+            const img = new Image();
+            const url = URL.createObjectURL(file);
+
+            img.onload = () => {
+                URL.revokeObjectURL(url);
+
+                let { width, height } = img;
+                const maxDimension = 1920;
+                if (width > maxDimension || height > maxDimension) {
+                    const ratio = Math.min(maxDimension / width, maxDimension / height);
+                    width = Math.round(width * ratio);
+                    height = Math.round(height * ratio);
+                }
+
+                const canvas = document.createElement('canvas');
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d')!;
+                ctx.drawImage(img, 0, 0, width, height);
+
+                const tryCompress = (quality: number) => {
+                    canvas.toBlob(
+                        (blob) => {
+                            if (!blob) { resolve(file); return; }
+                            if (blob.size <= MAX_FILE_SIZE || quality <= 0.1) {
+                                const ext = file.type === 'image/png' ? '.png' : '.jpg';
+                                const name = file.name.replace(/\.[^.]+$/, '') + ext;
+                                const compressed = new File([blob], name, { type: blob.type, lastModified: Date.now() });
+                                console.log(`🗜️ Compressed ${file.name}: ${(file.size / 1024).toFixed(0)}KB → ${(compressed.size / 1024).toFixed(0)}KB (q=${quality.toFixed(2)})`);
+                                resolve(compressed);
+                            } else {
+                                tryCompress(quality - 0.1);
+                            }
+                        },
+                        'image/jpeg',
+                        quality
+                    );
+                };
+
+                tryCompress(0.8);
+            };
+
+            img.onerror = () => {
+                URL.revokeObjectURL(url);
+                resolve(file);
+            };
+
+            img.src = url;
+        });
+    };
+
+    const compressFiles = async (files: File[]): Promise<File[]> => {
+        return Promise.all(files.map(f => compressImage(f)));
+    };
+
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>, fieldName: string, isMultiple: boolean = false) => {
         if (isMultiple) {
-            const files = Array.from(e.target.files || []);
-            if (files.length > 0) {
+            const rawFiles = Array.from(e.target.files || []);
+            if (rawFiles.length > 0) {
+                const files = await compressFiles(rawFiles);
                 const fileNamesArray = files.map(file => file.name);
                 const imageFiles = files.filter(file => file.type.startsWith('image/'));
 
@@ -1345,19 +1414,8 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
                 setFormData(prev => ({ ...prev, [fieldName]: '__pending__' }));
 
                 if (imageFiles.length > 0) {
-                    const readers = imageFiles.map((file) => {
-                        return new Promise<string>((resolve) => {
-                            const reader = new FileReader();
-                            reader.onloadend = () => resolve(reader.result as string);
-                            reader.onerror = () => resolve('');
-                            reader.readAsDataURL(file);
-                        });
-                    });
-
-                    Promise.all(readers).then(base64Array => {
-                        const validPreviews = base64Array.filter(b => b !== '');
-                        setImagePreviews(prev => ({ ...prev, [fieldName]: validPreviews }));
-                    });
+                    const previews = imageFiles.map(file => URL.createObjectURL(file));
+                    setImagePreviews(prev => ({ ...prev, [fieldName]: previews }));
                 }
 
                 if (fieldErrors[fieldName]) {
@@ -1365,19 +1423,16 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
                 }
             }
         } else {
-            const file = e.target.files?.[0];
-            if (file) {
+            const rawFile = e.target.files?.[0];
+            if (rawFile) {
+                const file = await compressImage(rawFile);
                 setFileNames(prev => ({ ...prev, [fieldName]: file.name }));
                 setPendingFiles(prev => ({ ...prev, [fieldName]: [file] }));
                 setFormData(prev => ({ ...prev, [fieldName]: '__pending__' }));
 
                 if (file.type.startsWith('image/')) {
-                    const reader = new FileReader();
-                    reader.onloadend = () => {
-                        const base64String = reader.result as string;
-                        setImagePreviews(prev => ({ ...prev, [fieldName]: [base64String] }));
-                    };
-                    reader.readAsDataURL(file);
+                    const previewUrl = URL.createObjectURL(file);
+                    setImagePreviews(prev => ({ ...prev, [fieldName]: [previewUrl] }));
                 }
 
                 if (fieldErrors[fieldName]) {

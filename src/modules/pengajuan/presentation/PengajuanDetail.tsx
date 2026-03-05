@@ -93,6 +93,47 @@ interface PengajuanDetailProps {
     id: string;
 }
 
+const MAX_FILE_SIZE = 1 * 1024 * 1024; // 1MB
+
+function compressImage(file: File): Promise<File> {
+    return new Promise((resolve) => {
+        if (!file.type.startsWith('image/') || file.type === 'image/gif') { resolve(file); return; }
+        if (file.size <= MAX_FILE_SIZE) { resolve(file); return; }
+
+        const img = new Image();
+        const url = URL.createObjectURL(file);
+        img.onload = () => {
+            URL.revokeObjectURL(url);
+            let { width, height } = img;
+            const maxDim = 1920;
+            if (width > maxDim || height > maxDim) {
+                const r = Math.min(maxDim / width, maxDim / height);
+                width = Math.round(width * r);
+                height = Math.round(height * r);
+            }
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            canvas.getContext('2d')!.drawImage(img, 0, 0, width, height);
+
+            const tryCompress = (q: number) => {
+                canvas.toBlob((blob) => {
+                    if (!blob) { resolve(file); return; }
+                    if (blob.size <= MAX_FILE_SIZE || q <= 0.1) {
+                        const name = file.name.replace(/\.[^.]+$/, '') + '.jpg';
+                        resolve(new File([blob], name, { type: 'image/jpeg', lastModified: Date.now() }));
+                    } else {
+                        tryCompress(q - 0.1);
+                    }
+                }, 'image/jpeg', q);
+            };
+            tryCompress(0.8);
+        };
+        img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
+        img.src = url;
+    });
+}
+
 export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
     const router = useRouter();
     const { user } = useAuth();
@@ -164,8 +205,9 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
             if (uploadTarget === 'shipping') fileUrl = pengajuan.shipping_receipt_url || '';
 
             if (proofForm.file) {
+                const compressedFile = await compressImage(proofForm.file);
                 const formData = new FormData();
-                formData.append('file', proofForm.file);
+                formData.append('file', compressedFile);
                 if (pengajuan.nik) formData.append('nik', pengajuan.nik);
                 formData.append('tanggal', pengajuan.created_at ? new Date(pengajuan.created_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]);
                 formData.append('label', uploadTarget === 'disbursement' ? 'bukti_pencairan' : 'bukti_pengiriman');
@@ -208,8 +250,9 @@ export const PengajuanDetail: React.FC<PengajuanDetailProps> = ({ id }) => {
             setUploadingDoc(docType);
             showLoading('Mengupload dokumen...');
 
+            const compressedFile = await compressImage(file);
             const formData = new FormData();
-            formData.append('file', file);
+            formData.append('file', compressedFile);
             if (pengajuan.nik) formData.append('nik', pengajuan.nik);
             formData.append('tanggal', pengajuan.created_at ? new Date(pengajuan.created_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]);
             formData.append('label', docType.replace(/_url$/, ''));
