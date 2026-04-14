@@ -10,6 +10,9 @@ export const useRekonsiliasiDashboard = () => {
     const [error, setError] = useState('');
     const [dateFrom, setDateFrom] = useState('');
     const [dateTo, setDateTo] = useState('');
+    const [filterRegional, setFilterRegional] = useState('');
+    const [filterKcu, setFilterKcu] = useState('');
+    const [filterKc, setFilterKc] = useState('');
 
     const fetchStats = useCallback(async () => {
         try {
@@ -38,6 +41,12 @@ export const useRekonsiliasiDashboard = () => {
         dateTo,
         setDateFrom,
         setDateTo,
+        filterRegional,
+        setFilterRegional,
+        filterKcu,
+        setFilterKcu,
+        filterKc,
+        setFilterKc,
         refresh: fetchStats,
     };
 };

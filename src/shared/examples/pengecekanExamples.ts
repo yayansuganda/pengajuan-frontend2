@@ -63,24 +63,25 @@ async function exampleUsingRepository() {
     const repository = new PengecekanRepositoryImpl();
     const nopen = "08000511000";
 
-    try {
-        console.log('Checking pensiunan with NOPEN:', nopen);
+    console.log('Checking pensiunan with NOPEN:', nopen);
 
-        const pensiunan = await repository.checkPensiunan(nopen);
+    const result = await repository.checkPensiunan(nopen);
 
-        console.log('Pensiunan Data:');
-        console.log('- Nama:', pensiunan.nama_lengkap);
-        console.log('- NOPEN:', pensiunan.nopen);
-        console.log('- Status:', pensiunan.status_keaktifan);
-        console.log('- Gaji Bersih:', pensiunan.gaji_bersih);
-        console.log('- Bank:', pensiunan.nama_bank);
-        console.log('- No. Rekening:', pensiunan.no_rekening);
-
-        return pensiunan;
-    } catch (error) {
-        console.error('Failed to fetch pensiunan:', error);
-        throw error;
+    if (!result.success) {
+        console.error('Failed to fetch pensiunan:', result.error);
+        return null;
     }
+
+    const pensiunan = result.data;
+    console.log('Pensiunan Data:');
+    console.log('- Nama:', pensiunan.nama_lengkap);
+    console.log('- NOPEN:', pensiunan.nopen);
+    console.log('- Status:', pensiunan.status_keaktifan);
+    console.log('- Gaji Bersih:', pensiunan.gaji_bersih);
+    console.log('- Bank:', pensiunan.nama_bank);
+    console.log('- No. Rekening:', pensiunan.no_rekening);
+
+    return pensiunan;
 }
 
 // ============================================
@@ -122,12 +123,12 @@ async function exampleErrorHandling() {
     ];
 
     for (const nopen of invalidNopens) {
-        try {
-            console.log(`\nTesting with NOPEN: "${nopen}"`);
-            const result = await repository.checkPensiunan(nopen);
-            console.log('Success:', result);
-        } catch (error: any) {
-            console.log('Error:', error.message);
+        console.log(`\nTesting with NOPEN: "${nopen}"`);
+        const result = await repository.checkPensiunan(nopen);
+        if (result.success) {
+            console.log('Success:', result.data);
+        } else {
+            console.log('Error:', result.error);
         }
     }
 }
