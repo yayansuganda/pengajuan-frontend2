@@ -518,17 +518,16 @@ export const PengecekanPage: React.FC<PengecekanPageProps> = ({ viewMode = 'resp
         e.preventDefault();
         if (!nopen.trim()) return;
 
-        try {
-            showLoading('Mencari data pensiunan...');
-            const data = await repository.checkPensiunan(nopen);
-            setResult(data);
-            setHasSearched(true);
-            hideLoading();
-        } catch (err: any) {
-            hideLoading();
+        showLoading('Mencari data pensiunan...');
+        const result = await repository.checkPensiunan(nopen);
+        hideLoading();
+        setHasSearched(true);
+
+        if (result.success) {
+            setResult(result.data);
+        } else {
             setResult(null);
-            setHasSearched(true);
-            showError(handleError(err, 'Data pensiunan tidak ditemukan'));
+            showError(result.error);
         }
     };
 

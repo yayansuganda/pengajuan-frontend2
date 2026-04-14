@@ -45,7 +45,7 @@ class PengecekanAPILogger {
         }
 
         if (log.error) {
-            console.error('❌ Error:', log.error);
+            console.warn('⚠️ API Error:', log.error);
         }
 
         if (log.duration) {

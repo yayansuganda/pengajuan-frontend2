@@ -1239,97 +1239,79 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
             kantor_pos_petugas: '',
         }));
 
-        try {
-            setLoadingNopen(true);
-            const pengecekanRepo = new PengecekanRepositoryImpl();
-            const data = await pengecekanRepo.checkPensiunan(nopen);
+        setLoadingNopen(true);
+        const pengecekanRepo = new PengecekanRepositoryImpl();
+        const result = await pengecekanRepo.checkPensiunan(nopen);
+        setLoadingNopen(false);
 
-            // Check specific ID_MITRA restriction
-            // ID: P401150041
-            if (data.potongan_pinjaman && data.potongan_pinjaman.length > 0) {
-                const restrictedMitra = data.potongan_pinjaman.find((p: any) => p.ID_MITRA === "P401150041");
-
-                if (restrictedMitra) {
-                    setLoadingNopen(false);
-                    await Swal.fire({
-                        icon: 'error',
-                        title: 'Pengajuan Ditolak',
-                        text: `Pengajuan tidak dapat dilanjutkan karena terdapat potongan aktif dari mitra: ${restrictedMitra.NAMA_MITRA || 'Unknown Mitra'} (P401150041).`,
-                        confirmButtonText: 'OK',
-                        confirmButtonColor: '#d33'
-                    });
-
-                    // Clear NOPEN to prevent user from proceeding with invalid data? 
-                    // Or keep it but don't fill data. Let's start by not filling data.
-                    return;
-                }
-            }
-
-            // Calculate Gaji Tersedia (Available Salary)
-            // UPDATE: User requested that POS API potongan should NOT reduce Gaji Tersedia. 
-            // It should only be displayed.
-            // So Gaji Tersedia = Gaji Bersih - Total Potongan Pinjaman.
-            const gajiBersih = data.gaji_bersih || 0;
-            const totalPotonganAPI = data.potongan || 0; // Renamed to clarify source
-            const gajiTersedia = gajiBersih - totalPotonganAPI;
-
-            console.log('💰 Auto-calculating Gaji Tersedia (Gaji Bersih - Potongan):');
-            console.log('  - Gaji Bersih:', gajiBersih);
-            console.log('  - Total Potongan (Display Only):', totalPotonganAPI);
-            console.log('  - Gaji Tersedia (= Gaji Bersih - Potongan):', gajiTersedia);
-
-            // Mark data as loaded so the form becomes visible
-            setNopenDataLoaded(true);
-
-            // Auto-fill form fields with API data
-            setFormData(prev => ({
-                ...prev,
-                // Data from API
-                nama_lengkap: data.nama_lengkap || prev.nama_lengkap,
-                jenis_pensiun: data.ket_jenis_pensiun || data.jenis_pensiun || prev.jenis_pensiun,
-                jenis_dapem: data.ket_jenis_dapem || data.jenis_dapem || prev.jenis_dapem,
-                bulan_dapem: data.bulan_dapem || prev.bulan_dapem,
-                status_dapem: data.ket_status_dapem || data.status_dapem || prev.status_dapem,
-                gaji_bersih: gajiBersih ? gajiBersih.toString() : prev.gaji_bersih,
-                total_potongan_pinjaman: totalPotonganAPI ? totalPotonganAPI.toString() : prev.total_potongan_pinjaman, // Display Only
-                gaji_tersedia: gajiTersedia ? gajiTersedia.toString() : prev.gaji_tersedia,
-                nomor_rekening_giro_pos: data.no_rekening || prev.nomor_rekening_giro_pos,
-                kantor_bayar: data.kantor_bayar || prev.kantor_bayar,
-                kantor_pos_petugas: data.kantor_bayar || prev.kantor_pos_petugas,
-                mitra: data.mitra || prev.mitra,
-            }));
-
-            // Show success notification with potongan info
-            const potonganInfo = totalPotonganAPI > 0
-                ? `\n\nGaji Bersih: Rp ${gajiBersih.toLocaleString('id-ID')}\nPotongan (Display): Rp ${totalPotonganAPI.toLocaleString('id-ID')}\nGaji Tersedia: Rp ${gajiTersedia.toLocaleString('id-ID')}`
-                : '';
-
-            Swal.fire({
-                icon: 'success',
-                title: 'Data Ditemukan!',
-                text: `Data pensiunan ${data.nama_lengkap} berhasil dimuat dari sistem Pos Indonesia.${potonganInfo}`,
-                timer: 5000,
-                showConfirmButton: false,
-                toast: true,
-                position: 'top-end'
-            });
-
-        } catch (error: any) {
-            console.error('Error fetching NOPEN data:', error);
-
-            // Show error notification
-            Swal.fire({
+        if (!result.success) {
+            setFieldErrors(prev => ({ ...prev, nopen: result.error }));
+            await Swal.fire({
                 icon: 'error',
-                title: 'Data Tidak Ditemukan',
-                text: error.message || 'Gagal mengambil data dari sistem Pos Indonesia. Silakan isi manual.',
-                timer: 4000,
-                showConfirmButton: false,
-                toast: true,
-                position: 'top-end'
+                title: 'Pengecekan Gagal',
+                html: `<div style="text-align:left;font-size:14px;">
+                    <p><strong>Nomor Pensiun:</strong> ${nopen}</p>
+                    <p><strong>Keterangan:</strong> ${result.error}</p>
+                </div>`,
+                confirmButtonText: 'OK',
+                confirmButtonColor: '#d33'
             });
-        } finally {
-            setLoadingNopen(false);
+            return;
         }
+
+        const data = result.data;
+
+        // Check specific ID_MITRA restriction (P401150041)
+        if (data.potongan_pinjaman && data.potongan_pinjaman.length > 0) {
+            const restrictedMitra = data.potongan_pinjaman.find((p: any) => p.ID_MITRA === "P401150041");
+
+            if (restrictedMitra) {
+                await Swal.fire({
+                    icon: 'error',
+                    title: 'Pengajuan Ditolak',
+                    text: `Pengajuan tidak dapat dilanjutkan karena terdapat potongan aktif dari mitra: ${restrictedMitra.NAMA_MITRA || 'Unknown Mitra'} (P401150041).`,
+                    confirmButtonText: 'OK',
+                    confirmButtonColor: '#d33'
+                });
+                return;
+            }
+        }
+
+        const gajiBersih = data.gaji_bersih || 0;
+        const totalPotonganAPI = data.potongan || 0;
+        const gajiTersedia = gajiBersih - totalPotonganAPI;
+
+        setNopenDataLoaded(true);
+
+        setFormData(prev => ({
+            ...prev,
+            nama_lengkap: data.nama_lengkap || prev.nama_lengkap,
+            jenis_pensiun: data.ket_jenis_pensiun || data.jenis_pensiun || prev.jenis_pensiun,
+            jenis_dapem: data.ket_jenis_dapem || data.jenis_dapem || prev.jenis_dapem,
+            bulan_dapem: data.bulan_dapem || prev.bulan_dapem,
+            status_dapem: data.ket_status_dapem || data.status_dapem || prev.status_dapem,
+            gaji_bersih: gajiBersih ? gajiBersih.toString() : prev.gaji_bersih,
+            total_potongan_pinjaman: totalPotonganAPI ? totalPotonganAPI.toString() : prev.total_potongan_pinjaman,
+            gaji_tersedia: gajiTersedia ? gajiTersedia.toString() : prev.gaji_tersedia,
+            nomor_rekening_giro_pos: data.no_rekening || prev.nomor_rekening_giro_pos,
+            kantor_bayar: data.kantor_bayar || prev.kantor_bayar,
+            kantor_pos_petugas: data.kantor_bayar || prev.kantor_pos_petugas,
+            mitra: data.mitra || prev.mitra,
+        }));
+
+        const potonganInfo = totalPotonganAPI > 0
+            ? `\n\nGaji Bersih: Rp ${gajiBersih.toLocaleString('id-ID')}\nPotongan (Display): Rp ${totalPotonganAPI.toLocaleString('id-ID')}\nGaji Tersedia: Rp ${gajiTersedia.toLocaleString('id-ID')}`
+            : '';
+
+        Swal.fire({
+            icon: 'success',
+            title: 'Data Ditemukan!',
+            text: `Data pensiunan ${data.nama_lengkap} berhasil dimuat dari sistem Pos Indonesia.${potonganInfo}`,
+            timer: 5000,
+            showConfirmButton: false,
+            toast: true,
+            position: 'top-end'
+        });
     };
 
 
