@@ -13,6 +13,12 @@ import { MobileLayoutWrapper } from '@/modules/pengajuan/presentation/components
 
 const repository = new SettingRepositoryImpl();
 
+const parseDecimalInput = (value: string): number => {
+    const normalized = value.replace(',', '.');
+    const parsed = parseFloat(normalized);
+    return isNaN(parsed) ? 0 : parsed;
+};
+
 // Interface
 interface ViewProps {
     formData: any;
@@ -21,10 +27,12 @@ interface ViewProps {
     activeSetting: Setting | null;
     isLoading: boolean;
     router: any;
+    decimalDisplays: { jasa_perbulan: string; fee_pelayanan_pos: string };
+    setDecimalDisplays: (val: any) => void;
 }
 
 // --- Mobile View ---
-const MobileView = ({ formData, setFormData, handleSubmit, activeSetting, isLoading, router }: ViewProps) => (
+const MobileView = ({ formData, setFormData, handleSubmit, activeSetting, isLoading, router, decimalDisplays, setDecimalDisplays }: ViewProps) => (
     <MobileLayoutWrapper>
         <div className="pt-6 px-4 pb-24">
             <div className="mb-5">
@@ -67,13 +75,17 @@ const MobileView = ({ formData, setFormData, handleSubmit, activeSetting, isLoad
                             </label>
                             <div className="relative">
                                 <input
-                                    type="number"
+                                    type="text"
+                                    inputMode="decimal"
                                     required
-                                    min="0"
-                                    max="100"
-                                    step="0.01"
-                                    value={formData.jasa_perbulan}
-                                    onChange={(e) => setFormData({ ...formData, jasa_perbulan: parseFloat(e.target.value) || 0 })}
+                                    value={decimalDisplays.jasa_perbulan}
+                                    onChange={(e) => {
+                                        const val = e.target.value;
+                                        if (/^[0-9]*[.,]?[0-9]*$/.test(val) || val === '') {
+                                            setDecimalDisplays((prev: any) => ({ ...prev, jasa_perbulan: val }));
+                                            setFormData({ ...formData, jasa_perbulan: parseDecimalInput(val) });
+                                        }
+                                    }}
                                     className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 font-semibold"
                                 />
                                 <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-500">%</span>
@@ -86,13 +98,17 @@ const MobileView = ({ formData, setFormData, handleSubmit, activeSetting, isLoad
                             </label>
                             <div className="relative">
                                 <input
-                                    type="number"
+                                    type="text"
+                                    inputMode="decimal"
                                     required
-                                    min="0"
-                                    max="100"
-                                    step="0.01"
-                                    value={formData.fee_pelayanan_pos}
-                                    onChange={(e) => setFormData({ ...formData, fee_pelayanan_pos: parseFloat(e.target.value) || 0 })}
+                                    value={decimalDisplays.fee_pelayanan_pos}
+                                    onChange={(e) => {
+                                        const val = e.target.value;
+                                        if (/^[0-9]*[.,]?[0-9]*$/.test(val) || val === '') {
+                                            setDecimalDisplays((prev: any) => ({ ...prev, fee_pelayanan_pos: val }));
+                                            setFormData({ ...formData, fee_pelayanan_pos: parseDecimalInput(val) });
+                                        }
+                                    }}
                                     className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 font-semibold"
                                 />
                                 <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-500">%</span>
@@ -204,7 +220,7 @@ const MobileView = ({ formData, setFormData, handleSubmit, activeSetting, isLoad
 );
 
 // --- Desktop View ---
-const DesktopView = ({ formData, setFormData, handleSubmit, activeSetting, isLoading, router }: ViewProps) => (
+const DesktopView = ({ formData, setFormData, handleSubmit, activeSetting, isLoading, router, decimalDisplays, setDecimalDisplays }: ViewProps) => (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
         {isLoading ? (
             <div className="flex flex-col items-center justify-center min-h-[400px]">
@@ -291,15 +307,19 @@ const DesktopView = ({ formData, setFormData, handleSubmit, activeSetting, isLoa
                                 </label>
                                 <div className="relative group">
                                     <input
-                                        type="number"
+                                        type="text"
+                                        inputMode="decimal"
                                         required
-                                        min="0"
-                                        max="100"
-                                        step="0.01"
-                                        value={formData.jasa_perbulan}
-                                        onChange={(e) => setFormData({ ...formData, jasa_perbulan: parseFloat(e.target.value) || 0 })}
+                                        value={decimalDisplays.jasa_perbulan}
+                                        onChange={(e) => {
+                                            const val = e.target.value;
+                                            if (/^[0-9]*[.,]?[0-9]*$/.test(val) || val === '') {
+                                                setDecimalDisplays((prev: any) => ({ ...prev, jasa_perbulan: val }));
+                                                setFormData({ ...formData, jasa_perbulan: parseDecimalInput(val) });
+                                            }
+                                        }}
                                         className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all font-medium text-gray-900 group-hover:border-gray-300"
-                                        placeholder="Contoh: 2.00"
+                                        placeholder="Contoh: 2,00"
                                     />
                                     <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
                                         <span className="text-sm font-bold text-gray-400 bg-gray-50 px-2 py-1 rounded">%</span>
@@ -314,15 +334,19 @@ const DesktopView = ({ formData, setFormData, handleSubmit, activeSetting, isLoa
                                 </label>
                                 <div className="relative group">
                                     <input
-                                        type="number"
+                                        type="text"
+                                        inputMode="decimal"
                                         required
-                                        min="0"
-                                        max="100"
-                                        step="0.01"
-                                        value={formData.fee_pelayanan_pos}
-                                        onChange={(e) => setFormData({ ...formData, fee_pelayanan_pos: parseFloat(e.target.value) || 0 })}
+                                        value={decimalDisplays.fee_pelayanan_pos}
+                                        onChange={(e) => {
+                                            const val = e.target.value;
+                                            if (/^[0-9]*[.,]?[0-9]*$/.test(val) || val === '') {
+                                                setDecimalDisplays((prev: any) => ({ ...prev, fee_pelayanan_pos: val }));
+                                                setFormData({ ...formData, fee_pelayanan_pos: parseDecimalInput(val) });
+                                            }
+                                        }}
                                         className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all font-medium text-gray-900 group-hover:border-gray-300"
-                                        placeholder="Contoh: 3.00"
+                                        placeholder="Contoh: 3,00"
                                     />
                                     <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
                                         <span className="text-sm font-bold text-gray-400 bg-gray-50 px-2 py-1 rounded">%</span>
@@ -489,6 +513,10 @@ export const SettingsList: React.FC = () => {
         makro_maksimal_pembiayaan: 0,
         description: ''
     });
+    const [decimalDisplays, setDecimalDisplays] = useState({
+        jasa_perbulan: '2',
+        fee_pelayanan_pos: '3',
+    });
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
@@ -501,15 +529,21 @@ export const SettingsList: React.FC = () => {
             setIsLoading(true);
             const active = await repository.getActive();
             setActiveSetting(active);
+            const jasaVal = active.jasa_perbulan;
+            const feeVal = active.fee_pelayanan_pos ?? 3.00;
             setFormData({
                 batas_usia_perhitungan_lunas: active.batas_usia_perhitungan_lunas,
-                jasa_perbulan: active.jasa_perbulan,
-                fee_pelayanan_pos: active.fee_pelayanan_pos ?? 3.00,
+                jasa_perbulan: jasaVal,
+                fee_pelayanan_pos: feeVal,
                 mikro_jangka_waktu: active.mikro_jangka_waktu || 0,
                 mikro_maksimal_pembiayaan: active.mikro_maksimal_pembiayaan || 0,
                 makro_jangka_waktu: active.makro_jangka_waktu || 0,
                 makro_maksimal_pembiayaan: active.makro_maksimal_pembiayaan || 0,
                 description: active.description || ''
+            });
+            setDecimalDisplays({
+                jasa_perbulan: String(jasaVal).replace('.', ','),
+                fee_pelayanan_pos: String(feeVal).replace('.', ','),
             });
             setIsLoading(false);
         } catch (error: any) {
@@ -533,7 +567,7 @@ export const SettingsList: React.FC = () => {
         } catch (error: any) { hideLoading(); showError(handleError(error, 'Gagal menyimpan pengaturan')); }
     };
 
-    const viewProps = { formData, setFormData, handleSubmit, activeSetting, isLoading, router };
+    const viewProps = { formData, setFormData, handleSubmit, activeSetting, isLoading, router, decimalDisplays, setDecimalDisplays };
 
     return (
         <>
