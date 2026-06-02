@@ -921,22 +921,13 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
             const gajiTersedia = parseFloat((formData.gaji_tersedia || '').replace(/\./g, '')) || 0;
             const sisaGaji = gajiTersedia - roundedAngsuran;
 
-            if (roundedAngsuran > sisaGaji) {
-                console.log('⚠️ Warning: Angsuran melebihi sisa gaji (50% rule or similar)');
-                // We don't set error here directly to avoid UI flickering, but we could if needed.
-                // The main validation is in validateCurrentStep or on blur.
-                // However, the user asked for immediate notification.
-                // Let's rely on validateCurrentStep for blocking, but we can set error here if we want immediate feedback.
-                // Actually, let's update the form data first.
-            }
-
             setFormData(prev => ({ ...prev, besar_angsuran: roundedAngsuran.toString() }));
 
             // Trigger validation immediately
-            if (gajiTersedia > 0 && roundedAngsuran > sisaGaji) {
+            if (gajiTersedia > 0 && roundedAngsuran > gajiTersedia) {
                 setFieldErrors(prev => ({
                     ...prev,
-                    besar_angsuran: 'Angsuran tidak boleh lebih besar dari Sisa Gaji (Gaji Tersedia - Angsuran)'
+                    besar_angsuran: 'Angsuran tidak boleh lebih besar dari Gaji Tersedia'
                 }));
             } else if (gajiTersedia > 0 && roundedAngsuran > 0 && sisaGaji < 100000) {
                 setFieldErrors(prev => ({
@@ -1560,20 +1551,12 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
             const gajiTersedia = parseFloat((formData.gaji_tersedia || '').replace(/\./g, '')) || 0;
             const sisaGaji = gajiTersedia - besarAngsuran;
 
-            // Check if Angsuran exceeds Sisa Gaji (User's specific request: "Angsuran/Bulan" lebih besar dari "Sisa Gaji")
-            // Interpretation: If Angsuran > Sisa Gaji (where Sisa Gaji = Gaji Tersedia - Angsuran), 
-            // effectively meaning Angsuran > (GajiTersedia / 2). 
-            // BUT, usually "Sisa Gaji" refers to the final remaining amount.
-            // If the user means "Angsuran > Gaji Tersedia", that's invalid.
-            // If the user means "Angsuran > Current Sisa Gaji displayed", that's recursive.
-            // Let's assume the standard: Sisa Gaji (Net Income after new installment) must be positive and > Angsuran?
-            // "Angsuran lebih besar dari Sisa Gaji" -> Angsuran > (Gaji Tersedia - Angsuran)
-            // Example: Gaji 5jt, Angsuran 3jt. Sisa = 2jt. Angsuran (3jt) > Sisa (2jt). ERROR.
-            // Example: Gaji 5jt, Angsuran 2jt. Sisa = 3jt. Angsuran (2jt) < Sisa (3jt). OK.
-
-            if (besarAngsuran > sisaGaji) {
-                errors.besar_angsuran = 'Angsuran/Bulan tidak boleh lebih besar dari Sisa Gaji';
-                errors.gaji_tersedia = 'Pendapatan tidak mencukupi (Ratio angsuran terlalu besar)';
+            // Check if Angsuran exceeds Gaji Tersedia
+            // Angsuran tidak boleh lebih besar dari total Gaji Tersedia
+            // Sisa Gaji = Gaji Tersedia - Angsuran (harus >= 0 dan minimal Rp 100.000)
+            if (besarAngsuran > gajiTersedia) {
+                errors.besar_angsuran = 'Angsuran/Bulan tidak boleh lebih besar dari Gaji Tersedia';
+                errors.gaji_tersedia = 'Pendapatan tidak mencukupi untuk menutup angsuran';
             }
             // Also check the absolute minimum buffer
             else if (besarAngsuran > 0 && sisaGaji < 100000) {

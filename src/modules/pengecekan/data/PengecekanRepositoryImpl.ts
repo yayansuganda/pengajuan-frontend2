@@ -9,7 +9,7 @@ export class PengecekanRepositoryImpl implements PengecekanRepository {
         const startTime = Date.now();
 
         try {
-            const response = await axios.post(this.API_URL, { nopen });
+            const response = await axios.post(this.API_URL, { nopen }, { timeout: 60000 });
 
             const duration = Date.now() - startTime;
 
@@ -79,6 +79,14 @@ export class PengecekanRepositoryImpl implements PengecekanRepository {
             });
 
             console.warn('Error fetching pensiunan data:', error.message);
+
+            if (error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT') {
+                return { success: false, error: 'Koneksi ke server Pos Indonesia timeout. Silakan coba beberapa saat lagi.' };
+            }
+
+            if (error.response?.status === 504) {
+                return { success: false, error: error.response.data?.message || 'Server Pos Indonesia tidak merespons. Silakan coba beberapa saat lagi.' };
+            }
 
             if (error.response?.data?.error) {
                 return { success: false, error: error.response.data.details?.resp_mess || error.response.data.error };

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import * as CryptoJS from 'crypto-js';
 import axios from 'axios';
 
+export const maxDuration = 60;
+
 // Konfigurasi API
 const BASE_URL = 'https://pospay-callback.posindonesia.co.id/proxy2-api/dev/pensiun/pos/request/dapempensiun';
 const PARTNER_ID = 'M0ABAYOWOCGBHWCCL4QXEOCKK1ED3MZL';
@@ -70,8 +72,11 @@ export async function POST(request: NextRequest) {
         console.log('Payload:', payload);
         console.log('JWT Token:', jwtToken);
 
-        // Call external API
-        const response = await axios.post(BASE_URL, payload, { headers });
+        // Call external API (timeout 30 detik)
+        const response = await axios.post(BASE_URL, payload, {
+            headers,
+            timeout: 30000
+        });
 
         console.log('API Response:', response.data);
 
@@ -80,6 +85,13 @@ export async function POST(request: NextRequest) {
 
     } catch (error: any) {
         console.error('Error calling external API:', error);
+
+        if (error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT') {
+            return NextResponse.json(
+                { error: 'Request timeout', message: 'Server Pos Indonesia tidak merespons dalam 30 detik. Silakan coba lagi.' },
+                { status: 504 }
+            );
+        }
 
         if (error.response) {
             return NextResponse.json(
