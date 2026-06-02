@@ -289,8 +289,7 @@ export const RekonsiliasiPage: React.FC = () => {
             const worksheet = workbook.addWorksheet('Rekonsiliasi POS');
 
             // Helpers
-            const toRp = (v?: number) =>
-                v ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(v) : 'Rp 0';
+            const toNum = (v?: number) => (v != null && v !== 0 ? v : 0);
             const fmtTgl = (s?: string) => {
                 if (!s) return '-';
                 const d = new Date(s);
@@ -412,17 +411,17 @@ export const RekonsiliasiPage: React.FC = () => {
                     jenis_dapem: item.jenis_dapem || '-',
                     bulan_dapem: item.bulan_dapem || '-',
                     status_dapem: item.status_dapem || '-',
-                    gaji_bersih: toRp(item.gaji_bersih),
-                    gaji_tersedia: toRp(item.gaji_tersedia),
+                    gaji_bersih: toNum(item.gaji_bersih),
+                    gaji_tersedia: toNum(item.gaji_tersedia),
                     jenis_pelayanan: item.jenis_pelayanan?.name || '-',
                     jenis_pembiayaan: item.jenis_pembiayaan?.name || '-',
                     kategori: item.kategori_pembiayaan || '-',
                     jangka_waktu: item.jangka_waktu || 0,
-                    jumlah_pembiayaan: toRp(item.jumlah_pembiayaan),
-                    besar_angsuran: toRp(item.besar_angsuran),
-                    total_potongan: toRp(item.total_potongan),
-                    nominal_terima: toRp(item.nominal_terima),
-                    fee_pelayanan_pos: toRp(item.fee_pelayanan_pos),
+                    jumlah_pembiayaan: toNum(item.jumlah_pembiayaan),
+                    besar_angsuran: toNum(item.besar_angsuran),
+                    total_potongan: toNum(item.total_potongan),
+                    nominal_terima: toNum(item.nominal_terima),
+                    fee_pelayanan_pos: toNum(item.fee_pelayanan_pos),
                     kantor_pos_petugas: item.kantor_pos_petugas || '-',
                     nippos: item.petugas_nippos || '-',
                     petugas_nama: item.petugas_name || '-',
@@ -437,6 +436,14 @@ export const RekonsiliasiPage: React.FC = () => {
                     role_pembuat: item.user?.role || '-',
                     unit: item.unit || '-',
                 });
+                // Format kolom uang sebagai angka dengan pemisah ribuan (tanpa simbol Rp)
+                const moneyColumns = ['gaji_bersih', 'gaji_tersedia', 'jumlah_pembiayaan', 'besar_angsuran', 'total_potongan', 'nominal_terima', 'fee_pelayanan_pos'];
+                moneyColumns.forEach((key) => {
+                    const col = worksheet.getColumn(key);
+                    const cell = row.getCell(col.number);
+                    cell.numFmt = '#,##0';
+                });
+
                 // Border + zebra stripe
                 row.eachCell({ includeEmpty: true }, (cell) => {
                     cell.border = { top: dataBorder, left: dataBorder, bottom: dataBorder, right: dataBorder };
