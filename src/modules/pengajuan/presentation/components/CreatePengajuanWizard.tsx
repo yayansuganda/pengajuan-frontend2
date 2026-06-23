@@ -1717,7 +1717,9 @@ export const CreatePengajuanWizard: React.FC<{ pengajuanId?: string }> = ({ peng
                             });
 
                             if (!response.ok) {
-                                throw new Error(`Upload failed for ${file.name}`);
+                                const errBody = await response.text().catch(() => '');
+                                console.error(`Upload error [${response.status}] for ${file.name}:`, errBody);
+                                throw new Error(`Upload failed for ${file.name} (${response.status})`);
                             }
 
                             const data = await response.json();

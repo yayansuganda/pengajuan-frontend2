@@ -27,7 +27,7 @@ interface ViewProps {
     activeSetting: Setting | null;
     isLoading: boolean;
     router: any;
-    decimalDisplays: { jasa_perbulan: string; fee_pelayanan_pos: string };
+    decimalDisplays: { jasa_perbulan: string; fee_pelayanan_pos: string; fee_pelayanan_pos_dari_manunggal_makmur: string };
     setDecimalDisplays: (val: any) => void;
 }
 
@@ -114,6 +114,30 @@ const MobileView = ({ formData, setFormData, handleSubmit, activeSetting, isLoad
                                 <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-500">%</span>
                             </div>
                             <p className="mt-1 text-[10px] text-slate-400">Default: 3%</p>
+                        </div>
+
+                        <div>
+                            <label className="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wide flex items-center gap-2">
+                                <Percent className="w-4 h-4 text-slate-400" /> Fee Pelayanan Pos Dari Manunggal Makmur
+                            </label>
+                            <div className="relative">
+                                <input
+                                    type="text"
+                                    inputMode="decimal"
+                                    required
+                                    value={decimalDisplays.fee_pelayanan_pos_dari_manunggal_makmur}
+                                    onChange={(e) => {
+                                        const val = e.target.value;
+                                        if (/^[0-9]*[.,]?[0-9]*$/.test(val) || val === '') {
+                                            setDecimalDisplays((prev: any) => ({ ...prev, fee_pelayanan_pos_dari_manunggal_makmur: val }));
+                                            setFormData({ ...formData, fee_pelayanan_pos_dari_manunggal_makmur: parseDecimalInput(val) });
+                                        }
+                                    }}
+                                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 font-semibold"
+                                />
+                                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-500">%</span>
+                            </div>
+                            <p className="mt-1 text-[10px] text-slate-400">Default: 0%</p>
                         </div>
 
                         <div>
@@ -354,6 +378,33 @@ const DesktopView = ({ formData, setFormData, handleSubmit, activeSetting, isLoa
                                 </div>
                                 <p className="mt-2 text-xs text-gray-500">Persentase fee pelayanan untuk Petugas Pos (default: 3%)</p>
                             </div>
+
+                            <div>
+                                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                    Fee Pelayanan Pos Dari Manunggal Makmur
+                                </label>
+                                <div className="relative group">
+                                    <input
+                                        type="text"
+                                        inputMode="decimal"
+                                        required
+                                        value={decimalDisplays.fee_pelayanan_pos_dari_manunggal_makmur}
+                                        onChange={(e) => {
+                                            const val = e.target.value;
+                                            if (/^[0-9]*[.,]?[0-9]*$/.test(val) || val === '') {
+                                                setDecimalDisplays((prev: any) => ({ ...prev, fee_pelayanan_pos_dari_manunggal_makmur: val }));
+                                                setFormData({ ...formData, fee_pelayanan_pos_dari_manunggal_makmur: parseDecimalInput(val) });
+                                            }
+                                        }}
+                                        className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all font-medium text-gray-900 group-hover:border-gray-300"
+                                        placeholder="Contoh: 0,00"
+                                    />
+                                    <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
+                                        <span className="text-sm font-bold text-gray-400 bg-gray-50 px-2 py-1 rounded">%</span>
+                                    </div>
+                                </div>
+                                <p className="mt-2 text-xs text-gray-500">Persentase fee pelayanan Pos dari Manunggal Makmur (default: 0%)</p>
+                            </div>
                         </div>
                     </div>
 
@@ -507,6 +558,7 @@ export const SettingsList: React.FC = () => {
         batas_usia_perhitungan_lunas: 90,
         jasa_perbulan: 2.00,
         fee_pelayanan_pos: 3.00,
+        fee_pelayanan_pos_dari_manunggal_makmur: 0.00,
         mikro_jangka_waktu: 0,
         mikro_maksimal_pembiayaan: 0,
         makro_jangka_waktu: 0,
@@ -516,6 +568,7 @@ export const SettingsList: React.FC = () => {
     const [decimalDisplays, setDecimalDisplays] = useState({
         jasa_perbulan: '2',
         fee_pelayanan_pos: '3',
+        fee_pelayanan_pos_dari_manunggal_makmur: '0',
     });
     const [isLoading, setIsLoading] = useState(true);
 
@@ -531,10 +584,12 @@ export const SettingsList: React.FC = () => {
             setActiveSetting(active);
             const jasaVal = active.jasa_perbulan;
             const feeVal = active.fee_pelayanan_pos ?? 3.00;
+            const feeMmVal = active.fee_pelayanan_pos_dari_manunggal_makmur ?? 0.00;
             setFormData({
                 batas_usia_perhitungan_lunas: active.batas_usia_perhitungan_lunas,
                 jasa_perbulan: jasaVal,
                 fee_pelayanan_pos: feeVal,
+                fee_pelayanan_pos_dari_manunggal_makmur: feeMmVal,
                 mikro_jangka_waktu: active.mikro_jangka_waktu || 0,
                 mikro_maksimal_pembiayaan: active.mikro_maksimal_pembiayaan || 0,
                 makro_jangka_waktu: active.makro_jangka_waktu || 0,
@@ -544,6 +599,7 @@ export const SettingsList: React.FC = () => {
             setDecimalDisplays({
                 jasa_perbulan: String(jasaVal).replace('.', ','),
                 fee_pelayanan_pos: String(feeVal).replace('.', ','),
+                fee_pelayanan_pos_dari_manunggal_makmur: String(feeMmVal).replace('.', ','),
             });
             setIsLoading(false);
         } catch (error: any) {
