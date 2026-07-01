@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import { Plus, Edit, Trash2, X, Save, Percent, Calendar, Clock, Layers } from 'lucide-react';
 import { PotonganJangkaWaktu, CreatePotonganJangkaWaktuDTO, UpdatePotonganJangkaWaktuDTO } from '../core/Entity';
 import { PotonganJangkaWaktuRepositoryImpl } from '../data/RepositoryImpl';
+import { JenisPelayanan } from '@/modules/jenis-pelayanan/core/Entity';
+import { JenisPelayananRepositoryImpl } from '@/modules/jenis-pelayanan/data/RepositoryImpl';
 import { useAuth } from '@/modules/auth/presentation/useAuth';
 import { showLoading, hideLoading, showSuccess, showError, showConfirm } from '@/shared/utils/sweetAlert';
 import { handleError } from '@/shared/utils/errorHandler';
@@ -12,6 +14,7 @@ import { handleError } from '@/shared/utils/errorHandler';
 import { MobileLayoutWrapper } from '@/modules/pengajuan/presentation/components/MobileLayoutWrapper';
 
 const repository = new PotonganJangkaWaktuRepositoryImpl();
+const jenisPelayananRepository = new JenisPelayananRepositoryImpl();
 
 // Interface
 interface ListViewProps {
@@ -80,6 +83,17 @@ const MobileView = ({ data, openCreateModal, openEditModal, handleDelete }: List
                                 </div>
                             </div>
                             <div className="mt-2">
+                                <p className="text-[10px] uppercase text-slate-400 font-semibold mb-0.5">Jenis Pelayanan</p>
+                                {item.jenis_pelayanan?.name ? (
+                                    <span className="inline-flex items-center gap-1 text-xs font-bold text-purple-700">
+                                        <Layers className="w-3.5 h-3.5" />
+                                        {item.jenis_pelayanan.name}
+                                    </span>
+                                ) : (
+                                    <span className="text-xs text-slate-400 italic">Semua Jenis Pelayanan</span>
+                                )}
+                            </div>
+                            <div className="mt-2">
                                 <p className="text-[10px] uppercase text-slate-400 font-semibold mb-0.5">Status</p>
                                 <span className={`text-xs font-bold ${item.is_active ? 'text-emerald-600' : 'text-slate-500'}`}>
                                     {item.is_active ? 'Aktif' : 'Nonaktif'}
@@ -126,6 +140,7 @@ const DesktopView = ({
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rentang Waktu</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Potongan</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jenis</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jenis Pelayanan</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Deskripsi</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                             <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
@@ -158,6 +173,16 @@ const DesktopView = ({
                                             }`}>
                                             {item.is_pos ? '📮 POS' : '🏦 Non-POS'}
                                         </span>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                        {item.jenis_pelayanan?.name ? (
+                                            <span className="inline-flex items-center gap-1 rounded-full bg-purple-50 px-2.5 py-1 text-xs font-medium text-purple-700 ring-1 ring-inset ring-purple-600/20">
+                                                <Layers className="h-3.5 w-3.5" />
+                                                {item.jenis_pelayanan.name}
+                                            </span>
+                                        ) : (
+                                            <span className="text-xs text-gray-400 italic">Semua</span>
+                                        )}
                                     </td>
                                     <td className="px-6 py-4 text-sm text-gray-500">{item.description || '-'}</td>
                                     <td className="px-6 py-4 whitespace-nowrap">
@@ -198,12 +223,24 @@ export const PotonganJangkaWaktuList: React.FC = () => {
     const [limit] = useState(100);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingItem, setEditingItem] = useState<PotonganJangkaWaktu | null>(null);
-    const [formData, setFormData] = useState({ min_bulan: 0, max_bulan: 0, potongan_persen: 0, is_pos: false, description: '', is_active: true });
+    const [jenisPelayananList, setJenisPelayananList] = useState<JenisPelayanan[]>([]);
+    const [formData, setFormData] = useState({ min_bulan: 0, max_bulan: 0, potongan_persen: 0, is_pos: false, jenis_pelayanan_id: '', description: '', is_active: true });
 
     useEffect(() => {
         if (user && user.role !== 'super-admin') { router.push('/dashboard'); return; }
         fetchData();
+        fetchJenisPelayanan();
     }, [page, user]);
+
+    const fetchJenisPelayanan = async () => {
+        try {
+            const response = await jenisPelayananRepository.getAll(undefined, 1, 1000);
+            setJenisPelayananList(response.data);
+        } catch (error: any) {
+            // Silent fail: dropdown akan kosong bila gagal memuat
+            console.error('Gagal memuat jenis pelayanan', error);
+        }
+    };
 
     const fetchData = async () => {
         try {
@@ -233,9 +270,9 @@ export const PotonganJangkaWaktuList: React.FC = () => {
         }
     };
 
-    const openCreateModal = () => { setEditingItem(null); setFormData({ min_bulan: 0, max_bulan: 0, potongan_persen: 0, is_pos: false, description: '', is_active: true }); setIsModalOpen(true); };
-    const openEditModal = (item: PotonganJangkaWaktu) => { setEditingItem(item); setFormData({ min_bulan: item.min_bulan || 0, max_bulan: item.max_bulan || 0, potongan_persen: item.potongan_persen || 0, is_pos: item.is_pos ?? false, description: item.description || '', is_active: item.is_active ?? true }); setIsModalOpen(true); };
-    const closeModal = () => { setIsModalOpen(false); setEditingItem(null); setFormData({ min_bulan: 0, max_bulan: 0, potongan_persen: 0, is_pos: false, description: '', is_active: true }); };
+    const openCreateModal = () => { setEditingItem(null); setFormData({ min_bulan: 0, max_bulan: 0, potongan_persen: 0, is_pos: false, jenis_pelayanan_id: '', description: '', is_active: true }); setIsModalOpen(true); };
+    const openEditModal = (item: PotonganJangkaWaktu) => { setEditingItem(item); setFormData({ min_bulan: item.min_bulan || 0, max_bulan: item.max_bulan || 0, potongan_persen: item.potongan_persen || 0, is_pos: item.is_pos ?? false, jenis_pelayanan_id: item.jenis_pelayanan_id || '', description: item.description || '', is_active: item.is_active ?? true }); setIsModalOpen(true); };
+    const closeModal = () => { setIsModalOpen(false); setEditingItem(null); setFormData({ min_bulan: 0, max_bulan: 0, potongan_persen: 0, is_pos: false, jenis_pelayanan_id: '', description: '', is_active: true }); };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -249,10 +286,15 @@ export const PotonganJangkaWaktuList: React.FC = () => {
         console.log('is_pos value:', formData.is_pos);
         console.log('=====================');
 
+        const payload = {
+            ...formData,
+            jenis_pelayanan_id: formData.jenis_pelayanan_id ? formData.jenis_pelayanan_id : null,
+        };
+
         try {
             showLoading(editingItem ? 'Mengupdate data...' : 'Menambahkan data...');
-            if (editingItem) { await repository.update(editingItem.id, formData as UpdatePotonganJangkaWaktuDTO); hideLoading(); await showSuccess('Data berhasil diupdate'); }
-            else { await repository.create(formData as CreatePotonganJangkaWaktuDTO); hideLoading(); await showSuccess('Data berhasil ditambahkan'); }
+            if (editingItem) { await repository.update(editingItem.id, payload as UpdatePotonganJangkaWaktuDTO); hideLoading(); await showSuccess('Data berhasil diupdate'); }
+            else { await repository.create(payload as CreatePotonganJangkaWaktuDTO); hideLoading(); await showSuccess('Data berhasil ditambahkan'); }
             closeModal();
             fetchData();
         } catch (error: any) {
@@ -295,6 +337,16 @@ export const PotonganJangkaWaktuList: React.FC = () => {
                                             <input type="number" required min="0.01" max="100" step="0.01" value={formData.potongan_persen} onChange={(e) => setFormData({ ...formData, potongan_persen: parseFloat(e.target.value) || 0 })} className="w-full px-4 py-2.5 pr-10 text-sm text-gray-900 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500" />
                                             <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none text-slate-500 font-bold">%</div>
                                         </div>
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wide flex items-center gap-1.5"><Layers className="h-3.5 w-3.5 text-indigo-500" /> Jenis Pelayanan</label>
+                                        <select value={formData.jenis_pelayanan_id} onChange={(e) => setFormData({ ...formData, jenis_pelayanan_id: e.target.value })} className="w-full px-4 py-2.5 text-sm text-gray-900 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
+                                            <option value="">Semua Jenis Pelayanan</option>
+                                            {jenisPelayananList.map((jp) => (
+                                                <option key={jp.id} value={jp.id}>{jp.name}</option>
+                                            ))}
+                                        </select>
+                                        <p className="mt-1 text-[11px] text-slate-400">Kosongkan bila potongan berlaku untuk semua jenis pelayanan.</p>
                                     </div>
                                     <div>
                                         <label className="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wide">Deskripsi</label>
