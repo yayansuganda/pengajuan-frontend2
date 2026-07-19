@@ -25,11 +25,23 @@ export class PengecekanRepositoryImpl implements PengecekanRepository {
 
             const responseData = response.data;
 
-            if (!responseData.status || responseData.resp_code !== '00') {
-                return { success: false, error: responseData.resp_mess || 'Data tidak ditemukan' };
+            // Tolak eksplisit jika POS mengembalikan code "19" (data ditolak/tidak valid),
+            // meskipun object data mungkin terisi.
+            if (responseData.code === '19' || responseData.resp_code === '19') {
+                return { success: false, error: responseData.resp_mess || 'Data pensiun tidak dapat diproses (code 19)' };
             }
 
+            // POS API tidak konsisten: sebagian record (mis. pensiun veteran
+            // "TUNJANGAN JD/DD VETERAN") dikembalikan dengan status=false &
+            // resp_code "20" NAMUN datanya valid (resp_mess "SUKSES"). Kegagalan
+            // sebenarnya (NOPEN tidak ditemukan) mengembalikan data=null. Karena itu
+            // keberhasilan ditentukan dari KEBERADAAN data, bukan flag status.
             const data = responseData.data;
+            const hasData = !!data && (!!data.nama_lengkap || !!data.nomor_pensiun);
+
+            if (!hasData) {
+                return { success: false, error: responseData.resp_mess || 'Data tidak ditemukan' };
+            }
 
             const totalPotongan = data.potongan_pinjaman
                 ? data.potongan_pinjaman.reduce((sum: number, p: any) => sum + (p.AMOUNT || 0), 0)
